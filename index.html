@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель Ханны</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      color: #333;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 1rem;
+      background: #fff;
+      min-height: 100vh;
+    }
+    h1, h2 {
+      margin-bottom: 0.5rem;
+    }
+    .section {
+      margin-bottom: 1.5rem;
+    }
+    .session {
+      background: #f0f0f0;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .session-buttons button {
+      margin-right: 0.5rem;
+    }
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+    .action-btn {
+      background: #e0e7ff;
+      border: none;
+      padding: 0.75rem;
+      border-radius: 8px;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+    }
+    .notifications {
+      background: #fffbea;
+      border-left: 4px solid #facc15;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>👩‍🏫 Привет, Ханна!</h1>
+    <div class="section">
+      <h2>📅 Сегодня — Понедельник, 5 августа</h2>
+      <div class="session">
+        <strong>10:00 — Аня (B1, англ)</strong>
+        <div class="session-buttons">
+          <button>💬 Zoom</button>
+          <button>✏️ Заметки</button>
+          <button>➕ Слово</button>
+        </div>
+      </div>
+      <div class="session">
+        <strong>13:00 — Марк (A2, франц)</strong>
+        <div class="session-buttons">
+          <button>💬 Zoom</button>
+          <button>✏️ Заметки</button>
+          <button>➕ Слово</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🔁 Быстрые действия</h2>
+      <div class="actions-grid">
+        <button class="action-btn">🧑‍🎓 Ученики</button>
+        <button class="action-btn">💰 Платежи</button>
+        <button class="action-btn">📘 Словари</button>
+        <button class="action-btn">📆 Все занятия</button>
+        <button class="action-btn">➕ Занятие</button>
+        <button class="action-btn">➕ Оплата</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>📍 Уведомления</h2>
+      <div class="notifications">⚠️ У ученика Анна закончились оплаченные занятия.</div>
+      <div class="notifications">✅ Марк подтвердил сегодняшнее занятие.</div>
+      <div class="notifications">📤 Zoom-ссылка отправлена Ане за 2 ч до урока.</div>
+    </div>
+  </div>
+</body>
+</html>
