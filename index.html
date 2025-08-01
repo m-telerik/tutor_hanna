@@ -56,16 +56,16 @@
         const today = new Date().toISOString().split('T')[0];
 
         const [sessions, students, vocab, balances, payments] = await Promise.all([
-          fetch(`${supabaseUrl}/rest/v1/hanna_sessions?session_date=eq.${today}&select=*`, { headers }).then(res => res.json()),
+          fetch(`${supabaseUrl}/rest/v1/hanna_sessions?session_date=eq.${today}&select=*,user:hanna_users(full_name)`, { headers }),
           fetch(`${supabaseUrl}/rest/v1/hanna_users?role=eq.student&select=*`, { headers }).then(res => res.json()),
-          fetch(`${supabaseUrl}/rest/v1/hanna_vocab?select=*&order=created_at.desc&limit=10`, { headers }).then(res => res.json()),
+          fetch(`${supabaseUrl}/rest/v1/hanna_vocab?select=*,user:hanna_users(full_name)&order=created_at.desc&limit=10`, { headers }),
           fetch(`${supabaseUrl}/rest/v1/hanna_lesson_balance?select=*`, { headers }).then(res => res.json()),
           fetch(`${supabaseUrl}/rest/v1/hanna_payments?select=*&order=payment_date.desc&limit=5`, { headers }).then(res => res.json())
         ]);
 
         document.getElementById('sessions').innerHTML = sessions.map(s => `<div class='card'><b>${s.session_time}</b> — ${s.language.toUpperCase()} (${s.status})</div>`).join('');
         document.getElementById('students').innerHTML = students.map(s => `<div class='card'>${s.full_name}</div>`).join('');
-        document.getElementById('vocab').innerHTML = vocab.map(w => `<div class='card'><b>${w.word}</b> — ${w.translation}<br><i>${w.example}</i></div>`).join('');
+        document.getElementById('vocab').innerHTML = vocab.map(w => `<div class='card'><b>${w.word}</b> — ${w.translation}${w.example}👤 ${w.user?.full_name}</div>`).join('');
         document.getElementById('balances').innerHTML = balances.map(b => `<div class='card'>ID ${b.user_id}<br>Уроков осталось: <b>${b.remaining_lessons}</b></div>`).join('');
         document.getElementById('payments').innerHTML = payments.map(p => `<div class='card'>ID ${p.user_id}<br>${p.amount} ₽ за ${p.lessons_paid} уроков</div>`).join('');
       }
