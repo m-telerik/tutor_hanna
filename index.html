@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Панель Ханны</title>
   <style>
     body { font-family: sans-serif; margin: 0; padding: 0; background: #f4f4f4; color: #333; }
@@ -10,9 +10,6 @@
     h1, h2 { margin-bottom: 0.5rem; }
     .section { margin-bottom: 1.5rem; }
     .card { background: #f0f0f0; border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem; }
-    .actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
-    .action-btn { background: #e0e7ff; border: none; padding: 0.75rem; border-radius: 8px; font-weight: bold; text-align: center; cursor: pointer; }
-    .notifications { background: #fffbea; border-left: 4px solid #facc15; padding: 0.75rem; border-radius: 6px; margin-bottom: 0.5rem; }
   </style>
 </head>
 <body>
@@ -46,7 +43,7 @@
 
     <script>
       const supabaseUrl = 'https://mhofpjjksgzknqenervp.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ob2Zwamprc2d6a25xZW5lcnZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NjE2MzEsImV4cCI6MjA2OTUzNzYzMX0.zLjDkyhLynwp4ZDmB65e3VpET3Qw8XFoWyWpXUIK6O8';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
       const headers = {
         apikey: supabaseKey,
         Authorization: 'Bearer ' + supabaseKey
@@ -55,19 +52,49 @@
       async function loadData() {
         const today = new Date().toISOString().split('T')[0];
 
-        const [sessions, students, vocab, balances, payments] = await Promise.all([
+        const [sessionsRes, studentsRes, vocabRes, balancesRes, paymentsRes] = await Promise.all([
           fetch(`${supabaseUrl}/rest/v1/hanna_sessions?session_date=eq.${today}&select=*,user:hanna_users(full_name)`, { headers }),
-          fetch(`${supabaseUrl}/rest/v1/hanna_users?role=eq.student&select=*`, { headers }).then(res => res.json()),
+          fetch(`${supabaseUrl}/rest/v1/hanna_users?role=eq.student&select=*`, { headers }),
           fetch(`${supabaseUrl}/rest/v1/hanna_vocab?select=*,user:hanna_users(full_name)&order=created_at.desc&limit=10`, { headers }),
-          fetch(`${supabaseUrl}/rest/v1/hanna_lesson_balance?select=*`, { headers }).then(res => res.json()),
-          fetch(`${supabaseUrl}/rest/v1/hanna_payments?select=*&order=payment_date.desc&limit=5`, { headers }).then(res => res.json())
+          fetch(`${supabaseUrl}/rest/v1/hanna_lesson_balance?select=*,user:hanna_users(full_name)`, { headers }),
+          fetch(`${supabaseUrl}/rest/v1/hanna_payments?select=*,user:hanna_users(full_name)&order=payment_date.desc&limit=5`, { headers })
         ]);
 
-        document.getElementById('sessions').innerHTML = sessions.map(s => `<div class='card'><b>${s.session_time}</b> — ${s.language.toUpperCase()} (${s.status})</div>`).join('');
-        document.getElementById('students').innerHTML = students.map(s => `<div class='card'>${s.full_name}</div>`).join('');
-        document.getElementById('vocab').innerHTML = vocab.map(w => `<div class='card'><b>${w.word}</b> — ${w.translation}${w.example}👤 ${w.user?.full_name}</div>`).join('');
-        document.getElementById('balances').innerHTML = balances.map(b => `<div class='card'>ID ${b.user_id}<br>Уроков осталось: <b>${b.remaining_lessons}</b></div>`).join('');
-        document.getElementById('payments').innerHTML = payments.map(p => `<div class='card'>ID ${p.user_id}<br>${p.amount} ₽ за ${p.lessons_paid} уроков</div>`).join('');
+        const [sessions, students, vocab, balances, payments] = await Promise.all([
+          sessionsRes.json(),
+          studentsRes.json(),
+          vocabRes.json(),
+          balancesRes.json(),
+          paymentsRes.json()
+        ]);
+
+        document.getElementById('sessions').innerHTML = sessions.map(s =>
+          `<div class='card'>
+            <b>${s.session_time}</b> — ${s.language.toUpperCase()} (${s.status})<br>
+            👤 ${s.user?.full_name || '—'}
+          </div>`).join('');
+
+        document.getElementById('students').innerHTML = students.map(s =>
+          `<div class='card'>${s.full_name}</div>`).join('');
+
+        document.getElementById('vocab').innerHTML = vocab.map(w =>
+          `<div class='card'>
+            <b>${w.word}</b> — ${w.translation || '—'}<br>
+            <i>${w.example || ''}</i><br>
+            👤 ${w.user?.full_name || '—'}
+          </div>`).join('');
+
+        document.getElementById('balances').innerHTML = balances.map(b =>
+          `<div class='card'>
+            👤 ${b.user?.full_name || '—'}<br>
+            Уроков осталось: <b>${b.remaining_lessons}</b>
+          </div>`).join('');
+
+        document.getElementById('payments').innerHTML = payments.map(p =>
+          `<div class='card'>
+            👤 ${p.user?.full_name || '—'}<br>
+            ${p.amount} ₽ за ${p.lessons_paid} уроков
+          </div>`).join('');
       }
 
       loadData();
