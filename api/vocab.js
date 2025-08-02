@@ -1,4 +1,5 @@
 // 📁 /api/vocab.js
+console.log('x-telegram-id:', req.headers['x-telegram-id']);
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
