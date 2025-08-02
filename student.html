@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Профиль ученика</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; background: #f9f9f9; }
+    .info { font-size: 1.1rem; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.05); }
+  </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <h1>Профиль ученика</h1>
+  <div class="info" id="student-info">Загрузка...</div>
+
+  <script>
+    const name = new URLSearchParams(window.location.search).get("name");
+    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
+    const infoDiv = document.getElementById("student-info");
+
+    if (!name) {
+      infoDiv.innerHTML = "Имя не указано.";
+    } else {
+      fetch(`/api/student?name=${encodeURIComponent(name)}`, {
+        headers: { "x-telegram-id": userId }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          infoDiv.innerHTML = "Ученик не найден или доступ запрещён.";
+          return;
+        }
+
+        infoDiv.innerHTML = `
+          <p><strong>Имя:</strong> ${data.name}</p>
+          <p><strong>Язык:</strong> ${data.language || '—'}</p>
+          <p><strong>Telegram:</strong> ${data.telegram || '—'}</p>
+          <p><strong>Следующее занятие:</strong> ${data.next_session || '—'}</p>
+        `;
+      })
+      .catch(err => {
+        infoDiv.innerHTML = "Ошибка загрузки данных.";
+        console.error(err);
+      });
+    }
+  </script>
+</body>
+</html>
