@@ -9,10 +9,13 @@ const supabase = createClient(
 const ADMIN_IDS = [618647337, 2341205];
 
 export default async function handler(req, res) {
-  const telegram_id = parseInt(req.headers['x-telegram-id']);
-  if (!ADMIN_IDS.includes(telegram_id)) {
-    return res.status(403).json({ error: 'Access denied' });
-  }
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const tgid = url.searchParams.get("tgid");
+  const telegram_id = parseInt(req.headers["x-telegram-id"] || tgid);
+
+if (!ADMIN_IDS.includes(telegram_id)) {
+  return res.status(403).json({ error: 'Access denied' });
+}
 
   const { data: users, error: userError } = await supabase
     .from('hanna_users')
