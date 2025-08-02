@@ -18,7 +18,6 @@
     <thead>
       <tr>
         <th>Имя</th>
-        <th>Кол-во/нед</th>
         <th>Язык</th>
         <th>Следующее занятие</th>
       </tr>
@@ -39,7 +38,6 @@
           const row = document.createElement("tr");
           row.innerHTML = `
             <td>${s.name}</td>
-            <td>${s.frequency ?? '-'}</td>
             <td>${s.language}</td>
             <td>${s.next_session ?? '—'}</td>
           `;
