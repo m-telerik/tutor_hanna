@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Урок</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; background: #f9f9f9; }
+    .info { font-size: 1.1rem; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.05); }
+  </style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <h1>Урок</h1>
+  <div class="info" id="lesson-info">Загрузка...</div>
+
+  <script>
+    const sessionId = new URLSearchParams(window.location.search).get("session_id");
+    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
+    const infoDiv = document.getElementById("lesson-info");
+
+    if (!sessionId || !userId) {
+      infoDiv.innerHTML = "Недостаточно данных.";
+    } else {
+      fetch('/api/students', {
+        headers: { "x-telegram-id": userId }
+      })
+        .then(res => res.json())
+        .then(({ students }) => {
+          const student = students.find(s => s.next_session_id == sessionId);
+
+          if (!student) {
+            infoDiv.innerHTML = "Урок не найден.";
+            return;
+          }
+
+          infoDiv.innerHTML = `
+            <p><strong>Дата:</strong> ${student.next_session}</p>
+            <p><strong>Ученик:</strong> <a href="student.html?name=${encodeURIComponent(student.name)}">${student.name}</a></p>
+            <p><strong>Язык:</strong> ${student.language || '—'}</p>
+            <p><strong>Тип:</strong> ${student.type || '—'}</p>
+            <p><strong>Статус:</strong> ${student.status || '—'}</p>
+          `;
+        })
+        .catch(err => {
+          infoDiv.innerHTML = "Ошибка загрузки.";
+          console.error(err);
+        });
+    }
+  </script>
+</body>
+</html>
