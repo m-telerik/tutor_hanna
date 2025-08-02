@@ -18,30 +18,32 @@
     const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
     const infoDiv = document.getElementById("student-info");
 
-    if (!name) {
-      infoDiv.innerHTML = "Имя не указано.";
+    if (!name || !userId) {
+      infoDiv.innerHTML = "Недостаточно данных для отображения.";
     } else {
-      fetch(`/api/student?name=${encodeURIComponent(name)}`, {
+      fetch('/api/students', {
         headers: { "x-telegram-id": userId }
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data.error) {
-          infoDiv.innerHTML = "Ученик не найден или доступ запрещён.";
-          return;
-        }
+        .then(res => res.json())
+        .then(({ students }) => {
+          const student = students.find(s => s.name === name);
 
-        infoDiv.innerHTML = `
-          <p><strong>Имя:</strong> ${data.name}</p>
-          <p><strong>Язык:</strong> ${data.language || '—'}</p>
-          <p><strong>Telegram:</strong> ${data.telegram || '—'}</p>
-          <p><strong>Следующее занятие:</strong> ${data.next_session || '—'}</p>
-        `;
-      })
-      .catch(err => {
-        infoDiv.innerHTML = "Ошибка загрузки данных.";
-        console.error(err);
-      });
+          if (!student) {
+            infoDiv.innerHTML = "Ученик не найден.";
+            return;
+          }
+
+          infoDiv.innerHTML = `
+            <p><strong>Имя:</strong> ${student.name}</p>
+            <p><strong>Язык:</strong> ${student.language || '—'}</p>
+            <p><strong>Частота:</strong> ${student.frequency || '—'} раз в неделю</p>
+            <p><strong>Следующее занятие:</strong> ${student.next_session || '—'}</p>
+          `;
+        })
+        .catch(err => {
+          infoDiv.innerHTML = "Ошибка загрузки данных.";
+          console.error(err);
+        });
     }
   </script>
 </body>
