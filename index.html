@@ -36,11 +36,15 @@
         const tbody = document.querySelector("#students tbody");
         students.forEach(s => {
           const row = document.createElement("tr");
-          row.innerHTML = `
-            <td><a href="student.html?name=${encodeURIComponent(s.name)}">${s.name}</a></td>
-            <td>${s.language}</td>
-            <td>${s.next_session ?? '—'}</td>
-`         ;
+              row.innerHTML = `
+                <td><a href="student.html?name=${encodeURIComponent(s.name)}">${s.name}</a></td>
+                <td>${s.language}</td>
+                <td>${
+                  s.next_session
+      ? `<a href="lesson.html?session_id=${s.next_session_id}">${s.next_session}</a>`
+      : '—'
+  }</td>
+`;
           tbody.appendChild(row);
         });
       })
