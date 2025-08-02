@@ -1,6 +1,5 @@
-// 📁 /api/vocab.js
-console.log('x-telegram-id:', req.headers['x-telegram-id']);
 import { createClient } from '@supabase/supabase-js';
+import getRawBody from 'raw-body';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -11,12 +10,17 @@ const ADMIN_IDS = [618647337, 2341205];
 
 export default async function handler(req, res) {
   const telegram_id = parseInt(req.headers["x-telegram-id"]);
+  console.log('🔍 x-telegram-id:', telegram_id);
+
   if (!ADMIN_IDS.includes(telegram_id)) {
     return res.status(403).json({ error: 'Access denied' });
   }
 
   if (req.method === 'GET') {
-    const { session_id } = new URL(req.url, `http://${req.headers.host}`).searchParams;
+    const { searchParams } = new URL(req.url, `http://${req.headers.host}`);
+    const session_id = searchParams.get('session_id');
+    if (!session_id) return res.status(400).json({ error: 'Missing session_id' });
+
     const { data, error } = await supabase
       .from('hanna_vocab')
       .select('word, translation, example, session_id, created_at, session:session_id(session_date)')
@@ -34,8 +38,14 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'POST') {
-    const body = await req.json();
+    const rawBody = await getRawBody(req);
+    const body = JSON.parse(rawBody.toString());
+    console.log('📥 body:', body);
+
     const { word, translation, example, session_id } = body;
+    if (!word || !session_id) {
+      return res.status(400).json({ error: 'Missing word or session_id' });
+    }
 
     const { error } = await supabase.from('hanna_vocab').insert({
       word,
