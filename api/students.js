@@ -27,24 +27,39 @@ if (!ADMIN_IDS.includes(telegram_id)) {
 
   const { data: sessions } = await supabase
     .from('hanna_sessions')
-    .select('user_id, session_date')
+    .select('id, user_id, session_date, status, type') // добавили status и type
     .gte('session_date', new Date().toISOString().slice(0, 10));
 
-  const sessionsMap = {};
-  for (const s of sessions) {
-    if (!sessionsMap[s.user_id] || sessionsMap[s.user_id] > s.session_date) {
-      sessionsMap[s.user_id] = s.session_date;
-    }
+const sessionsMap = {};
+for (const s of sessions) {
+  if (
+    !sessionsMap[s.user_id] ||
+    sessionsMap[s.user_id].session_date > s.session_date
+  ) {
+    sessionsMap[s.user_id] = {
+      session_date: s.session_date,
+      session_id: s.id,
+      status: s.status,
+      type: s.type
+    };
   }
+}
 
-  const students = users.map((u) => ({
+const students = users.map((u) => {
+  const session = sessionsMap[u.id] || {};
+
+  return {
     name: u.name,
     language: Array.isArray(u.language) ? u.language.join(', ') : u.language,
     preferred_days: u.preferred_days || [],
     preferred_time: u.preferred_time || null,
-    next_session: sessionsMap[u.id] || null,
+    next_session: session.session_date || null,
+    next_session_id: session.session_id || null,
+    status: session.status || null,
+    type: session.type || null,
     frequency: u.preferred_days?.length || null,
-  }));
+  };
+});
 
   return res.status(200).json({ students });
 }
