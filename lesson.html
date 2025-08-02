@@ -5,7 +5,12 @@
   <title>Урок</title>
   <style>
     body { font-family: sans-serif; margin: 2rem; background: #f9f9f9; }
-    .info { font-size: 1.1rem; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.05); }
+    .info, .vocab, form { font-size: 1.1rem; background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.05); margin-top: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+    th, td { padding: 6px; border-bottom: 1px solid #ddd; text-align: left; }
+    th { background: #f4f4f4; }
+    input, textarea { width: 100%; margin-top: 5px; margin-bottom: 10px; }
+    button { padding: 6px 12px; }
   </style>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
@@ -13,39 +18,114 @@
   <h1>Урок</h1>
   <div class="info" id="lesson-info">Загрузка...</div>
 
+  <div class="vocab">
+    <h2>🧠 Новые слова</h2>
+    <table id="vocab-table">
+      <thead>
+        <tr>
+          <th>Занятие</th>
+          <th>Слово</th>
+          <th>Перевод</th>
+          <th>Пример</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <form id="vocab-form">
+    <h3>➕ Добавить слово</h3>
+    <label>Слово: <input type="text" name="word" required /></label>
+    <label>Перевод: <input type="text" name="translation" /></label>
+    <label>Пример: <textarea name="example" rows="2"></textarea></label>
+    <button type="submit">Добавить</button>
+  </form>
+
   <script>
     const sessionId = new URLSearchParams(window.location.search).get("session_id");
     const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
-    const infoDiv = document.getElementById("lesson-info");
+    const lessonInfo = document.getElementById("lesson-info");
+    const vocabTable = document.querySelector("#vocab-table tbody");
+    const form = document.getElementById("vocab-form");
+
+    let currentStudentName = "";
 
     if (!sessionId || !userId) {
-      infoDiv.innerHTML = "Недостаточно данных.";
+      lessonInfo.innerHTML = "Недостаточно данных.";
     } else {
-      fetch('/api/students', {
-        headers: { "x-telegram-id": userId }
-      })
-        .then(res => res.json())
-        .then(({ students }) => {
-          const student = students.find(s => s.next_session_id == sessionId);
-
-          if (!student) {
-            infoDiv.innerHTML = "Урок не найден.";
-            return;
-          }
-
-          infoDiv.innerHTML = `
-            <p><strong>Дата:</strong> ${student.next_session}</p>
-            <p><strong>Ученик:</strong> <a href="student.html?name=${encodeURIComponent(student.name)}">${student.name}</a></p>
-            <p><strong>Язык:</strong> ${student.language || '—'}</p>
-            <p><strong>Тип:</strong> ${student.type || '—'}</p>
-            <p><strong>Статус:</strong> ${student.status || '—'}</p>
-          `;
-        })
-        .catch(err => {
-          infoDiv.innerHTML = "Ошибка загрузки.";
-          console.error(err);
-        });
+      loadLesson();
+      loadVocab();
     }
+
+    async function loadLesson() {
+      const res = await fetch('/api/students', {
+        headers: { "x-telegram-id": userId }
+      });
+      const { students } = await res.json();
+      const student = students.find(s => s.next_session_id == sessionId);
+
+      if (!student) {
+        lessonInfo.innerHTML = "Урок не найден.";
+        return;
+      }
+
+      currentStudentName = student.name;
+
+      lessonInfo.innerHTML = `
+        <p><strong>Дата:</strong> ${student.next_session}</p>
+        <p><strong>Ученик:</strong> <a href="student.html?name=${encodeURIComponent(student.name)}">${student.name}</a></p>
+        <p><strong>Язык:</strong> ${student.language || '—'}</p>
+        <p><strong>Тип:</strong> ${student.type || '—'}</p>
+        <p><strong>Статус:</strong> ${student.status || '—'}</p>
+      `;
+    }
+
+    async function loadVocab() {
+      const res = await fetch(`/api/vocab?session_id=${sessionId}`, {
+        headers: { "x-telegram-id": userId }
+      });
+      const { words = [] } = await res.json();
+      vocabTable.innerHTML = words.map(w => `
+        <tr>
+          <td><a href="lesson.html?session_id=${sessionId}">${w.session_date?.slice(0,10) || '—'}</a></td>
+          <td>${w.word}</td>
+          <td>${w.translation || ''}</td>
+          <td>${w.example || ''}</td>
+        </tr>
+      `).join('');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const word = formData.get('word')?.trim();
+      if (!word) return;
+
+      const payload = {
+        word,
+        translation: formData.get('translation')?.trim(),
+        example: formData.get('example')?.trim(),
+        session_id: sessionId,
+      };
+
+      const res = await fetch('/api/vocab', {
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "x-telegram-id": userId
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        form.reset();
+        await loadVocab();
+      } else {
+        alert('Ошибка при добавлении слова');
+        console.error(data);
+      }
+    });
   </script>
 </body>
 </html>
