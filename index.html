@@ -26,7 +26,7 @@
   </table>
 
   <script>
-    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
+    const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 618647337;
 
     fetch("/api/students", {
       headers: { "x-telegram-id": userId }
