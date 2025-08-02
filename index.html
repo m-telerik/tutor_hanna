@@ -37,10 +37,10 @@
         students.forEach(s => {
           const row = document.createElement("tr");
           row.innerHTML = `
-            <td>${s.name}</td>
+            <td><a href="student.html?name=${encodeURIComponent(s.name)}">${s.name}</a></td>
             <td>${s.language}</td>
             <td>${s.next_session ?? '—'}</td>
-          `;
+`         ;
           tbody.appendChild(row);
         });
       })
