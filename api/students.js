@@ -27,7 +27,7 @@ if (!ADMIN_IDS.includes(telegram_id)) {
 
   const { data: sessions } = await supabase
     .from('hanna_sessions')
-    .select('id, user_id, session_date, status, type') // добавили status и type
+    .select('id, user_id, session_date, status, type')
     .gte('session_date', new Date().toISOString().slice(0, 10));
 
 const sessionsMap = {};
@@ -50,7 +50,7 @@ const students = users.map((u) => {
 
   return {
     name: u.name,
-    language: Array.isArray(u.languages) ? u.languages.join(', ') : u.languages,
+    language: Array.isArray(u.languages) ? u.languages.join(', ') : (u.languages || '—'),
     preferred_days: u.preferred_days || [],
     preferred_time: u.preferred_time || null,
     next_session: session.session_date || null,
