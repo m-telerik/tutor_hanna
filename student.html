@@ -3,14 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <title>Профиль ученика</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #202124;
+      --border-color: #e0e0e0;
+      --header-bg: #f1f3f4;
+      --accent-color: #007aff;
+      --card-bg: #f8f9fa;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1a1a1a;
+        --text-color: #e1e1e1;
+        --border-color: #333;
+        --header-bg: #2d2d2d;
+        --accent-color: #0a84ff;
+        --card-bg: #2d2d2d;
+      }
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       font-size: 14px;
       margin: 0.5rem;
       padding: 0;
-      background: #fff;
-      color: #202124;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
     }
 
     h1, h2, h3 {
@@ -18,25 +40,49 @@
       margin: 0.5rem 0;
     }
 
+    .info {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      border: 1px solid var(--border-color);
+    }
+
+    .info p {
+      margin: 0.5rem 0;
+      line-height: 1.5;
+    }
+
+    .info strong {
+      color: var(--text-color);
+      font-weight: 600;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 1rem;
+      background: var(--bg-color);
     }
 
     th, td {
-      padding: 6px;
-      border-bottom: 1px solid #e0e0e0;
+      padding: 8px;
+      border-bottom: 1px solid var(--border-color);
       text-align: left;
       font-size: 13px;
     }
 
     th {
-      background-color: #f1f3f4;
+      background-color: var(--header-bg);
+      font-weight: 500;
+    }
+
+    tr:hover {
+      background-color: var(--card-bg);
     }
 
     a {
-      color: #007aff;
+      color: var(--accent-color);
       text-decoration: none;
     }
 
@@ -47,7 +93,7 @@
     button {
       background: none;
       border: none;
-      color: #007aff;
+      color: var(--accent-color);
       font-size: 13px;
       padding: 0.5rem 0;
       cursor: pointer;
@@ -56,13 +102,35 @@
     button:hover {
       text-decoration: underline;
     }
-    </style>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    .emoji {
+      font-size: 1.2em;
+      margin-right: 0.5rem;
+    }
+
+    .student-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .loading, .error {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-color);
+    }
+
+    .error {
+      color: #ff3b30;
+    }
+  </style>
 </head>
 <body>
   <button onclick="history.back()">← Назад</button>
 
-  <h1>Профиль ученика</h1>
+  <div class="student-header">
+    <h1><span class="emoji">👤</span>Профиль ученика</h1>
+  </div>
   <div class="info" id="student-info">Загрузка...</div>
 
   <script>
@@ -81,22 +149,18 @@
           const student = students.find(s => s.name === name);
 
           if (!student) {
-            infoDiv.innerHTML = "Ученик не найден.";
+            infoDiv.innerHTML = "<div class='error'>Ученик не найден.</div>";
             return;
           }
 
           infoDiv.innerHTML = `
-            <p><strong>Имя:</strong> ${student.name}</p>
-            <p><strong>Язык:</strong> ${student.language || '—'}</p>
-            <p><strong>Частота:</strong> ${student.frequency || '—'} раз в неделю</p>
-            <p><strong>Следующее занятие:</strong> ${student.next_session || '—'}</p>
-          `;
-        })
-        .catch(err => {
-          infoDiv.innerHTML = "Ошибка загрузки данных.";
-          console.error(err);
-        });
-    }
-  </script>
-</body>
-</html>
+            <p><strong><span class="emoji">👤</span>Имя:</strong> ${student.name}</p>
+            <p><strong><span class="emoji">🌍</span>Язык:</strong> ${student.language || '—'}</p>
+            <p><strong><span class="emoji">📅</span>Частота:</strong> ${student.frequency || '—'} раз в неделю</p>
+            <p><strong><span class="emoji">⏰</span>Следующее занятие:</strong> ${
+              student.next_session 
+                ? `<a href="lesson.html?session_id=${student.next_session_id}">${student.next_session}</a>`
+                : '—'
+            }</p>
+            ${student.preferred_time ? `<p><strong><span class="emoji">🕐</span>Предпочитаемое время:</strong> ${student.preferred_time}</p>` : ''}
+            ${student.preferred_days && student.preferred_days.length > 0 ? `<p><strong><span class="emoji">📆</span>Предпочитаемые дни:</strong> ${student.preferred_days.join(', ')}</p>` : ''}
