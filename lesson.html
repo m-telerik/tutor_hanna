@@ -3,14 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <title>Урок</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #202124;
+      --border-color: #e0e0e0;
+      --header-bg: #f1f3f4;
+      --accent-color: #007aff;
+      --card-bg: #f8f9fa;
+      --input-bg: #fff;
+      --input-border: #d1d5db;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1a1a1a;
+        --text-color: #e1e1e1;
+        --border-color: #333;
+        --header-bg: #2d2d2d;
+        --accent-color: #0a84ff;
+        --card-bg: #2d2d2d;
+        --input-bg: #2d2d2d;
+        --input-border: #404040;
+      }
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       font-size: 14px;
       margin: 0.5rem;
       padding: 0;
-      background: #fff;
-      color: #202124;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
     }
 
     h1, h2, h3 {
@@ -18,25 +44,43 @@
       margin: 0.5rem 0;
     }
 
+    .info {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      border: 1px solid var(--border-color);
+    }
+
+    .vocab {
+      margin: 2rem 0;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 1rem;
+      background: var(--bg-color);
     }
 
     th, td {
-      padding: 6px;
-      border-bottom: 1px solid #e0e0e0;
+      padding: 8px;
+      border-bottom: 1px solid var(--border-color);
       text-align: left;
       font-size: 13px;
     }
 
     th {
-      background-color: #f1f3f4;
+      background-color: var(--header-bg);
+      font-weight: 500;
+    }
+
+    tr:hover {
+      background-color: var(--card-bg);
     }
 
     a {
-      color: #007aff;
+      color: var(--accent-color);
       text-decoration: none;
     }
 
@@ -47,7 +91,7 @@
     button {
       background: none;
       border: none;
-      color: #007aff;
+      color: var(--accent-color);
       font-size: 13px;
       padding: 0.5rem 0;
       cursor: pointer;
@@ -56,8 +100,65 @@
     button:hover {
       text-decoration: underline;
     }
-    </style>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    form {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin: 2rem 0;
+      border: 1px solid var(--border-color);
+    }
+
+    form h3 {
+      margin-top: 0;
+    }
+
+    label {
+      display: block;
+      margin: 1rem 0;
+      font-weight: 500;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      font-size: 14px;
+      background: var(--input-bg);
+      color: var(--text-color);
+      margin-top: 4px;
+      box-sizing: border-box;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+
+    button[type="submit"] {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    button[type="submit"]:hover {
+      opacity: 0.9;
+      text-decoration: none;
+    }
+
+    .emoji {
+      font-size: 1.2em;
+      margin-right: 0.5rem;
+    }
+  </style>
 </head>
 <body>
   <button onclick="history.back()">← Назад</button>
@@ -66,7 +167,7 @@
   <div class="info" id="lesson-info">Загрузка...</div>
 
   <div class="vocab">
-    <h2>🧠 Новые слова</h2>
+    <h2><span class="emoji">🧠</span>Новые слова</h2>
     <table id="vocab-table">
       <thead>
         <tr>
@@ -81,7 +182,7 @@
   </div>
 
   <form id="vocab-form">
-    <h3>➕ Добавить слово</h3>
+    <h3><span class="emoji">➕</span>Добавить слово</h3>
     <label>Слово: <input type="text" name="word" required /></label>
     <label>Перевод: <input type="text" name="translation" /></label>
     <label>Пример: <textarea name="example" rows="2"></textarea></label>
