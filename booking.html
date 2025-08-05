@@ -177,6 +177,11 @@
         grid-template-columns: 1fr;
       }
     }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -202,16 +207,16 @@
 
   <div class="calendar-container">
     <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 400px; background: var(--card-bg); border-radius: 8px; padding: 2rem; text-align: center;">
-      <span style="font-size: 5em; margin-bottom: 1.5rem;">📅</span>
-      <h2 style="margin-bottom: 1rem; color: var(--accent-color);">Календарь Ханны</h2>
+      <div style="width: 50px; height: 50px; border: 3px solid var(--accent-color); border-top: 3px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 2rem;"></div>
+      <h2 style="margin-bottom: 1rem; color: var(--accent-color);">Открываем календарь...</h2>
       <p style="opacity: 0.8; margin-bottom: 2rem; line-height: 1.6; max-width: 300px;">
-        Выберите удобное время для занятия английским или французским языком
+        Сейчас вы будете перенаправлены на страницу бронирования Ханны
       </p>
-      <button onclick="openCalendarBooking()" class="external-link-btn" style="font-size: 18px; padding: 18px 32px; border-radius: 25px;">
-        <span class="emoji">🗓️</span>Открыть календарь бронирования
+      <button onclick="openCalendarBooking()" class="external-link-btn" style="font-size: 16px; padding: 12px 24px;">
+        <span class="emoji">📅</span>Открыть вручную
       </button>
-      <p style="font-size: 12px; opacity: 0.6; margin-top: 1.5rem;">
-        Календарь откроется в Telegram
+      <p style="font-size: 12px; opacity: 0.6; margin-top: 1rem;">
+        Если автоматический переход не сработал
       </p>
     </div>
   </div>
@@ -219,24 +224,34 @@
 
 
   <script>
-    const CALENDAR_BOOKING_URL = 'https://calendar.google.com/calendar/embed?src=mknaumenko%40gmail.com&ctz=Asia%2FBangkok';
+    const CALENDAR_BOOKING_URL = 'https://calendar.app.google/SQGJj626MUyQ6DYL6';
     
-    function openCalendarBooking() {
-      if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(CALENDAR_BOOKING_URL);
-      } else {
-        window.open(CALENDAR_BOOKING_URL, '_blank');
-      }
-    }
-    
-    // Инициализация при загрузке
+    // Автоматический редирект при загрузке страницы
     document.addEventListener('DOMContentLoaded', function() {
       // Настройка Telegram WebApp
       if (window.Telegram?.WebApp) {
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
       }
+      
+      // Показываем загрузку на секунду, затем редирект
+      setTimeout(() => {
+        if (window.Telegram?.WebApp?.openLink) {
+          window.Telegram.WebApp.openLink(CALENDAR_BOOKING_URL);
+        } else {
+          window.location.href = CALENDAR_BOOKING_URL;
+        }
+      }, 1000);
     });
+    
+    // Функция для ручного открытия, если автоматический редирект не сработал
+    function openCalendarBooking() {
+      if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(CALENDAR_BOOKING_URL);
+      } else {
+        window.location.href = CALENDAR_BOOKING_URL;
+      }
+    }
   </script>
 </body>
 </html>
