@@ -19,7 +19,7 @@ if (!ADMIN_IDS.includes(telegram_id)) {
 
   const { data: users, error: userError } = await supabase
     .from('hanna_users')
-    .select('id, name, language, preferred_days, preferred_time')
+    .select('id, name, languages, preferred_days, preferred_time')
     .eq('is_active', true)
     .eq('role', 'student');
 
@@ -50,7 +50,7 @@ const students = users.map((u) => {
 
   return {
     name: u.name,
-    language: Array.isArray(u.language) ? u.language.join(', ') : u.language,
+    language: Array.isArray(u.languages) ? u.languages.join(', ') : u.languages,
     preferred_days: u.preferred_days || [],
     preferred_time: u.preferred_time || null,
     next_session: session.session_date || null,
