@@ -3,16 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Список студентов</title>
+  <title>Hanna English & French</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #202124;
+      --border-color: #e0e0e0;
+      --header-bg: #f1f3f4;
+      --accent-color: #007aff;
+      --button-bg: #007aff;
+      --button-text: #fff;
+      --card-bg: #f8f9fa;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1a1a1a;
+        --text-color: #e1e1e1;
+        --border-color: #333;
+        --header-bg: #2d2d2d;
+        --accent-color: #0a84ff;
+        --button-bg: #0a84ff;
+        --button-text: #fff;
+        --card-bg: #2d2d2d;
+      }
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       font-size: 14px;
       margin: 0.5rem;
       padding: 0;
-      background: #fff;
-      color: #202124;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
     }
 
     h1, h2, h3 {
@@ -20,25 +45,81 @@
       margin: 0.5rem 0;
     }
 
+    .welcome-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1rem 0;
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .student-info {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      border: 1px solid var(--border-color);
+    }
+
+    .next-lesson {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      border: 1px solid var(--border-color);
+    }
+
+    .book-lesson-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 25px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+      z-index: 1000;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .book-lesson-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 1rem;
+      background: var(--bg-color);
     }
 
     th, td {
-      padding: 6px;
-      border-bottom: 1px solid #e0e0e0;
+      padding: 8px;
+      border-bottom: 1px solid var(--border-color);
       text-align: left;
       font-size: 13px;
     }
 
     th {
-      background-color: #f1f3f4;
+      background-color: var(--header-bg);
+      font-weight: 500;
+    }
+
+    tr:hover {
+      background-color: var(--card-bg);
     }
 
     a {
-      color: #007aff;
+      color: var(--accent-color);
       text-decoration: none;
     }
 
@@ -49,7 +130,7 @@
     button {
       background: none;
       border: none;
-      color: #007aff;
+      color: var(--accent-color);
       font-size: 13px;
       padding: 0.5rem 0;
       cursor: pointer;
@@ -58,48 +139,188 @@
     button:hover {
       text-decoration: underline;
     }
-    </style>
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-color);
+    }
+
+    .error {
+      color: #ff3b30;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .emoji {
+      font-size: 1.5em;
+      margin: 0 0.5rem;
+    }
+
+    .contact-link {
+      display: inline-block;
+      background: var(--button-bg);
+      color: var(--button-text);
+      padding: 10px 20px;
+      border-radius: 20px;
+      text-decoration: none;
+      margin-top: 1rem;
+      font-weight: 500;
+    }
+
+    .contact-link:hover {
+      opacity: 0.9;
+      text-decoration: none;
+    }
+  </style>
 </head>
 <body>
-  <h2>🧑‍🎓Список студентов</h2>
-  <table id="students">
-    <thead>
-      <tr>
-        <th>Имя</th>
-        <th>Язык</th>
-        <th>Следующее занятие</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div id="app">
+    <div class="loading">Загрузка...</div>
+  </div>
 
   <script>
     const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 618647337;
-
-    fetch("/api/students", {
-      headers: { "x-telegram-id": userId }
-    })
-      .then(res => res.json())
-      .then(({ students }) => {
-        const tbody = document.querySelector("#students tbody");
-        students.forEach(s => {
-          const row = document.createElement("tr");
-              row.innerHTML = `
-                <td><a href="student.html?name=${encodeURIComponent(s.name)}">${s.name}</a></td>
-                <td>${s.language}</td>
-                <td>${
-                  s.next_session
-      ? `<a href="lesson.html?session_id=${s.next_session_id}">${s.next_session}</a>`
-      : '—'
-  }</td>
-`;
-          tbody.appendChild(row);
+    const userName = Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Пользователь';
+    
+    // Ссылка на календарь Ханны
+    const CALENDAR_LINK = 'https://calendar.google.com/calendar/u/0?cid=Y18yZmI3ZjY5ODg5MjUyODY3MzM5YTUwZGE4ZDE4M2Q5NzQ4ZjFkMmMwYjdhZTZhYTBhMzQ1MTM2MTJhZjUzOTE3QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20';
+    
+    async function loadUserRole() {
+      try {
+        const response = await fetch("/api/user-role", {
+          headers: { "x-telegram-id": userId }
         });
-      })
-      .catch(err => {
-        document.body.innerHTML = "<p style='color:red'>Ошибка загрузки списка студентов</p>";
-        console.error(err);
-      });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch user role');
+        }
+        
+        const data = await response.json();
+        renderContent(data);
+      } catch (error) {
+        console.error('Error loading user role:', error);
+        document.getElementById('app').innerHTML = `
+          <div class="error">
+            <h2>Ошибка загрузки</h2>
+            <p>Не удалось определить тип пользователя</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderContent(userData) {
+      const app = document.getElementById('app');
+      
+      if (userData.role === 'admin') {
+        renderAdminView();
+      } else if (userData.role === 'student') {
+        renderStudentView(userData);
+      } else {
+        renderProspectView();
+      }
+    }
+
+    async function renderAdminView() {
+      try {
+        const response = await fetch("/api/students", {
+          headers: { "x-telegram-id": userId }
+        });
+        const { students } = await response.json();
+        
+        document.getElementById('app').innerHTML = `
+          <h2><span class="emoji">🧑‍🎓</span>Список студентов</h2>
+          <table id="students">
+            <thead>
+              <tr>
+                <th>Имя</th>
+                <th>Язык</th>
+                <th>Следующее занятие</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${students.map(s => `
+                <tr>
+                  <td><a href="student.html?name=${encodeURIComponent(s.name)}">${s.name}</a></td>
+                  <td>${s.language || '—'}</td>
+                  <td>${
+                    s.next_session
+                      ? `<a href="lesson.html?session_id=${s.next_session_id}">${s.next_session}</a>`
+                      : '—'
+                  }</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } catch (error) {
+        console.error('Error loading students:', error);
+        document.getElementById('app').innerHTML = `
+          <div class="error">Ошибка загрузки списка студентов</div>
+        `;
+      }
+    }
+
+    function renderStudentView(userData) {
+      const nextLesson = userData.next_session;
+      
+      document.getElementById('app').innerHTML = `
+        <div class="student-info">
+          <h2><span class="emoji">👋</span>Привет, ${userName}!</h2>
+          <p>Добро пожаловать в твой личный кабинет для изучения языков с Ханной</p>
+        </div>
+        
+        ${nextLesson ? `
+          <div class="next-lesson">
+            <div>
+              <h3><span class="emoji">📅</span>Следующее занятие</h3>
+              <p><strong>${nextLesson.date}</strong></p>
+              <p>Язык: ${nextLesson.language || '—'}</p>
+            </div>
+            <div>
+              <a href="lesson.html?session_id=${nextLesson.session_id}" 
+                 style="background: var(--button-bg); color: var(--button-text); 
+                        padding: 8px 16px; border-radius: 16px; text-decoration: none;">
+                Открыть урок
+              </a>
+            </div>
+          </div>
+        ` : `
+          <div class="welcome-card">
+            <h3><span class="emoji">📚</span>Занятий пока не запланировано</h3>
+            <p>Забронируй следующее занятие, чтобы продолжить изучение языка!</p>
+          </div>
+        `}
+        
+        <button class="book-lesson-btn" onclick="openCalendar()">
+          <span class="emoji">📅</span>Забронировать занятие
+        </button>
+      `;
+    }
+
+    function renderProspectView() {
+      document.getElementById('app').innerHTML = `
+        <div class="welcome-card">
+          <h2><span class="emoji">🌟</span>Добро пожаловать!</h2>
+          <p>Хочешь начать изучать <strong>английский</strong> или <strong>французский</strong> с Ханной?</p>
+          <p>Ханна — опытный преподаватель, который поможет тебе достичь твоих языковых целей!</p>
+          <a href="https://t.me/hanna_teaches" class="contact-link">
+            <span class="emoji">💬</span>Написать Ханне
+          </a>
+        </div>
+        
+        <div style="margin-top: 2rem; text-align: center; opacity: 0.7;">
+          <p style="font-size: 12px;">🇬🇧 English • 🇫🇷 Français</p>
+        </div>
+      `;
+    }
+
+    function openCalendar() {
+      window.open(CALENDAR_LINK, '_blank');
+    }
+
+    // Инициализация
+    loadUserRole();
   </script>
 </body>
 </html>
