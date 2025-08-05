@@ -172,6 +172,39 @@
       opacity: 0.9;
       text-decoration: none;
     }
+
+    .view-btn {
+      background: var(--card-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .view-btn:hover {
+      background: var(--accent-color);
+      color: white;
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    .view-btn.active {
+      background: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+    }
+
+    .view-btn .emoji {
+      font-size: 1em;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -184,7 +217,7 @@
     const userName = Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Пользователь';
     
     // Ссылка на календарь Ханны
-    const CALENDAR_LINK = 'https://calendar.google.com/calendar/u/0?cid=Y18yZmI3ZjY5ODg5MjUyODY3MzM5YTUwZGE4ZDE4M2Q5NzQ4ZjFkMmMwYjdhZTZhYTBhMzQ1MTM2MTJhZjUzOTE3QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20';
+    const CALENDAR_LINK = 'https://calendar.app.google/SQGJj626MUyQ6DYL6';
     
     async function loadUserRole() {
       try {
@@ -209,10 +242,14 @@
       }
     }
 
+    let currentView = 'admin'; // Текущий режим просмотра для админа
+    let adminUserData = null; // Сохраняем данные админа
+    
     function renderContent(userData) {
       const app = document.getElementById('app');
       
       if (userData.role === 'admin') {
+        adminUserData = userData; // Сохраняем данные админа
         renderAdminView();
       } else if (userData.role === 'student') {
         renderStudentView(userData);
@@ -222,6 +259,15 @@
     }
 
     async function renderAdminView() {
+      // Если админ переключился на другой вид
+      if (currentView === 'student') {
+        renderStudentView(mockStudentData);
+        return;
+      } else if (currentView === 'prospect') {
+        renderProspectView();
+        return;
+      }
+
       try {
         const response = await fetch("/api/students", {
           headers: { "x-telegram-id": userId }
@@ -229,6 +275,21 @@
         const { students } = await response.json();
         
         document.getElementById('app').innerHTML = `
+          <div style="background: var(--card-bg); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border-color);">
+            <h2><span class="emoji">👑</span>Режим администратора</h2>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem;">
+              <button class="view-btn ${currentView === 'admin' ? 'active' : ''}" onclick="switchView('admin')">
+                <span class="emoji">🧑‍🎓</span>Админ
+              </button>
+              <button class="view-btn ${currentView === 'student' ? 'active' : ''}" onclick="switchView('student')">
+                <span class="emoji">👤</span>Студент
+              </button>
+              <button class="view-btn ${currentView === 'prospect' ? 'active' : ''}" onclick="switchView('prospect')">
+                <span class="emoji">🌟</span>Потенциальный студент
+              </button>
+            </div>
+          </div>
+          
           <h2><span class="emoji">🧑‍🎓</span>Список студентов</h2>
           <table id="students">
             <thead>
@@ -264,9 +325,17 @@
     function renderStudentView(userData) {
       const nextLesson = userData.next_session;
       
+      // Добавляем кнопку "Назад к админке" если это режим просмотра админом
+      const backButton = adminUserData ? `
+        <button onclick="switchView('admin')" style="margin-bottom: 1rem; background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 6px;">
+          ← Назад к админке
+        </button>
+      ` : '';
+      
       document.getElementById('app').innerHTML = `
+        ${backButton}
         <div class="student-info">
-          <h2><span class="emoji">👋</span>Привет, ${userName}!</h2>
+          <h2><span class="emoji">👋</span>Привет, ${userData.name || userName}!</h2>
           <p>Добро пожаловать в твой личный кабинет для изучения языков с Ханной</p>
         </div>
         
@@ -299,7 +368,15 @@
     }
 
     function renderProspectView() {
+      // Добавляем кнопку "Назад к админке" если это режим просмотра админом
+      const backButton = adminUserData ? `
+        <button onclick="switchView('admin')" style="margin-bottom: 1rem; background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 6px;">
+          ← Назад к админке
+        </button>
+      ` : '';
+      
       document.getElementById('app').innerHTML = `
+        ${backButton}
         <div class="welcome-card">
           <h2><span class="emoji">🌟</span>Добро пожаловать!</h2>
           <p>Хочешь начать изучать <strong>английский</strong> или <strong>французский</strong> с Ханной?</p>
@@ -313,6 +390,35 @@
           <p style="font-size: 12px;">🇬🇧 English • 🇫🇷 Français</p>
         </div>
       `;
+    }
+
+    // Мок-данные для студента (для демонстрации админу)
+    const mockStudentData = {
+      role: 'student',
+      name: 'Анна Иванова',
+      languages: ['English', 'French'],
+      next_session: {
+        session_id: 123,
+        date: '2025-08-10',
+        language: 'English, French',
+        status: 'scheduled',
+        type: 'individual'
+      }
+    };
+
+    // Функция переключения видов для админа
+    function switchView(view) {
+      if (!adminUserData) return; // Только для админов
+      
+      currentView = view;
+      
+      if (view === 'admin') {
+        renderAdminView();
+      } else if (view === 'student') {
+        renderStudentView(mockStudentData);
+      } else if (view === 'prospect') {
+        renderProspectView();
+      }
     }
 
     function openCalendar() {
