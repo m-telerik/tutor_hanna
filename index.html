@@ -217,7 +217,7 @@
     const userName = Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Пользователь';
     
     // Ссылка на календарь Ханны
-    const CALENDAR_LINK = 'https://calendar.app.google/SQGJj626MUyQ6DYL6';
+    const CALENDAR_LINK = 'https://calendar.google.com/calendar/u/0?cid=Y18yZmI3ZjY5ODg5MjUyODY3MzM5YTUwZGE4ZDE4M2Q5NzQ4ZjFkMmMwYjdhZTZhYTBhMzQ1MTM2MTJhZjUzOTE3QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20';
     
     async function loadUserRole() {
       try {
@@ -361,7 +361,7 @@
           </div>
         `}
         
-        <button class="book-lesson-btn" onclick="openCalendar()">
+        <button class="book-lesson-btn" onclick="openBookingPage()">
           <span class="emoji">📅</span>Забронировать занятие
         </button>
       `;
@@ -381,7 +381,7 @@
           <h2><span class="emoji">🌟</span>Добро пожаловать!</h2>
           <p>Хочешь начать изучать <strong>английский</strong> или <strong>французский</strong> с Ханной?</p>
           <p>Ханна — опытный преподаватель, который поможет тебе достичь твоих языковых целей!</p>
-          <a href="https://t.me/annalesf" class="contact-link">
+          <a href="https://t.me/hanna_teaches" class="contact-link">
             <span class="emoji">💬</span>Написать Ханне
           </a>
         </div>
@@ -422,7 +422,22 @@
     }
 
     function openCalendar() {
-      window.open(CALENDAR_LINK, '_blank');
+      // Проверяем, доступны ли методы Telegram WebApp
+      if (window.Telegram?.WebApp?.openLink) {
+        // Используем openLink для открытия в браузере внутри Telegram
+        window.Telegram.WebApp.openLink(CALENDAR_LINK);
+      } else if (window.Telegram?.WebApp?.openTelegramLink) {
+        // Альтернативный метод для Telegram ссылок
+        window.Telegram.WebApp.openTelegramLink(CALENDAR_LINK);
+      } else {
+        // Фаллбек для обычных браузеров или старых версий
+        window.open(CALENDAR_LINK, '_blank');
+      }
+    }
+
+    function openBookingPage() {
+      // Открываем страницу бронирования внутри мини-аппа
+      window.location.href = 'booking.html';
     }
 
     // Инициализация
