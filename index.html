@@ -295,6 +295,8 @@
             <thead>
               <tr>
                 <th>Имя</th>
+                <th>Username</th>
+                <th>Email</th>
                 <th>Язык</th>
                 <th>Следующее занятие</th>
               </tr>
@@ -303,6 +305,8 @@
               ${students.map(s => `
                 <tr>
                   <td><a href="student.html?name=${encodeURIComponent(s.name)}">${s.name}</a></td>
+                  <td>${s.username ? '@' + s.username : '—'}</td>
+                  <td>${s.email || '—'}</td>
                   <td>${s.language || '—'}</td>
                   <td>${
                     s.next_session
