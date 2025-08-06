@@ -56,6 +56,35 @@
       border: 1px solid var(--border-color);
     }
 
+    .welcome-card.gradient {
+      background: linear-gradient(135deg, var(--accent-color) 0%, #5856d6 100%);
+      color: white;
+      border: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-card.gradient::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .welcome-card.gradient * {
+      position: relative;
+      z-index: 2;
+    }
+
+    .welcome-card.gradient p {
+      opacity: 0.9;
+    }
+
     .student-info {
       background: var(--card-bg);
       border-radius: 8px;
@@ -161,18 +190,34 @@
 
     .contact-link {
       display: inline-block;
-      background: var(--button-bg);
-      color: var(--button-text);
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
       padding: 10px 20px;
       border-radius: 20px;
       text-decoration: none;
       margin-top: 1rem;
       font-weight: 500;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.2s;
     }
 
     .contact-link:hover {
-      opacity: 0.9;
+      background: rgba(255, 255, 255, 0.3);
       text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    .contact-link.default {
+      background: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      backdrop-filter: none;
+    }
+
+    .contact-link.default:hover {
+      opacity: 0.9;
+      background: var(--button-bg);
     }
 
     .view-btn {
@@ -451,10 +496,10 @@
       
       document.getElementById('app').innerHTML = `
         ${backButton}
-        <div class="welcome-card">
+        <div class="welcome-card gradient">
           <h2><span class="emoji">🌟</span>Добро пожаловать!</h2>
-          <p>Хочешь начать изучать <strong>английский</strong> или <strong>французский</strong> с Ханной?</p>
-          <p>Ханна — опытный преподаватель, который поможет тебе достичь твоих языковых целей!</p>
+          <p>Изучайте <strong>английский</strong> и <strong>французский</strong> с Ханной — сертифицированным преподавателем CELTA Grade A</p>
+          <p>Ханна поможет вам достичь языковых целей, а преподавателям — стать лучшими методистами</p>
           <a href="https://t.me/annalesf" class="contact-link">
             <span class="emoji">💬</span>Написать Ханне
           </a>
@@ -465,13 +510,13 @@
         <div class="tutor-section">
           <h3><span class="emoji">🎓</span>Для преподавателей</h3>
           <p>Хотите учить языкам и не отвлекаться на операционку? Ваш персональный тьюторбот может с этим помочь!</p>
-          <a href="https://t.me/annalesf" class="tutor-link">
+          <a href="https://t.me/naumenko" class="tutor-link">
             <span class="emoji">📝</span>Оставить заявку
           </a>
         </div>
         
-        <div style="margin-top: 2rem; text-align: center; opacity: 0.7;">
-          <p style="font-size: 12px;">🇬🇧 English • 🇫🇷 Français</p>
+        <div style="margin-top: 2rem; text-align: center; opacity: 0.5;">
+          <p style="font-size: 11px;">© by Nau production</p>
         </div>
       `;
     }
