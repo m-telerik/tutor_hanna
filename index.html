@@ -15,6 +15,7 @@
       --button-bg: #007aff;
       --button-text: #fff;
       --card-bg: #f8f9fa;
+      --tutor-accent: #28a745;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -27,6 +28,7 @@
         --button-bg: #0a84ff;
         --button-text: #fff;
         --card-bg: #2d2d2d;
+        --tutor-accent: #34d058;
       }
     }
 
@@ -204,6 +206,71 @@
     .view-btn .emoji {
       font-size: 1em;
       margin: 0;
+    }
+
+    .tutor-section {
+      background: linear-gradient(135deg, var(--tutor-accent) 0%, #20c997 100%);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 2rem 0 1rem 0;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tutor-section::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .tutor-section * {
+      position: relative;
+      z-index: 2;
+    }
+
+    .tutor-section h3 {
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .tutor-section p {
+      margin-bottom: 1.5rem;
+      opacity: 0.9;
+      line-height: 1.4;
+    }
+
+    .tutor-link {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      text-decoration: none;
+      font-weight: 500;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      transition: all 0.2s;
+    }
+
+    .tutor-link:hover {
+      background: rgba(255, 255, 255, 0.3);
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    .footer-divider {
+      height: 1px;
+      background: var(--border-color);
+      margin: 2rem 0 1rem 0;
+      opacity: 0.5;
     }
   </style>
 </head>
@@ -390,6 +457,16 @@
           <p>Ханна — опытный преподаватель, который поможет тебе достичь твоих языковых целей!</p>
           <a href="https://t.me/annalesf" class="contact-link">
             <span class="emoji">💬</span>Написать Ханне
+          </a>
+        </div>
+        
+        <div class="footer-divider"></div>
+        
+        <div class="tutor-section">
+          <h3><span class="emoji">🎓</span>Для преподавателей</h3>
+          <p>Хотите учить языкам и не отвлекаться на операционку? Ваш персональный тьюторбот может с этим помочь!</p>
+          <a href="https://t.me/annalesf" class="tutor-link">
+            <span class="emoji">📝</span>Оставить заявку
           </a>
         </div>
         
