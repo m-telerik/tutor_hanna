@@ -50,8 +50,8 @@
     .welcome-card {
       background: var(--card-bg);
       border-radius: 12px;
-      padding: 1.5rem;
-      margin: 1rem 0;
+      padding: 1.2rem;
+      margin: 0.8rem 0;
       text-align: center;
       border: 1px solid var(--border-color);
     }
@@ -83,6 +83,11 @@
 
     .welcome-card.gradient p {
       opacity: 0.9;
+      margin: 0.5rem 0;
+    }
+
+    .welcome-card.gradient h2 {
+      margin: 0 0 0.8rem 0;
     }
 
     .student-info {
@@ -256,8 +261,8 @@
     .tutor-section {
       background: linear-gradient(135deg, var(--tutor-accent) 0%, #20c997 100%);
       border-radius: 12px;
-      padding: 1.5rem;
-      margin: 2rem 0 1rem 0;
+      padding: 1.2rem;
+      margin: 1.5rem 0 0.8rem 0;
       text-align: center;
       color: white;
       position: relative;
@@ -282,12 +287,12 @@
     }
 
     .tutor-section h3 {
-      margin-bottom: 1rem;
+      margin: 0 0 0.8rem 0;
       font-size: 1.1rem;
     }
 
     .tutor-section p {
-      margin-bottom: 1.5rem;
+      margin: 0 0 1.2rem 0;
       opacity: 0.9;
       line-height: 1.4;
     }
@@ -314,7 +319,7 @@
     .footer-divider {
       height: 1px;
       background: var(--border-color);
-      margin: 2rem 0 1rem 0;
+      margin: 1.5rem 0 0.8rem 0;
       opacity: 0.5;
     }
   </style>
@@ -499,7 +504,7 @@
         <div class="welcome-card gradient">
           <h2><span class="emoji">🌟</span>Добро пожаловать!</h2>
           <p>Изучайте <strong>английский</strong> и <strong>французский</strong> с Ханной — сертифицированным преподавателем CELTA Grade A</p>
-          <p>Ханна поможет вам достичь языковых целей, а преподавателям — стать лучшими методистами</p>
+          <p>Ханна поможет достичь языковых целей и стать лучшим методистом</p>
           <a href="https://t.me/annalesf" class="contact-link">
             <span class="emoji">💬</span>Написать Ханне
           </a>
@@ -509,14 +514,16 @@
         
         <div class="tutor-section">
           <h3><span class="emoji">🎓</span>Для преподавателей</h3>
-          <p>Хотите учить языкам и не отвлекаться на операционку? Ваш персональный тьюторбот может с этим помочь!</p>
+          <p>Хотите учить языкам и не отвлекаться на операционку? Ваш персональный тьюторбот поможет!</p>
           <a href="https://t.me/naumenko" class="tutor-link">
             <span class="emoji">📝</span>Оставить заявку
           </a>
         </div>
         
-        <div style="margin-top: 2rem; text-align: center; opacity: 0.5;">
-          <p style="font-size: 11px;">© by Nau production</p>
+        <div style="margin-top: 1.5rem; text-align: center; opacity: 0.5;">
+          <p style="font-size: 11px; margin: 0;">
+            <a href="https://marinaumenko.com/" style="color: inherit; text-decoration: none;">© by Nau production</a>
+          </p>
         </div>
       `;
     }
