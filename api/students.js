@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  // Добавляем username и email в SELECT
+  // Получаем всех активных студентов
   const { data: users, error: userError } = await supabase
     .from('hanna_users')
     .select('id, name, username, email, languages, preferred_days, preferred_time')
@@ -24,10 +24,12 @@ export default async function handler(req, res) {
 
   if (userError) return res.status(500).json({ error: userError.message });
 
+  // Получаем все будущие сессии
   const { data: sessions, error: sessionsError } = await supabase
     .from('hanna_sessions')
-    .select('id, user_id, session_date, status, type')
-    .gte('session_date', new Date().toISOString().slice(0, 10));
+    .select('id, participant_ids, session_date, status, type, language')
+    .gte('session_date', new Date().toISOString().slice(0, 10))
+    .order('session_date', { ascending: true });
 
   // Проверяем на ошибки и null/undefined
   if (sessionsError) {
@@ -38,18 +40,23 @@ export default async function handler(req, res) {
   // Обеспечиваем, что sessions всегда массив
   const sessionsArray = sessions || [];
   
+  // Создаем карту ближайших сессий для каждого пользователя
   const sessionsMap = {};
-  for (const s of sessionsArray) {
-    if (
-      !sessionsMap[s.user_id] ||
-      sessionsMap[s.user_id].session_date > s.session_date
-    ) {
-      sessionsMap[s.user_id] = {
-        session_date: s.session_date,
-        session_id: s.id,
-        status: s.status,
-        type: s.type
-      };
+  
+  for (const session of sessionsArray) {
+    if (session.participant_ids && Array.isArray(session.participant_ids)) {
+      for (const userId of session.participant_ids) {
+        // Для каждого участника находим ближайшую сессию
+        if (!sessionsMap[userId] || sessionsMap[userId].session_date > session.session_date) {
+          sessionsMap[userId] = {
+            session_date: session.session_date,
+            session_id: session.id,
+            status: session.status,
+            type: session.type,
+            language: session.language
+          };
+        }
+      }
     }
   }
 
@@ -60,8 +67,8 @@ export default async function handler(req, res) {
     const session = sessionsMap[u.id] || {};
     return {
       name: u.name,
-      username: u.username, // Добавляем username
-      email: u.email,       // Добавляем email
+      username: u.username,
+      email: u.email,
       language: Array.isArray(u.languages) ? u.languages.join(', ') : (u.languages || '—'),
       preferred_days: u.preferred_days || [],
       preferred_time: u.preferred_time || null,
@@ -69,6 +76,7 @@ export default async function handler(req, res) {
       next_session_id: session.session_id || null,
       status: session.status || null,
       type: session.type || null,
+      session_language: session.language || null,
       frequency: u.preferred_days?.length || null,
     };
   });
