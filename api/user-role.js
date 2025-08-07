@@ -44,13 +44,13 @@ export default async function handler(req, res) {
 
   // Если найден и активный студент
   if (user.role === 'student' && user.is_active) {
-    // Получаем следующее занятие
+    // Получаем следующее занятие с новой схемой
     const { data: nextSession } = await supabase
       .from('hanna_sessions')
-      .select('id, session_date, status, type')
+      .select('id, session_datetime, status, type')
       .eq('user_id', user.id)
-      .gte('session_date', new Date().toISOString().slice(0, 10))
-      .order('session_date', { ascending: true })
+      .gte('session_datetime', new Date().toISOString())
+      .order('session_datetime', { ascending: true })
       .limit(1)
       .single();
 
@@ -66,7 +66,15 @@ export default async function handler(req, res) {
     if (nextSession) {
       response.next_session = {
         session_id: nextSession.id,
-        date: nextSession.session_date,
+        date: new Date(nextSession.session_datetime).toLocaleString('ru-RU', {
+          timeZone: 'Asia/Bangkok',
+          year: 'numeric',
+          month: '2-digit', 
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        datetime: nextSession.session_datetime,
         status: nextSession.status,
         type: nextSession.type,
         language: Array.isArray(user.languages) ? user.languages.join(', ') : user.languages
