@@ -24,13 +24,22 @@ export default async function handler(req, res) {
 
   if (userError) return res.status(500).json({ error: userError.message });
 
-  const { data: sessions } = await supabase
+  const { data: sessions, error: sessionsError } = await supabase
     .from('hanna_sessions')
     .select('id, user_id, session_date, status, type')
     .gte('session_date', new Date().toISOString().slice(0, 10));
 
+  // Проверяем на ошибки и null/undefined
+  if (sessionsError) {
+    console.error('Sessions query error:', sessionsError);
+    return res.status(500).json({ error: sessionsError.message });
+  }
+
+  // Обеспечиваем, что sessions всегда массив
+  const sessionsArray = sessions || [];
+  
   const sessionsMap = {};
-  for (const s of sessions) {
+  for (const s of sessionsArray) {
     if (
       !sessionsMap[s.user_id] ||
       sessionsMap[s.user_id].session_date > s.session_date
@@ -44,7 +53,10 @@ export default async function handler(req, res) {
     }
   }
 
-  const students = users.map((u) => {
+  // Обеспечиваем, что users всегда массив
+  const usersArray = users || [];
+
+  const students = usersArray.map((u) => {
     const session = sessionsMap[u.id] || {};
     return {
       name: u.name,
