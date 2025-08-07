@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  // Получаем всех активных студентов
+  // Добавляем username и email в SELECT
   const { data: users, error: userError } = await supabase
     .from('hanna_users')
     .select('id, name, username, email, languages, preferred_days, preferred_time')
@@ -24,46 +24,28 @@ export default async function handler(req, res) {
 
   if (userError) return res.status(500).json({ error: userError.message });
 
-  // Получаем все будущие сессии
-  const { data: sessions, error: sessionsError } = await supabase
+  // Получаем будущие сессии с новой схемой
+  const { data: sessions } = await supabase
     .from('hanna_sessions')
-    .select('id, participant_ids, session_date, status, type, language')
-    .gte('session_date', new Date().toISOString().slice(0, 10))
-    .order('session_date', { ascending: true });
+    .select('id, user_id, session_datetime, status, type')
+    .gte('session_datetime', new Date().toISOString());
 
-  // Проверяем на ошибки и null/undefined
-  if (sessionsError) {
-    console.error('Sessions query error:', sessionsError);
-    return res.status(500).json({ error: sessionsError.message });
-  }
-
-  // Обеспечиваем, что sessions всегда массив
-  const sessionsArray = sessions || [];
-  
-  // Создаем карту ближайших сессий для каждого пользователя
   const sessionsMap = {};
-  
-  for (const session of sessionsArray) {
-    if (session.participant_ids && Array.isArray(session.participant_ids)) {
-      for (const userId of session.participant_ids) {
-        // Для каждого участника находим ближайшую сессию
-        if (!sessionsMap[userId] || sessionsMap[userId].session_date > session.session_date) {
-          sessionsMap[userId] = {
-            session_date: session.session_date,
-            session_id: session.id,
-            status: session.status,
-            type: session.type,
-            language: session.language
-          };
-        }
-      }
+  for (const s of sessions) {
+    if (
+      !sessionsMap[s.user_id] ||
+      sessionsMap[s.user_id].session_datetime > s.session_datetime
+    ) {
+      sessionsMap[s.user_id] = {
+        session_datetime: s.session_datetime,
+        session_id: s.id,
+        status: s.status,
+        type: s.type
+      };
     }
   }
 
-  // Обеспечиваем, что users всегда массив
-  const usersArray = users || [];
-
-  const students = usersArray.map((u) => {
+  const students = users.map((u) => {
     const session = sessionsMap[u.id] || {};
     return {
       name: u.name,
@@ -72,11 +54,18 @@ export default async function handler(req, res) {
       language: Array.isArray(u.languages) ? u.languages.join(', ') : (u.languages || '—'),
       preferred_days: u.preferred_days || [],
       preferred_time: u.preferred_time || null,
-      next_session: session.session_date || null,
+      next_session: session.session_datetime ? 
+        new Date(session.session_datetime).toLocaleString('ru-RU', {
+          timeZone: 'Asia/Bangkok',
+          year: 'numeric',
+          month: '2-digit', 
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        }) : null,
       next_session_id: session.session_id || null,
       status: session.status || null,
       type: session.type || null,
-      session_language: session.language || null,
       frequency: u.preferred_days?.length || null,
     };
   });
