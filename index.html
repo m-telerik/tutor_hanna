@@ -391,53 +391,55 @@
         });
         const { students } = await response.json();
         
-        document.getElementById('app').innerHTML = `
-          <div style="background: var(--card-bg); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border-color);">
-            <h2><span class="emoji">👑</span>Режим администратора</h2>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem;">
-              <button class="view-btn ${currentView === 'admin' ? 'active' : ''}" onclick="switchView('admin')">
-                <span class="emoji">🧑‍🎓</span>Админ
-              </button>
-              <button class="view-btn ${currentView === 'student' ? 'active' : ''}" onclick="switchView('student')">
-                <span class="emoji">👤</span>Студент
-              </button>
-              <button class="view-btn ${currentView === 'prospect' ? 'active' : ''}" onclick="switchView('prospect')">
-                <span class="emoji">🌟</span>Потенциальный студент
-              </button>
-            </div>
-          </div>
-          
-          <h2><span class="emoji">🧑‍🎓</span>Список студентов</h2>
-          <table id="students">
-            <thead>
-              <tr>
-                <th>Студент</th>
-                <th>Email</th>
-                <th>Следующее занятие</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${students.map(s => `
-                <tr>
-                  <td>
-                    <a href="student.html?name=${encodeURIComponent(s.name)}">
-                      ${s.name}<br>
-                      <small style="color: var(--accent-color); font-size: 11px;">
-                        ${s.username ? '@' + s.username : ''}
-                      </small>
-                    </a>
-                  </td>
-                  <td>${s.email || '—'}</td>
-                  <td>${
-                    s.next_session
-                      ? `<a href="lesson.html?session_id=${s.next_session_id}">${s.next_session}</a>`
-                      : '—'
-                  }</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
+// В функции renderAdminView() в index.html замените создание таблицы на:
+
+document.getElementById('app').innerHTML = `
+  <div style="background: var(--card-bg); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border-color);">
+    <h2><span class="emoji">👑</span>Режим администратора</h2>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem;">
+      <button class="view-btn ${currentView === 'admin' ? 'active' : ''}" onclick="switchView('admin')">
+        <span class="emoji">🧑‍🎓</span>Админ
+      </button>
+      <button class="view-btn ${currentView === 'student' ? 'active' : ''}" onclick="switchView('student')">
+        <span class="emoji">👤</span>Студент
+      </button>
+      <button class="view-btn ${currentView === 'prospect' ? 'active' : ''}" onclick="switchView('prospect')">
+        <span class="emoji">🌟</span>Потенциальный студент
+      </button>
+    </div>
+  </div>
+  
+  <h2><span class="emoji">🧑‍🎓</span>Список студентов</h2>
+  <table id="students">
+    <thead>
+      <tr>
+        <th>Студент</th>
+        <th>Email</th>
+        <th>Следующее занятие</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${students.map((s, index) => `
+        <tr>
+          <td>
+            <a href="student.html?name=${encodeURIComponent(s.name)}&index=${index}${s.email ? '&email=' + encodeURIComponent(s.email) : ''}">
+              ${s.name}<br>
+              <small style="color: var(--accent-color); font-size: 11px;">
+                ${s.username ? '@' + s.username : ''}
+              </small>
+            </a>
+          </td>
+          <td>${s.email || '—'}</td>
+          <td>${
+            s.next_session
+              ? `<a href="lesson.html?session_id=${s.next_session_id}">${s.next_session}</a>`
+              : '—'
+          }</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+`;
       } catch (error) {
         console.error('Error loading students:', error);
         document.getElementById('app').innerHTML = `
