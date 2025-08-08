@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Админ панель - Hanna English & French</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #202124;
+      --border-color: #e0e0e0;
+      --header-bg: #f1f3f4;
+      --accent-color: #007aff;
+      --button-bg: #007aff;
+      --button-text: #fff;
+      --card-bg: #f8f9fa;
+      --admin-accent: #ff6b35;
+      --success-color: #28a745;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1a1a1a;
+        --text-color: #e1e1e1;
+        --border-color: #333;
+        --header-bg: #2d2d2d;
+        --accent-color: #0a84ff;
+        --button-bg: #0a84ff;
+        --button-text: #fff;
+        --card-bg: #2d2d2d;
+        --admin-accent: #ff8a65;
+        --success-color: #34d058;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      font-size: 14px;
+      margin: 0.5rem;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    h1, h2, h3 {
+      font-size: 1.2rem;
+      margin: 0.5rem 0;
+    }
+
+    .admin-header {
+      background: linear-gradient(135deg, var(--admin-accent) 0%, #e91e63 100%);
+      color: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 0.8rem 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .admin-header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .admin-header * {
+      position: relative;
+      z-index: 2;
+    }
+
+    .admin-header h1 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1.4rem;
+    }
+
+    .admin-header p {
+      margin: 0;
+      opacity: 0.9;
+    }
+
+    .quick-tools {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 1.5rem 0;
+    }
+
+    .tool-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      color: var(--text-color);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tool-card:hover {
+      background: var(--accent-color);
+      color: white;
+      text-decoration: none;
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 122, 255, 0.3);
+    }
+
+    .tool-card .emoji {
+      font-size: 2em;
+      display: block;
+      margin-bottom: 0.8rem;
+    }
+
+    .tool-card .title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .tool-card .subtitle {
+      font-size: 0.9em;
+      opacity: 0.8;
+      line-height: 1.4;
+    }
+
+    .view-modes {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border-color);
+    }
+
+    .view-modes h3 {
+      margin: 0 0 1rem 0;
+      color: var(--admin-accent);
+    }
+
+    .mode-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .mode-btn {
+      background: var(--bg-color);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .mode-btn:hover {
+      background: var(--accent-color);
+      color: white;
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    .mode-btn.active {
+      background: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+    }
+
+    .mode-btn .emoji {
+      font-size: 1em;
+      margin: 0;
+    }
+
+    .students-section {
+      margin: 2rem 0;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .refresh-btn {
+      background: var(--success-color);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .refresh-btn:hover {
+      opacity: 0.9;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: var(--bg-color);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background-color: var(--header-bg);
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    tr:hover {
+      background-color: var(--card-bg);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    a {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .student-name {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .student-username {
+      color: var(--accent-color);
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .next-lesson-link {
+      background: var(--success-color);
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .next-lesson-link:hover {
+      opacity: 0.9;
+      text-decoration: none;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-color);
+    }
+
+    .error {
+      color: #ff3b30;
+      text-align: center;
+      padding: 1rem;
+      background: rgba(255, 59, 48, 0.1);
+      border-radius: 6px;
+      margin: 1rem 0;
+    }
+
+    .emoji {
+      font-size: 1.2em;
+      margin-right: 0.5rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .stat-number {
+      font-size: 1.8em;
+      font-weight: bold;
+      color: var(--accent-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.8;
+    }
+
+    @media (max-width: 600px) {
+      .quick-tools {
+        grid-template-columns: 1fr;
+      }
+      
+      .mode-buttons {
+        flex-direction: column;
+      }
+      
+      .mode-btn {
+        justify-content: center;
+      }
+      
+      table {
+        font-size: 12px;
+      }
+      
+      th, td {
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-header">
+    <h1><span class="emoji">👑</span>Админ панель</h1>
+    <p>Управление студентами и уроками Ханны</p>
+  </div>
+
+  <div class="quick-tools">
+    <a href="chat-history.html" class="tool-card">
+      <span class="emoji">💬</span>
+      <div class="title">История чатов</div>
+      <div class="subtitle">Просмотр диалогов с агентами</div>
+    </a>
+    
+    <a href="vocabulary.html" class="tool-card">
+      <span class="emoji">📚</span>
+      <div class="title">Управление словарем</div>
+      <div class="subtitle">Добавление и редактирование слов</div>
+    </a>
+    
+    <a href="booking.html" class="tool-card">
+      <span class="emoji">📅</span>
+      <div class="title">Календарь бронирований</div>
+      <div class="subtitle">Управление расписанием</div>
+    </a>
+    
+    <div class="tool-card" onclick="exportData()">
+      <span class="emoji">📊</span>
+      <div class="title">Экспорт данных</div>
+      <div class="subtitle">Скачать отчеты и статистику</div>
+    </div>
+  </div>
+
+  <div class="view-modes">
+    <h3><span class="emoji">👁️</span>Режимы просмотра</h3>
+    <div class="mode-buttons">
+      <button class="mode-btn active" onclick="switchView('admin')">
+        <span class="emoji">👑</span>Админ
+      </button>
+      <button class="mode-btn" onclick="switchView('student')">
+        <span class="emoji">👤</span>Вид студента
+      </button>
+      <button class="mode-btn" onclick="switchView('prospect')">
+        <span class="emoji">🌟</span>Вид лида
+      </button>
+      <a href="index.html" class="mode-btn">
+        <span class="emoji">🏠</span>Главная страница
+      </a>
+    </div>
+  </div>
+
+  <div class="stats-grid" id="statsGrid" style="display: none;">
+    <div class="stat-card">
+      <div class="stat-number" id="totalStudents">0</div>
+      <div class="stat-label">Активных студентов</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="upcomingLessons">0</div>
+      <div class="stat-label">Предстоящих уроков</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="totalWords">0</div>
+      <div class="stat-label">Слов в словаре</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="weeklyLessons">0</div>
+      <div class="stat-label">Уроков на неделе</div>
+    </div>
+  </div>
+
+  <div class="students-section">
+    <div class="section-header">
+      <h2><span class="emoji">🧑‍🎓</span>Список студентов</h2>
+      <button class="refresh-btn" onclick="loadStudents()">
+        <span class="emoji">🔄</span>Обновить
+      </button>
+    </div>
+    
+    <div id="studentsContent">
+      <div class="loading">Загрузка списка студентов...</div>
+    </div>
+  </div>
+
+  <!-- Демонстрационные режимы просмотра -->
+  <div id="studentView" style="display: none;">
+    <div style="background: var(--card-bg); border-radius: 8px; padding: 1rem; margin: 1rem 0; border: 1px solid var(--border-color);">
+      <h3><span class="emoji">👤</span>Вид студента</h3>
+      <p>Так видят приложение студенты:</p>
+      <iframe src="index.html" style="width: 100%; height: 400px; border: 1px solid var(--border-color); border-radius: 8px;"></iframe>
+    </div>
+  </div>
+
+  <div id="prospectView" style="display: none;">
+    <div style="background: var(--card-bg); border-radius: 8px; padding: 1rem; margin: 1rem 0; border: 1px solid var(--border-color);">
+      <h3><span class="emoji">🌟</span>Вид потенциального студента</h3>
+      <p>Так видят приложение потенциальные студенты:</p>
+      <iframe src="index.html" style="width: 100%; height: 400px; border: 1px solid var(--border-color); border-radius: 8px;"></iframe>
+    </div>
+  </div>
+
+  <script>
+    const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 618647337;
+    const userName = Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Админ';
+    
+    let currentView = 'admin';
+    let studentsData = [];
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      }
+      loadStudents();
+    });
+
+    async function loadStudents() {
+      const studentsContent = document.getElementById('studentsContent');
+      studentsContent.innerHTML = '<div class="loading">Загрузка списка студентов...</div>';
+
+      try {
+        const response = await fetch("/api/students", {
+          headers: { "x-telegram-id": userId }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch students');
+        }
+        
+        const { students } = await response.json();
+        studentsData = students;
+        
+        renderStudentsTable(students);
+        updateStats(students);
+        
+      } catch (error) {
+        console.error('Error loading students:', error);
+        studentsContent.innerHTML = `
+          <div class="error">
+            <h3>Ошибка загрузки</h3>
+            <p>Не удалось загрузить список студентов</p>
+            <button onclick="loadStudents()" style="margin-top: 1rem; background: var(--accent-color); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+              Попробовать снова
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    function renderStudentsTable(students) {
+      const studentsContent = document.getElementById('studentsContent');
+      
+      if (students.length === 0) {
+        studentsContent.innerHTML = `
+          <div style="text-align: center; padding: 2rem; opacity: 0.6;">
+            <span class="emoji" style="font-size: 3em;">👥</span>
+            <p>Пока нет активных студентов</p>
+          </div>
+        `;
+        return;
+      }
+
+      studentsContent.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Студент</th>
+              <th>Контакты</th>
+              <th>Язык</th>
+              <th>Следующее занятие</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${students.map(student => `
+              <tr>
+                <td>
+                  <div class="student-name">${student.name}</div>
+                  ${student.username ? `<div class="student-username">@${student.username}</div>` : ''}
+                </td>
+                <td>
+                  ${student.email || '—'}<br>
+                  ${student.preferred_time ? `<small>⏰ ${student.preferred_time}</small>` : ''}
+                </td>
+                <td>
+                  <span style="background: var(--accent-color); color: white; padding: 2px 6px; border-radius: 10px; font-size: 11px;">
+                    ${student.language || '—'}
+                  </span>
+                  ${student.frequency ? `<br><small>${student.frequency}x в неделю</small>` : ''}
+                </td>
+                <td>
+                  ${student.next_session 
+                    ? `<a href="lesson.html?session_id=${student.next_session_id}" class="next-lesson-link">${student.next_session}</a>`
+                    : '<span style="opacity: 0.6;">Не запланировано</span>'
+                  }
+                </td>
+                <td>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="student.html?name=${encodeURIComponent(student.name)}" 
+                       style="background: var(--card-bg); color: var(--text-color); padding: 4px 8px; border-radius: 4px; font-size: 11px; text-decoration: none; border: 1px solid var(--border-color);">
+                      👤 Профиль
+                    </a>
+                    <a href="vocabulary.html?student_name=${encodeURIComponent(student.name)}" 
+                       style="background: var(--card-bg); color: var(--text-color); padding: 4px 8px; border-radius: 4px; font-size: 11px; text-decoration: none; border: 1px solid var(--border-color);">
+                      📚 Словарь
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function updateStats(students) {
+      const statsGrid = document.getElementById('statsGrid');
+      const totalStudents = students.length;
+      const upcomingLessons = students.filter(s => s.next_session).length;
+      const weeklyLessons = students.reduce((sum, s) => sum + (s.frequency || 0), 0);
+      
+      document.getElementById('totalStudents').textContent = totalStudents;
+      document.getElementById('upcomingLessons').textContent = upcomingLessons;
+      document.getElementById('totalWords').textContent = '234'; // Можно добавить API для подсчета
+      document.getElementById('weeklyLessons').textContent = weeklyLessons;
+      
+      statsGrid.style.display = 'grid';
+    }
+
+    function switchView(view) {
+      // Обновляем активную кнопку
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Скрываем все виды
+      document.getElementById('studentsContent').style.display = view === 'admin' ? 'block' : 'none';
+      document.getElementById('studentView').style.display = view === 'student' ? 'block' : 'none';
+      document.getElementById('prospectView').style.display = view === 'prospect' ? 'block' : 'none';
+      document.querySelector('.students-section h2').style.display = view === 'admin' ? 'block' : 'none';
+      document.querySelector('.refresh-btn').style.display = view === 'admin' ? 'block' : 'none';
+      
+      currentView = view;
+    }
+
+    async function exportData() {
+      // Простой экспорт данных в JSON
+      try {
+        const dataToExport = {
+          students: studentsData,
+          exportDate: new Date().toISOString(),
+          exportedBy: userName
+        };
+        
+        const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { 
+          type: 'application/json' 
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hanna_students_export_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        // Показываем уведомление
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed; 
+          top: 20px; 
+          right: 20px; 
+          background: var(--success-color); 
+          color: white; 
+          padding: 12px 20px; 
+          border-radius: 8px; 
+          z-index: 1000;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        `;
+        notification.textContent = '✅ Данные экспортированы';
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 3000);
+        
+      } catch (error) {
+        console.error('Export error:', error);
+        alert('Ошибка экспорта данных');
+      }
+    }
+  </script>
+</body>
+</html>
