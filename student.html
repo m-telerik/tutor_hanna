@@ -58,6 +58,49 @@
       font-weight: 600;
     }
 
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 1.5rem 0;
+    }
+
+    .action-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      color: var(--text-color);
+    }
+
+    .action-card:hover {
+      background: var(--accent-color);
+      color: white;
+      text-decoration: none;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+    }
+
+    .action-card .emoji {
+      font-size: 1.5em;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .action-card .title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .action-card .subtitle {
+      font-size: 0.9em;
+      opacity: 0.8;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -123,19 +166,6 @@
     .error {
       color: #ff3b30;
     }
-
-    .debug-info {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 1rem;
-      margin: 1rem 0;
-      font-family: monospace;
-      font-size: 12px;
-      color: var(--text-color);
-      max-height: 200px;
-      overflow-y: auto;
-    }
   </style>
 </head>
 <body>
@@ -145,32 +175,31 @@
     <h1><span class="emoji">👤</span>Профиль ученика</h1>
   </div>
   <div class="info" id="student-info">Загрузка...</div>
-  <div id="debug-info" class="debug-info" style="display: none;"></div>
+
+  <div class="quick-actions" id="quick-actions" style="display: none;">
+    <a href="#" class="action-card" id="vocab-link">
+      <span class="emoji">📚</span>
+      <div class="title">Словарь</div>
+      <div class="subtitle">Все изученные слова</div>
+    </a>
+    
+    <a href="#" class="action-card" id="next-lesson-link">
+      <span class="emoji">📅</span>
+      <div class="title">Следующий урок</div>
+      <div class="subtitle">Перейти к уроку</div>
+    </a>
+  </div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const name = urlParams.get("name");
-    const studentId = urlParams.get("id"); // Новый параметр для ID
-    const email = urlParams.get("email"); // Альтернативный параметр
+    const name = new URLSearchParams(window.location.search).get("name");
     const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
     const infoDiv = document.getElementById("student-info");
-    const debugDiv = document.getElementById("debug-info");
+    const quickActions = document.getElementById("quick-actions");
+    const vocabLink = document.getElementById("vocab-link");
+    const nextLessonLink = document.getElementById("next-lesson-link");
 
-    function showDebug(data) {
-      debugDiv.style.display = 'block';
-      debugDiv.innerHTML = `
-        <strong>Отладочная информация:</strong><br>
-        URL параметры: name=${name}, id=${studentId}, email=${email}<br>
-        Telegram ID: ${userId}<br>
-        Количество студентов: ${data.students ? data.students.length : 'N/A'}<br>
-        Первый студент: ${data.students && data.students[0] ? JSON.stringify(data.students[0], null, 2) : 'N/A'}
-      `;
-    }
-
-    if (!userId) {
-      infoDiv.innerHTML = "<div class='error'>Не удалось определить пользователя Telegram.</div>";
-    } else if (!name && !studentId && !email) {
-      infoDiv.innerHTML = "<div class='error'>Не указан идентификатор ученика.</div>";
+    if (!name || !userId) {
+      infoDiv.innerHTML = "Недостаточно данных для отображения.";
     } else {
       loadStudentInfo();
     }
@@ -180,60 +209,17 @@
         const res = await fetch('/api/students', {
           headers: { "x-telegram-id": userId }
         });
-        
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        
-        const data = await res.json();
-        showDebug(data);
-        
-        if (!data.students || !Array.isArray(data.students)) {
-          throw new Error('Неверный формат данных студентов');
-        }
-
-        let student = null;
-
-        // Ищем студента по разным критериям
-        if (studentId) {
-          student = data.students.find(s => s.id === studentId);
-        } else if (email) {
-          student = data.students.find(s => s.email === email);
-        } else if (name) {
-          // Нечеткий поиск по имени
-          student = data.students.find(s => 
-            s.name === name || 
-            s.name === decodeURIComponent(name) ||
-            encodeURIComponent(s.name) === name
-          );
-        }
-
-        if (!student && data.students.length > 0) {
-          // Если не нашли, показываем список доступных студентов
-          infoDiv.innerHTML = `
-            <div class='error'>
-              <p>Ученик не найден.</p>
-              <p>Доступные студенты:</p>
-              <ul style="text-align: left; margin-top: 1rem;">
-                ${data.students.map(s => `
-                  <li><a href="?name=${encodeURIComponent(s.name)}">${s.name}</a></li>
-                `).join('')}
-              </ul>
-            </div>
-          `;
-          return;
-        }
+        const { students } = await res.json();
+        const student = students.find(s => s.name === name);
 
         if (!student) {
-          infoDiv.innerHTML = "<div class='error'>Студенты не найдены.</div>";
+          infoDiv.innerHTML = "<div class='error'>Ученик не найден.</div>";
           return;
         }
 
-        // Отображаем информацию о студенте
+        // Обновляем основную информацию
         infoDiv.innerHTML = `
           <p><strong><span class="emoji">👤</span>Имя:</strong> ${student.name}</p>
-          ${student.email ? `<p><strong><span class="emoji">📧</span>Email:</strong> ${student.email}</p>` : ''}
-          ${student.username ? `<p><strong><span class="emoji">📱</span>Username:</strong> @${student.username}</p>` : ''}
           <p><strong><span class="emoji">🌍</span>Язык:</strong> ${student.language || '—'}</p>
           <p><strong><span class="emoji">📅</span>Частота:</strong> ${student.frequency || '—'} раз в неделю</p>
           <p><strong><span class="emoji">⏰</span>Следующее занятие:</strong> ${
@@ -243,15 +229,32 @@
           }</p>
           ${student.preferred_time ? `<p><strong><span class="emoji">🕐</span>Предпочитаемое время:</strong> ${student.preferred_time}</p>` : ''}
           ${student.preferred_days && student.preferred_days.length > 0 ? `<p><strong><span class="emoji">📆</span>Предпочитаемые дни:</strong> ${student.preferred_days.join(', ')}</p>` : ''}
-          ${student.status ? `<p><strong><span class="emoji">📊</span>Статус занятия:</strong> ${student.status}</p>` : ''}
-          ${student.type ? `<p><strong><span class="emoji">🎯</span>Тип занятия:</strong> ${student.type}</p>` : ''}
+          ${student.email ? `<p><strong><span class="emoji">📧</span>Email:</strong> ${student.email}</p>` : ''}
+          ${student.username ? `<p><strong><span class="emoji">💬</span>Telegram:</strong> @${student.username}</p>` : ''}
         `;
 
+        // Настраиваем быстрые действия
+        vocabLink.href = `vocabulary.html?student_name=${encodeURIComponent(student.name)}`;
+        
+        if (student.next_session_id) {
+          nextLessonLink.href = `lesson.html?session_id=${student.next_session_id}`;
+          nextLessonLink.style.display = 'block';
+        } else {
+          nextLessonLink.style.display = 'none';
+        }
+
+        quickActions.style.display = 'grid';
+
       } catch (error) {
-        infoDiv.innerHTML = `<div class='error'>Ошибка загрузки: ${error.message}</div>`;
-        debugDiv.style.display = 'block';
-        debugDiv.innerHTML = `<strong>Ошибка:</strong> ${error.stack || error.message}`;
+        console.error('Error loading student info:', error);
+        infoDiv.innerHTML = "<div class='error'>Ошибка загрузки информации о студенте.</div>";
       }
+    }
+
+    // Инициализация Telegram WebApp
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
     }
   </script>
 </body>
