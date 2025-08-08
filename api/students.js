@@ -24,36 +24,27 @@ export default async function handler(req, res) {
 
   if (userError) return res.status(500).json({ error: userError.message });
 
-  // Получаем будущие сессии с новой схемой - используем participant_ids вместо user_id
-  const { data: sessions, error: sessionsError } = await supabase
+  // Получаем будущие сессии с новой схемой (используем participant_ids)
+  const { data: sessions } = await supabase
     .from('hanna_sessions')
-    .select('id, participant_ids, session_datetime, status, type, language')
+    .select('id, participant_ids, session_datetime, status, type')
     .gte('session_datetime', new Date().toISOString());
 
-  // Проверяем на ошибки запроса сессий
-  if (sessionsError) {
-    console.error('Sessions query error:', sessionsError);
-    return res.status(500).json({ error: sessionsError.message });
-  }
-
-  // Убеждаемся что sessions это массив, даже если пустой
-  const sessionsArray = sessions || [];
-  
+  // Создаем карту сессий по user_id
   const sessionsMap = {};
-  for (const s of sessionsArray) {
-    // Проверяем каждого участника в массиве participant_ids
-    if (s.participant_ids && Array.isArray(s.participant_ids)) {
-      for (const participantId of s.participant_ids) {
+  for (const s of sessions) {
+    if (s.participant_ids && s.participant_ids.length > 0) {
+      // Для каждого участника сессии
+      for (const user_id of s.participant_ids) {
         if (
-          !sessionsMap[participantId] ||
-          sessionsMap[participantId].session_datetime > s.session_datetime
+          !sessionsMap[user_id] ||
+          sessionsMap[user_id].session_datetime > s.session_datetime
         ) {
-          sessionsMap[participantId] = {
+          sessionsMap[user_id] = {
             session_datetime: s.session_datetime,
             session_id: s.id,
             status: s.status,
-            type: s.type,
-            language: s.language
+            type: s.type
           };
         }
       }
@@ -66,7 +57,7 @@ export default async function handler(req, res) {
       name: u.name,
       username: u.username,
       email: u.email,
-      language: session.language || Array.isArray(u.languages) ? u.languages.join(', ') : (u.languages || '—'),
+      language: Array.isArray(u.languages) ? u.languages.join(', ') : (u.languages || '—'),
       preferred_days: u.preferred_days || [],
       preferred_time: u.preferred_time || null,
       next_session: session.session_datetime ? 
