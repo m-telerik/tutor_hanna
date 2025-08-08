@@ -14,6 +14,7 @@
       --card-bg: #f8f9fa;
       --input-bg: #fff;
       --input-border: #d1d5db;
+      --success-color: #28a745;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -26,6 +27,7 @@
         --card-bg: #2d2d2d;
         --input-bg: #2d2d2d;
         --input-border: #404040;
+        --success-color: #34d058;
       }
     }
 
@@ -56,6 +58,16 @@
       margin: 2rem 0;
     }
 
+    .vocab-section {
+      margin-bottom: 2rem;
+    }
+
+    .vocab-section h3 {
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent-color);
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -77,6 +89,16 @@
 
     tr:hover {
       background-color: var(--card-bg);
+    }
+
+    tr.current-lesson {
+      background-color: var(--accent-color) !important;
+      color: white;
+    }
+
+    tr.current-lesson:hover {
+      background-color: var(--accent-color) !important;
+      opacity: 0.9;
     }
 
     a {
@@ -119,7 +141,7 @@
       font-weight: 500;
     }
 
-    input[type="text"], textarea {
+    input[type="text"], textarea, select {
       width: 100%;
       padding: 8px 12px;
       border: 1px solid var(--input-border);
@@ -131,7 +153,7 @@
       box-sizing: border-box;
     }
 
-    input[type="text"]:focus, textarea:focus {
+    input[type="text"]:focus, textarea:focus, select:focus {
       outline: none;
       border-color: var(--accent-color);
       box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
@@ -158,6 +180,49 @@
       font-size: 1.2em;
       margin-right: 0.5rem;
     }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .stat-number {
+      font-size: 1.5em;
+      font-weight: bold;
+      color: var(--accent-color);
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.8;
+      margin-top: 0.5rem;
+    }
+
+    .vocabulary-link {
+      background: var(--success-color);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+      display: inline-block;
+      margin: 1rem 0;
+    }
+
+    .vocabulary-link:hover {
+      opacity: 0.9;
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
@@ -166,19 +231,55 @@
   <h1>Урок</h1>
   <div class="info" id="lesson-info">Загрузка...</div>
 
+  <div class="stats" id="vocab-stats" style="display: none;">
+    <div class="stat-card">
+      <div class="stat-number" id="total-words">0</div>
+      <div class="stat-label">Всего слов</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="lesson-words">0</div>
+      <div class="stat-label">Слов в уроке</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="studied-words">0</div>
+      <div class="stat-label">Изучено</div>
+    </div>
+  </div>
+
   <div class="vocab">
-    <h2><span class="emoji">🧠</span>Новые слова</h2>
-    <table id="vocab-table">
-      <thead>
-        <tr>
-          <th>Занятие</th>
-          <th>Слово</th>
-          <th>Перевод</th>
-          <th>Пример</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="vocab-section">
+      <h2><span class="emoji">📝</span>Слова этого урока</h2>
+      <table id="lesson-vocab-table">
+        <thead>
+          <tr>
+            <th>Слово</th>
+            <th>Перевод</th>
+            <th>Пример</th>
+            <th>Язык</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="vocab-section">
+      <h3><span class="emoji">🧠</span>Весь словарь студента</h3>
+      <a href="#" class="vocabulary-link" id="full-vocab-link">
+        <span class="emoji">📚</span>Открыть полный словарь
+      </a>
+      <table id="all-vocab-table">
+        <thead>
+          <tr>
+            <th>Дата урока</th>
+            <th>Слово</th>
+            <th>Перевод</th>
+            <th>Пример</th>
+            <th>Язык</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 
   <form id="vocab-form">
@@ -186,6 +287,13 @@
     <label>Слово: <input type="text" name="word" required /></label>
     <label>Перевод: <input type="text" name="translation" /></label>
     <label>Пример: <textarea name="example" rows="2"></textarea></label>
+    <label>Язык: 
+      <select name="language">
+        <option value="">Не указан</option>
+        <option value="english">English</option>
+        <option value="french">French</option>
+      </select>
+    </label>
     <button type="submit">Добавить</button>
   </form>
 
@@ -193,10 +301,13 @@
     const sessionId = new URLSearchParams(window.location.search).get("session_id");
     const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
     const lessonInfo = document.getElementById("lesson-info");
-    const vocabTable = document.querySelector("#vocab-table tbody");
+    const lessonVocabTable = document.querySelector("#lesson-vocab-table tbody");
+    const allVocabTable = document.querySelector("#all-vocab-table tbody");
     const form = document.getElementById("vocab-form");
+    const vocabStats = document.getElementById("vocab-stats");
 
     let currentStudentName = "";
+    let currentStudentId = null;
 
     if (!sessionId || !userId) {
       lessonInfo.innerHTML = "Недостаточно данных.";
@@ -226,21 +337,60 @@
         <p><strong>Тип:</strong> ${student.type || '—'}</p>
         <p><strong>Статус:</strong> ${student.status || '—'}</p>
       `;
+
+      // Обновляем ссылку на полный словарь
+      document.getElementById('full-vocab-link').href = `vocabulary.html?student_name=${encodeURIComponent(student.name)}`;
     }
 
     async function loadVocab() {
-      const res = await fetch(`/api/vocab?session_id=${sessionId}`, {
-        headers: { "x-telegram-id": userId }
-      });
-      const { words = [] } = await res.json();
-      vocabTable.innerHTML = words.map(w => `
-        <tr>
-          <td><a href="lesson.html?session_id=${sessionId}">${w.session_date?.slice(0,10) || '—'}</a></td>
-          <td>${w.word}</td>
-          <td>${w.translation || ''}</td>
-          <td>${w.example || ''}</td>
-        </tr>
-      `).join('');
+      try {
+        // Загружаем слова конкретного урока
+        const lessonRes = await fetch(`/api/vocab?session_id=${sessionId}`, {
+          headers: { "x-telegram-id": userId }
+        });
+        const { words: lessonWords = [] } = await lessonRes.json();
+        
+        // Загружаем все слова студента
+        const allRes = await fetch(`/api/vocab?user_name=${encodeURIComponent(currentStudentName)}`, {
+          headers: { "x-telegram-id": userId }
+        });
+        const { words: allWords = [] } = await allRes.json();
+
+        // Отображаем слова урока
+        lessonVocabTable.innerHTML = lessonWords.map(w => `
+          <tr>
+            <td><strong>${w.word}</strong></td>
+            <td>${w.translation || ''}</td>
+            <td>${w.example || ''}</td>
+            <td>${w.language ? `<span style="color: var(--accent-color);">${w.language}</span>` : '—'}</td>
+          </tr>
+        `).join('');
+
+        // Отображаем все слова студента
+        allVocabTable.innerHTML = allWords.map(w => `
+          <tr class="${w.session_id === sessionId ? 'current-lesson' : ''}">
+            <td>${w.session_date ? new Date(w.session_date).toLocaleDateString('ru-RU') : '—'}</td>
+            <td><strong>${w.word}</strong></td>
+            <td>${w.translation || ''}</td>
+            <td>${w.example || ''}</td>
+            <td>${w.language ? `<span style="color: var(--accent-color);">${w.language}</span>` : '—'}</td>
+          </tr>
+        `).join('');
+
+        // Обновляем статистику
+        updateStats(lessonWords, allWords);
+        vocabStats.style.display = 'grid';
+
+      } catch (error) {
+        console.error('Error loading vocabulary:', error);
+        lessonVocabTable.innerHTML = '<tr><td colspan="4">Ошибка загрузки словаря</td></tr>';
+      }
+    }
+
+    function updateStats(lessonWords, allWords) {
+      document.getElementById('total-words').textContent = allWords.length;
+      document.getElementById('lesson-words').textContent = lessonWords.length;
+      document.getElementById('studied-words').textContent = allWords.filter(w => w.studied_count > 0).length;
     }
 
     form.addEventListener('submit', async (e) => {
@@ -253,6 +403,7 @@
         word,
         translation: formData.get('translation')?.trim(),
         example: formData.get('example')?.trim(),
+        language: formData.get('language') || null,
         session_id: sessionId,
       };
 
