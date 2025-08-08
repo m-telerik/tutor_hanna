@@ -316,35 +316,69 @@
   </div>
 
   <script>
-    const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 618647337;
-    const userName = Telegram.WebApp.initDataUnsafe?.user?.first_name || 'Пользователь';
+
+const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
+
+// Проверяем, есть ли валидный userId
+if (!userId) {
+  console.warn('User ID not available from Telegram WebApp');
+}
+
+// Ссылка на календарь Ханны
+const CALENDAR_LINK = 'https://calendar.google.com/calendar/u/0?cid=Y18yZmI3ZjY5ODg5MjUyODY3MzM5YTUwZGE4ZDE4M2Q5NzQ4ZjFkMmMwYjdhZTZhYTBhMzQ1MTM2MTJhZjUzOTE3QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20';
+
+// Проверка на админа (ТОЛЬКО если userId валиден)
+const ADMIN_IDS = [618647337, 2341205];
+const isAdmin = userId && ADMIN_IDS.includes(userId);
+
+async function loadUserRole() {
+  try {
+    // Если нет userId, показываем вид для потенциального студента
+    if (!userId) {
+      renderProspectView();
+      return;
+    }
+
+    const response = await fetch("/api/user-role", {
+      headers: { "x-telegram-id": userId }
+    });
     
-    // Ссылка на календарь Ханны
-    const CALENDAR_LINK = 'https://calendar.google.com/calendar/u/0?cid=Y18yZmI3ZjY5ODg5MjUyODY3MzM5YTUwZGE4ZDE4M2Q5NzQ4ZjFkMmMwYjdhZTZhYTBhMzQ1MTM2MTJhZjUzOTE3QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20';
-    
-    // Проверка на админа
-    const ADMIN_IDS = [618647337, 2341205];
-    const isAdmin = ADMIN_IDS.includes(userId);
-    
-    async function loadUserRole() {
-      try {
-        const response = await fetch("/api/user-role", {
-          headers: { "x-telegram-id": userId }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch user role');
-        }
-        
-        const data = await response.json();
-        renderContent(data);
-      } catch (error) {
-        console.error('Error loading user role:', error);
-        // Если ошибка API, показываем view для потенциального студента
-        renderProspectView();
-      }
+    if (!response.ok) {
+      throw new Error('Failed to fetch user role');
     }
     
+    const data = await response.json();
+    renderContent(data);
+  } catch (error) {
+    console.error('Error loading user role:', error);
+    // Если ошибка API, показываем view для потенциального студента
+    renderProspectView();
+  }
+}
+
+function renderContent(userData) {
+  const app = document.getElementById('app');
+  
+  // Показываем ссылку на админку ТОЛЬКО для валидных админов
+  if (isAdmin && userId) {
+    const adminLink = document.createElement('a');
+    adminLink.href = 'admin.html';
+    adminLink.className = 'admin-link';
+    adminLink.innerHTML = '<span class="emoji">👑</span>Админка';
+    document.body.appendChild(adminLink);
+  }
+  
+  if (userData.role === 'admin') {
+    // Редирект админов на админку
+    window.location.href = 'admin.html';
+    return;
+  } else if (userData.role === 'student') {
+    renderStudentView(userData);
+  } else {
+    renderProspectView();
+  }
+}
+
     function renderContent(userData) {
       const app = document.getElementById('app');
       
