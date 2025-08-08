@@ -175,48 +175,12 @@
       box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      background: var(--bg-color);
-    }
-
-    th, td {
-      padding: 8px;
-      border-bottom: 1px solid var(--border-color);
-      text-align: left;
-      font-size: 13px;
-    }
-
-    th {
-      background-color: var(--header-bg);
-      font-weight: 500;
-    }
-
-    tr:hover {
-      background-color: var(--card-bg);
-    }
-
     a {
       color: var(--accent-color);
       text-decoration: none;
     }
 
     a:hover {
-      text-decoration: underline;
-    }
-
-    button {
-      background: none;
-      border: none;
-      color: var(--accent-color);
-      font-size: 13px;
-      padding: 0.5rem 0;
-      cursor: pointer;
-    }
-
-    button:hover {
       text-decoration: underline;
     }
 
@@ -255,51 +219,6 @@
       background: rgba(255, 255, 255, 0.3);
       text-decoration: none;
       transform: translateY(-1px);
-    }
-
-    .contact-link.default {
-      background: var(--button-bg);
-      color: var(--button-text);
-      border: none;
-      backdrop-filter: none;
-    }
-
-    .contact-link.default:hover {
-      opacity: 0.9;
-      background: var(--button-bg);
-    }
-
-    .view-btn {
-      background: var(--card-bg);
-      color: var(--text-color);
-      border: 1px solid var(--border-color);
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .view-btn:hover {
-      background: var(--accent-color);
-      color: white;
-      text-decoration: none;
-      transform: translateY(-1px);
-    }
-
-    .view-btn.active {
-      background: var(--accent-color);
-      color: white;
-      border-color: var(--accent-color);
-    }
-
-    .view-btn .emoji {
-      font-size: 1em;
-      margin: 0;
     }
 
     .tutor-section {
@@ -366,6 +285,29 @@
       margin: 1.5rem 0 0.8rem 0;
       opacity: 0.5;
     }
+
+    .admin-link {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #ff6b35;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+      z-index: 1000;
+      transition: transform 0.2s;
+      text-decoration: none;
+    }
+
+    .admin-link:hover {
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
@@ -379,6 +321,10 @@
     
     // Ссылка на календарь Ханны
     const CALENDAR_LINK = 'https://calendar.google.com/calendar/u/0?cid=Y18yZmI3ZjY5ODg5MjUyODY3MzM5YTUwZGE4ZDE4M2Q5NzQ4ZjFkMmMwYjdhZTZhYTBhMzQ1MTM2MTJhZjUzOTE3QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20';
+    
+    // Проверка на админа
+    const ADMIN_IDS = [618647337, 2341205];
+    const isAdmin = ADMIN_IDS.includes(userId);
     
     async function loadUserRole() {
       try {
@@ -394,24 +340,27 @@
         renderContent(data);
       } catch (error) {
         console.error('Error loading user role:', error);
-        document.getElementById('app').innerHTML = `
-          <div class="error">
-            <h2>Ошибка загрузки</h2>
-            <p>Не удалось определить тип пользователя</p>
-          </div>
-        `;
+        // Если ошибка API, показываем view для потенциального студента
+        renderProspectView();
       }
     }
-
-    let currentView = 'admin'; // Текущий режим просмотра для админа
-    let adminUserData = null; // Сохраняем данные админа
     
     function renderContent(userData) {
       const app = document.getElementById('app');
       
+      // Показываем ссылку на админку для админов
+      if (isAdmin) {
+        const adminLink = document.createElement('a');
+        adminLink.href = 'admin.html';
+        adminLink.className = 'admin-link';
+        adminLink.innerHTML = '<span class="emoji">👑</span>Админка';
+        document.body.appendChild(adminLink);
+      }
+      
       if (userData.role === 'admin') {
-        adminUserData = userData; // Сохраняем данные админа
-        renderAdminView();
+        // Редирект админов на админку
+        window.location.href = 'admin.html';
+        return;
       } else if (userData.role === 'student') {
         renderStudentView(userData);
       } else {
@@ -419,92 +368,10 @@
       }
     }
 
-    async function renderAdminView() {
-      // Если админ переключился на другой вид
-      if (currentView === 'student') {
-        renderStudentView(mockStudentData);
-        return;
-      } else if (currentView === 'prospect') {
-        renderProspectView();
-        return;
-      }
-
-      try {
-        const response = await fetch("/api/students", {
-          headers: { "x-telegram-id": userId }
-        });
-        const { students } = await response.json();
-        
-        document.getElementById('app').innerHTML = `
-          <div style="background: var(--card-bg); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border: 1px solid var(--border-color);">
-            <h2><span class="emoji">👑</span>Режим администратора</h2>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1rem;">
-              <button class="view-btn ${currentView === 'admin' ? 'active' : ''}" onclick="switchView('admin')">
-                <span class="emoji">🧑‍🎓</span>Админ
-              </button>
-              <button class="view-btn ${currentView === 'student' ? 'active' : ''}" onclick="switchView('student')">
-                <span class="emoji">👤</span>Студент
-              </button>
-              <button class="view-btn ${currentView === 'prospect' ? 'active' : ''}" onclick="switchView('prospect')">
-                <span class="emoji">🌟</span>Потенциальный студент
-              </button>
-              <a href="chat-history.html" class="view-btn">
-  <span class="emoji">💬</span>История чатов
-</a>
-            </div>
-          </div>
-          
-          <h2><span class="emoji">🧑‍🎓</span>Список студентов</h2>
-          <table id="students">
-            <thead>
-              <tr>
-                <th>Студент</th>
-                <th>Email</th>
-                <th>Следующее занятие</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${students.map(s => `
-                <tr>
-                  <td>
-                    <a href="student.html?name=${encodeURIComponent(s.name)}">
-                      ${s.name}<br>
-                      <small style="color: var(--accent-color); font-size: 11px;">
-                        ${s.username ? '@' + s.username : ''}
-                      </small>
-                    </a>
-                  </td>
-                  <td>${s.email || '—'}</td>
-                  <td>${
-                    s.next_session
-                      ? `<a href="lesson.html?session_id=${s.next_session_id}">${s.next_session}</a>`
-                      : '—'
-                  }</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
-      } catch (error) {
-        console.error('Error loading students:', error);
-        document.getElementById('app').innerHTML = `
-          <div class="error">Ошибка загрузки списка студентов</div>
-        `;
-      }
-    }
-
     function renderStudentView(userData) {
       const nextLesson = userData.next_session;
       
-      // Добавляем кнопку "Назад к админке" если это режим просмотра админом
-      const backButton = adminUserData ? `
-        <button onclick="switchView('admin')" style="margin-bottom: 1rem; background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 6px;">
-          ← Назад к админке
-        </button>
-      ` : '';
-      
       document.getElementById('app').innerHTML = `
-        ${backButton}
         <div class="student-info">
           <h2><span class="emoji">👋</span>Привет, ${userData.name || userName}!</h2>
           <p>Добро пожаловать в твой личный кабинет для изучения языков с Ханной</p>
@@ -544,6 +411,18 @@
             <strong>Забронировать</strong>
             <small>Следующее занятие</small>
           </a>
+          
+          <a href="https://t.me/hanna_teaches" class="action-card">
+            <span class="emoji">💬</span>
+            <strong>Написать Ханне</strong>
+            <small>Задать вопрос</small>
+          </a>
+          
+          <div class="action-card" onclick="openCalendar()">
+            <span class="emoji">📋</span>
+            <strong>Календарь</strong>
+            <small>Все занятия</small>
+          </div>
         </div>
         
         <button class="book-lesson-btn" onclick="openBookingPage()">
@@ -553,22 +432,40 @@
     }
 
     function renderProspectView() {
-      // Добавляем кнопку "Назад к админке" если это режим просмотра админом
-      const backButton = adminUserData ? `
-        <button onclick="switchView('admin')" style="margin-bottom: 1rem; background: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 6px;">
-          ← Назад к админке
-        </button>
-      ` : '';
-      
       document.getElementById('app').innerHTML = `
-        ${backButton}
         <div class="welcome-card gradient">
           <h2><span class="emoji">🌟</span>Добро пожаловать!</h2>
           <p>Изучайте <strong>английский</strong> и <strong>французский</strong> с Ханной — сертифицированным преподавателем CELTA Grade A</p>
-          <p>Ханна поможет достичь языковых целей и стать лучшим методистом</p>
+          <p>Ханна поможет достичь языковых целей и стать увереннее в общении</p>
           <a href="https://t.me/annalesf" class="contact-link">
             <span class="emoji">💬</span>Написать Ханне
           </a>
+        </div>
+        
+        <div class="student-actions">
+          <a href="https://t.me/hanna_teaches" class="action-card">
+            <span class="emoji">💬</span>
+            <strong>Телеграм канал</strong>
+            <small>Полезные материалы</small>
+          </a>
+          
+          <a href="booking.html" class="action-card">
+            <span class="emoji">📅</span>
+            <strong>Записаться на урок</strong>
+            <small>Первое занятие</small>
+          </a>
+          
+          <div class="action-card" onclick="showPricing()">
+            <span class="emoji">💰</span>
+            <strong>Цены</strong>
+            <small>Стоимость занятий</small>
+          </div>
+          
+          <div class="action-card" onclick="showAbout()">
+            <span class="emoji">👩‍🏫</span>
+            <strong>О преподавателе</strong>
+            <small>Опыт и квалификация</small>
+          </div>
         </div>
         
         <div class="footer-divider"></div>
@@ -589,55 +486,34 @@
       `;
     }
 
-    // Мок-данные для студента (для демонстрации админу)
-    const mockStudentData = {
-      role: 'student',
-      name: 'Анна Иванова',
-      languages: ['English', 'French'],
-      next_session: {
-        session_id: 123,
-        date: '2025-08-10',
-        language: 'English, French',
-        status: 'scheduled',
-        type: 'individual'
-      }
-    };
-
-    // Функция переключения видов для админа
-    function switchView(view) {
-      if (!adminUserData) return; // Только для админов
-      
-      currentView = view;
-      
-      if (view === 'admin') {
-        renderAdminView();
-      } else if (view === 'student') {
-        renderStudentView(mockStudentData);
-      } else if (view === 'prospect') {
-        renderProspectView();
-      }
-    }
-
     function openCalendar() {
-      // Проверяем, доступны ли методы Telegram WebApp
       if (window.Telegram?.WebApp?.openLink) {
-        // Используем openLink для открытия в браузере внутри Telegram
         window.Telegram.WebApp.openLink(CALENDAR_LINK);
       } else if (window.Telegram?.WebApp?.openTelegramLink) {
-        // Альтернативный метод для Telegram ссылок
         window.Telegram.WebApp.openTelegramLink(CALENDAR_LINK);
       } else {
-        // Фаллбек для обычных браузеров или старых версий
         window.open(CALENDAR_LINK, '_blank');
       }
     }
 
     function openBookingPage() {
-      // Прямой редирект на Google Calendar в том же окне
       window.location.href = 'https://calendar.app.google/SQGJj626MUyQ6DYL6';
     }
 
+    function showPricing() {
+      alert('💰 Стоимость занятий:\n\n🇬🇧 Английский:\n• Индивидуально: 2000₽/час\n• Группа 2-3 чел: 1200₽/час\n\n🇫🇷 Французский:\n• Индивидуально: 2500₽/час\n• Группа 2-3 чел: 1500₽/час\n\n📞 Для записи напишите @hanna_teaches');
+    }
+
+    function showAbout() {
+      alert('👩‍🏫 О преподавателе:\n\n🎓 Ханна - сертифицированный преподаватель CELTA Grade A\n📚 Более 5 лет опыта преподавания\n🌍 Опыт работы с учениками разных уровней\n🏆 Специализация: разговорная практика и подготовка к экзаменам\n\n💬 Для знакомства напишите @hanna_teaches');
+    }
+
     // Инициализация
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+    
     loadUserRole();
   </script>
 </body>
