@@ -1,7 +1,4 @@
-<div class="chat-container" id="chatContainer">
-    <div class="loading">
-      <p>Выберите ученика и агента для просмотра истории памяти</p>
-      <div style="font-size: 12px; opacity: 0.7; margin-top<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -57,14 +54,28 @@
       padding: 1rem;
       margin-bottom: 1rem;
       border: 1px solid var(--border-color);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
     }
 
-    .session-selector {
+    .navigation-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .step-label {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-color);
+      opacity: 0.8;
+    }
+
+    .step-controls {
       display: flex;
       gap: 10px;
       align-items: center;
@@ -78,6 +89,12 @@
       background: var(--bg-color);
       color: var(--text-color);
       font-size: 14px;
+      min-width: 180px;
+    }
+
+    select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .load-btn {
@@ -88,14 +105,60 @@
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
+      transition: opacity 0.2s;
     }
 
     .load-btn:hover {
       opacity: 0.9;
     }
 
+    .load-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .chat-list {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      margin: 1rem 0;
+      border: 1px solid var(--border-color);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .chat-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-bottom: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .chat-item:hover {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .chat-item.selected {
+      background: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+    }
+
+    .chat-item-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .chat-item-meta {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
     .chat-container {
-      max-height: 70vh;
+      max-height: 60vh;
       overflow-y: auto;
       background: var(--card-bg);
       border-radius: 8px;
@@ -219,14 +282,29 @@
       margin-right: 0.5rem;
     }
 
+    .memory-key-info {
+      background: var(--card-bg);
+      border-radius: 6px;
+      padding: 0.8rem;
+      margin: 1rem 0;
+      border: 1px solid var(--border-color);
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
     @media (max-width: 600px) {
-      .header {
+      .step-controls {
         flex-direction: column;
         align-items: stretch;
       }
       
-      .session-selector {
-        justify-content: center;
+      select, input {
+        min-width: auto;
+        width: 100%;
       }
     }
   </style>
@@ -236,21 +314,48 @@
 
   <div class="header">
     <h1><span class="emoji">💬</span>История чатов</h1>
-    <div class="session-selector">
-      <select id="studentSelect">
-        <option value="">Выберите ученика...</option>
-      </select>
-      <select id="agentSelect">
-        <option value="">Выберите агента...</option>
-        <option value="hanna_user">🤖 Main Agent (основной)</option>
-        <option value="student">👤 Student Agent (ученик)</option>
-        <option value="lead">🌟 Lead Agent (лид)</option>
-      </select>
-      <input type="text" id="customMemoryKey" placeholder="Или введите ключ памяти (например: student_71272569)" />
-      <button class="load-btn" onclick="loadChatHistory()">Загрузить</button>
+    
+    <div class="navigation-panel">
+      <!-- Шаг 1: Выбор агента -->
+      <div class="step">
+        <div class="step-label">1. Выберите агента:</div>
+        <div class="step-controls">
+          <select id="agentSelect" onchange="onAgentChange()">
+            <option value="">Выберите агента...</option>
+            <option value="hanna_user">🤖 TutorBot (основной агент)</option>
+            <option value="student">👤 Student Agent (для студентов)</option>
+            <option value="lead">🌟 Lead Agent (для лидов)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Шаг 2: Дополнительный фильтр (зависит от агента) -->
+      <div class="step" id="step2" style="display: none;">
+        <div class="step-label" id="step2Label"></div>
+        <div class="step-controls">
+          <select id="filterSelect" onchange="onFilterChange()" disabled>
+            <option value="">Выберите...</option>
+          </select>
+          <button class="load-btn" onclick="loadChatList()" disabled id="loadListBtn">Загрузить список</button>
+        </div>
+      </div>
+
+      <!-- Шаг 3: Выбор конкретного чата (для некоторых агентов) -->
+      <div class="step" id="step3" style="display: none;">
+        <div class="step-label" id="step3Label">3. Выберите чат:</div>
+        <div class="step-controls">
+          <button class="load-btn" onclick="loadChatHistory()" disabled id="loadChatBtn">Загрузить историю</button>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- Список чатов (для выбора конкретного чата) -->
+  <div class="chat-list" id="chatList" style="display: none;">
+    <div class="loading">Загрузка списка чатов...</div>
+  </div>
+
+  <!-- Фильтры сообщений -->
   <div class="filter-controls" id="filterControls" style="display: none;">
     <button class="filter-btn active" onclick="filterMessages('all')">Все</button>
     <button class="filter-btn" onclick="filterMessages('ai')">AI</button>
@@ -258,15 +363,18 @@
     <button class="filter-btn" onclick="filterMessages('system')">System</button>
   </div>
 
+  <!-- Статистика -->
   <div class="stats" id="stats" style="display: none;"></div>
 
+  <!-- Контейнер с сообщениями -->
   <div class="chat-container" id="chatContainer">
     <div class="loading">
-      <p>Выберите ученика и агента для просмотра истории памяти</p>
+      <p>Выберите агента для начала работы</p>
       <div style="font-size: 12px; opacity: 0.7; margin-top: 1rem;">
-        <strong>Как это работает:</strong><br>
-        • Ключ памяти = тип_агента_telegram_id<br>
-        • Например: student_71272569, hanna_user_71272569, lead_937619983
+        <strong>Доступные агенты:</strong><br>
+        • 🤖 TutorBot - основной агент для всех пользователей<br>
+        • 👤 Student Agent - специализированный агент для студентов<br>
+        • 🌟 Lead Agent - агент для работы с потенциальными клиентами
       </div>
     </div>
   </div>
@@ -275,6 +383,9 @@
     const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 618647337;
     let allMessages = [];
     let currentFilter = 'all';
+    let selectedChatKey = null;
+    let availableStudents = [];
+    let availableChats = [];
 
     // Инициализация
     document.addEventListener('DOMContentLoaded', function() {
@@ -287,91 +398,238 @@
 
     async function loadAvailableStudents() {
       try {
-        // Загружаем список студентов
         const response = await fetch('/api/students', {
           headers: { "x-telegram-id": userId }
         });
         
-        if (!response.ok) throw new Error('Failed to load students');
-        
-        const { students } = await response.json();
-        const studentSelect = document.getElementById('studentSelect');
-        
-        // Очищаем и добавляем опции
-        studentSelect.innerHTML = '<option value="">Выберите ученика...</option>';
-        
-        // Добавляем студентов из базы
-        students.forEach(student => {
-          const option = document.createElement('option');
-          // Нужно получить telegram_id из базы данных пользователей
-          // Пока используем имя как placeholder
-          option.value = student.telegram_id || student.name.toLowerCase().replace(/\s+/g, '');
-          option.textContent = student.name;
-          option.dataset.telegramId = student.telegram_id || '';
-          studentSelect.appendChild(option);
-        });
-
-        // Добавляем известные примеры с telegram_id
-        const knownStudents = [
-          { telegram_id: '71272569', name: 'Крис' },
-          { telegram_id: '937619983', name: 'Пример лида' },
-          { telegram_id: '123456789', name: 'Тестовый пользователь' }
-        ];
-
-        const separator = document.createElement('option');
-        separator.disabled = true;
-        separator.textContent = '--- Примеры ---';
-        studentSelect.appendChild(separator);
-
-        knownStudents.forEach(student => {
-          const option = document.createElement('option');
-          option.value = student.telegram_id;
-          option.textContent = `${student.name} (${student.telegram_id})`;
-          option.dataset.telegramId = student.telegram_id;
-          studentSelect.appendChild(option);
-        });
-        
+        if (response.ok) {
+          const { students } = await response.json();
+          availableStudents = students;
+        }
       } catch (error) {
         console.error('Error loading students:', error);
-        // В случае ошибки добавляем базовые примеры
-        const studentSelect = document.getElementById('studentSelect');
-        studentSelect.innerHTML = `
-          <option value="">Выберите ученика...</option>
-          <option value="71272569" data-telegram-id="71272569">Крис (71272569)</option>
-          <option value="937619983" data-telegram-id="937619983">Пример лида (937619983)</option>
-          <option value="123456789" data-telegram-id="123456789">Тестовый пользователь (123456789)</option>
-        `;
       }
     }
 
-    async function loadChatHistory() {
-      const studentSelect = document.getElementById('studentSelect');
+    function onAgentChange() {
       const agentSelect = document.getElementById('agentSelect');
-      const customMemoryKey = document.getElementById('customMemoryKey');
+      const step2 = document.getElementById('step2');
+      const step3 = document.getElementById('step3');
+      const filterSelect = document.getElementById('filterSelect');
+      const step2Label = document.getElementById('step2Label');
+      const loadListBtn = document.getElementById('loadListBtn');
       
-      let memoryKey;
+      // Сброс состояния
+      resetChatInterface();
       
-      // Проверяем, ввели ли ключ памяти напрямую
-      if (customMemoryKey.value.trim()) {
-        memoryKey = customMemoryKey.value.trim();
-      } else {
-        // Генерируем ключ памяти из выбранных значений
-        const studentId = studentSelect.value;
-        const agentType = agentSelect.value;
-        
-        if (!studentId || !agentType) {
-          alert('Пожалуйста, выберите ученика и агента, или введите ключ памяти напрямую');
-          return;
-        }
-        
-        memoryKey = `${agentType}_${studentId}`;
+      const selectedAgent = agentSelect.value;
+      
+      if (!selectedAgent) {
+        step2.style.display = 'none';
+        step3.style.display = 'none';
+        return;
       }
 
+      // Настройка второго шага в зависимости от агента
+      if (selectedAgent === 'hanna_user') {
+        // Для TutorBot показываем историю сразу, второй шаг не нужен
+        step2.style.display = 'none';
+        step3.style.display = 'none';
+        loadTutorBotHistory();
+        
+      } else if (selectedAgent === 'student') {
+        // Для Student Agent показываем список студентов
+        step2Label.textContent = '2. Выберите студента:';
+        populateStudentFilter();
+        step2.style.display = 'block';
+        step3.style.display = 'none';
+        
+      } else if (selectedAgent === 'lead') {
+        // Для Lead Agent показываем статусы лидов
+        step2Label.textContent = '2. Выберите статус лида:';
+        populateLeadStatusFilter();
+        step2.style.display = 'block';
+        step3.style.display = 'none';
+      }
+    }
+
+    function populateStudentFilter() {
+      const filterSelect = document.getElementById('filterSelect');
+      const loadListBtn = document.getElementById('loadListBtn');
+      
+      filterSelect.innerHTML = '<option value="">Выберите студента...</option>';
+      
+      // Добавляем студентов из базы
+      availableStudents.forEach(student => {
+        const option = document.createElement('option');
+        option.value = student.telegram_id || student.name.toLowerCase().replace(/\s+/g, '');
+        option.textContent = student.name;
+        option.dataset.telegramId = student.telegram_id || '';
+        filterSelect.appendChild(option);
+      });
+      
+      // Добавляем известные примеры
+      const knownStudents = [
+        { telegram_id: '71272569', name: 'Крис (пример)' },
+        { telegram_id: '123456789', name: 'Тестовый студент' }
+      ];
+      
+      if (knownStudents.length > 0) {
+        const separator = document.createElement('option');
+        separator.disabled = true;
+        separator.textContent = '--- Примеры ---';
+        filterSelect.appendChild(separator);
+        
+        knownStudents.forEach(student => {
+          const option = document.createElement('option');
+          option.value = student.telegram_id;
+          option.textContent = student.name;
+          option.dataset.telegramId = student.telegram_id;
+          filterSelect.appendChild(option);
+        });
+      }
+      
+      filterSelect.disabled = false;
+      loadListBtn.disabled = true;
+    }
+
+    function populateLeadStatusFilter() {
+      const filterSelect = document.getElementById('filterSelect');
+      const loadListBtn = document.getElementById('loadListBtn');
+      
+      filterSelect.innerHTML = `
+        <option value="">Выберите статус...</option>
+        <option value="new">🆕 Новые лиды</option>
+        <option value="contacted">📞 Связались</option>
+        <option value="interested">💫 Заинтересованы</option>
+        <option value="trial">🎯 Пробный урок</option>
+        <option value="converted">✅ Стали студентами</option>
+        <option value="lost">❌ Потеряны</option>
+        <option value="all">📋 Все лиды</option>
+      `;
+      
+      filterSelect.disabled = false;
+      loadListBtn.disabled = true;
+    }
+
+    function onFilterChange() {
+      const filterSelect = document.getElementById('filterSelect');
+      const loadListBtn = document.getElementById('loadListBtn');
+      
+      loadListBtn.disabled = !filterSelect.value;
+    }
+
+    async function loadTutorBotHistory() {
+      // Для TutorBot загружаем общую историю
+      const chatContainer = document.getElementById('chatContainer');
+      chatContainer.innerHTML = '<div class="loading">Загрузка истории TutorBot...</div>';
+
+      try {
+        // Пытаемся загрузить общую историю TutorBot
+        const memoryKey = `hanna_user_${userId}`;
+        await loadChatHistoryByKey(memoryKey);
+        
+        showMemoryKeyInfo(memoryKey);
+        
+      } catch (error) {
+        console.error('Error loading TutorBot history:', error);
+        // Показываем демо данные
+        allMessages = await getMockChatData(`hanna_user_${userId}`);
+        renderMessages();
+        updateStats();
+        showFiltersAndStats();
+        showMemoryKeyInfo(`hanna_user_${userId} (демо данные)`);
+      }
+    }
+
+    async function loadChatList() {
+      const agentSelect = document.getElementById('agentSelect');
+      const filterSelect = document.getElementById('filterSelect');
+      const chatList = document.getElementById('chatList');
+      const step3 = document.getElementById('step3');
+      const step3Label = document.getElementById('step3Label');
+      
+      const agent = agentSelect.value;
+      const filter = filterSelect.value;
+      
+      if (!agent || !filter) return;
+      
+      chatList.style.display = 'block';
+      chatList.innerHTML = '<div class="loading">Загрузка списка чатов...</div>';
+      
+      try {
+        if (agent === 'student') {
+          // Для студентов показываем чаты с агентами
+          const studentId = filter;
+          const chats = await getStudentChats(studentId);
+          
+          if (chats.length === 0) {
+            chatList.innerHTML = '<div class="loading">Нет доступных чатов для этого студента</div>';
+            return;
+          }
+          
+          chatList.innerHTML = chats.map(chat => `
+            <div class="chat-item" onclick="selectChat('${chat.key}')">
+              <div class="chat-item-title">${chat.title}</div>
+              <div class="chat-item-meta">${chat.description}</div>
+            </div>
+          `).join('');
+          
+          step3Label.textContent = '3. Выберите чат студента:';
+          step3.style.display = 'block';
+          
+        } else if (agent === 'lead') {
+          // Для лидов показываем список лидов по статусу
+          const status = filter;
+          const leads = await getLeadsByStatus(status);
+          
+          if (leads.length === 0) {
+            chatList.innerHTML = '<div class="loading">Нет лидов с выбранным статусом</div>';
+            return;
+          }
+          
+          chatList.innerHTML = leads.map(lead => `
+            <div class="chat-item" onclick="selectChat('${lead.key}')">
+              <div class="chat-item-title">${lead.title}</div>
+              <div class="chat-item-meta">${lead.description}</div>
+            </div>
+          `).join('');
+          
+          step3Label.textContent = '3. Выберите лида:';
+          step3.style.display = 'block';
+        }
+        
+      } catch (error) {
+        console.error('Error loading chat list:', error);
+        chatList.innerHTML = '<div class="error">Ошибка загрузки списка чатов</div>';
+      }
+    }
+
+    function selectChat(chatKey) {
+      // Убираем выделение с предыдущего чата
+      document.querySelectorAll('.chat-item').forEach(item => {
+        item.classList.remove('selected');
+      });
+      
+      // Выделяем выбранный чат
+      event.target.closest('.chat-item').classList.add('selected');
+      
+      selectedChatKey = chatKey;
+      document.getElementById('loadChatBtn').disabled = false;
+    }
+
+    async function loadChatHistory() {
+      if (!selectedChatKey) return;
+      
+      await loadChatHistoryByKey(selectedChatKey);
+      showMemoryKeyInfo(selectedChatKey);
+    }
+
+    async function loadChatHistoryByKey(memoryKey) {
       const chatContainer = document.getElementById('chatContainer');
       chatContainer.innerHTML = '<div class="loading">Загрузка истории чата...</div>';
 
       try {
-        // Запрос к API для получения истории чата по ключу памяти
         const response = await fetch(`/api/chat-history?memory_key=${encodeURIComponent(memoryKey)}`, {
           headers: { "x-telegram-id": userId }
         });
@@ -383,7 +641,6 @@
         const { messages } = await response.json();
         
         if (!messages || messages.length === 0) {
-          // Если нет данных в API, показываем моковые данные для демонстрации
           allMessages = await getMockChatData(memoryKey);
         } else {
           allMessages = messages;
@@ -391,61 +648,73 @@
         
         renderMessages();
         updateStats();
-        
-        document.getElementById('filterControls').style.display = 'flex';
-        document.getElementById('stats').style.display = 'flex';
-        
-        // Показываем информацию о загруженном ключе памяти
-        updateMemoryKeyInfo(memoryKey);
+        showFiltersAndStats();
         
       } catch (error) {
         console.error('Error loading chat history:', error);
-        
-        // В случае ошибки API показываем моковые данные
-        console.log('Falling back to mock data...');
-        try {
-          allMessages = await getMockChatData(memoryKey);
-          renderMessages();
-          updateStats();
-          document.getElementById('filterControls').style.display = 'flex';
-          document.getElementById('stats').style.display = 'flex';
-          updateMemoryKeyInfo(memoryKey + ' (демо данные)');
-        } catch (mockError) {
-          chatContainer.innerHTML = 
-            '<div class="error">Ошибка загрузки истории чата: ' + error.message + '</div>';
-        }
+        allMessages = await getMockChatData(memoryKey);
+        renderMessages();
+        updateStats();
+        showFiltersAndStats();
       }
     }
 
-    function updateMemoryKeyInfo(memoryKey) {
+    async function getStudentChats(studentId) {
+      // Возвращаем доступные чаты для студента
+      return [
+        {
+          key: `student_${studentId}`,
+          title: 'Student Agent Chat',
+          description: 'Основной чат со Student Agent'
+        },
+        {
+          key: `hanna_user_${studentId}`,
+          title: 'TutorBot Chat', 
+          description: 'Чат с основным агентом (TutorBot)'
+        }
+      ];
+    }
+
+    async function getLeadsByStatus(status) {
+      // Возвращаем моковые данные лидов
+      const mockLeads = [
+        { id: '937619983', name: 'Анна Петрова', status: 'new' },
+        { id: '123456789', name: 'Иван Сидоров', status: 'contacted' },
+        { id: '987654321', name: 'Мария Иванова', status: 'interested' }
+      ];
+      
+      let filteredLeads = mockLeads;
+      if (status !== 'all') {
+        filteredLeads = mockLeads.filter(lead => lead.status === status);
+      }
+      
+      return filteredLeads.map(lead => ({
+        key: `lead_${lead.id}`,
+        title: lead.name,
+        description: `Telegram ID: ${lead.id}, Статус: ${lead.status}`
+      }));
+    }
+
+    function showFiltersAndStats() {
+      document.getElementById('filterControls').style.display = 'flex';
+      document.getElementById('stats').style.display = 'flex';
+    }
+
+    function showMemoryKeyInfo(memoryKey) {
       const [agentType, telegramId] = memoryKey.split('_');
       const agentNames = {
-        'hanna_user': '🤖 Main Agent (основной)',
-        'student': '👤 Student Agent (ученик)', 
-        'lead': '🌟 Lead Agent (лид)'
+        'hanna_user': '🤖 TutorBot (основной агент)',
+        'student': '👤 Student Agent', 
+        'lead': '🌟 Lead Agent'
       };
       
       const agentName = agentNames[agentType] || '❓ Неизвестный агент';
       
-      // Добавляем информацию о текущем ключе памяти
       const existingInfo = document.querySelector('.memory-key-info');
       if (existingInfo) existingInfo.remove();
       
       const memoryKeyInfo = document.createElement('div');
       memoryKeyInfo.className = 'memory-key-info';
-      memoryKeyInfo.style.cssText = `
-        background: var(--card-bg);
-        border-radius: 6px;
-        padding: 0.8rem;
-        margin: 1rem 0;
-        border: 1px solid var(--border-color);
-        font-size: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-      `;
       memoryKeyInfo.innerHTML = `
         <span><strong>Ключ памяти:</strong> <code style="background: var(--bg-color); padding: 2px 6px; border-radius: 4px; font-family: monospace;">${memoryKey}</code></span>
         <span><strong>Агент:</strong> ${agentName}</span>
@@ -456,9 +725,34 @@
       filterControls.parentNode.insertBefore(memoryKeyInfo, filterControls);
     }
 
-    // Моковые данные для разных агентов по ключам памяти
+    function resetChatInterface() {
+      selectedChatKey = null;
+      allMessages = [];
+      
+      document.getElementById('chatList').style.display = 'none';
+      document.getElementById('filterControls').style.display = 'none';
+      document.getElementById('stats').style.display = 'none';
+      document.getElementById('loadChatBtn').disabled = true;
+      
+      const existingInfo = document.querySelector('.memory-key-info');
+      if (existingInfo) existingInfo.remove();
+      
+      const chatContainer = document.getElementById('chatContainer');
+      chatContainer.innerHTML = `
+        <div class="loading">
+          <p>Выберите агента для начала работы</p>
+          <div style="font-size: 12px; opacity: 0.7; margin-top: 1rem;">
+            <strong>Доступные агенты:</strong><br>
+            • 🤖 TutorBot - основной агент для всех пользователей<br>
+            • 👤 Student Agent - специализированный агент для студентов<br>
+            • 🌟 Lead Agent - агент для работы с потенциальными клиентами
+          </div>
+        </div>
+      `;
+    }
+
+    // Моковые данные для демонстрации
     async function getMockChatData(memoryKey) {
-      // Имитация API запроса
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const [agentType, telegramId] = memoryKey.split('_');
@@ -486,35 +780,25 @@
               response_metadata: {},
               invalid_tool_calls: []
             })
-          },
-          {
-            id: 35,
-            session_id: "student_71272569",
-            message: JSON.stringify({
-              type: "human", 
-              content: "Да, составь упражнения с этим словом!",
-              additional_kwargs: {},
-              response_metadata: {}
-            })
           }
         ];
       }
       
-      if (memoryKey === 'hanna_user_71272569') {
+      if (memoryKey === 'hanna_user_71272569' || agentType === 'hanna_user') {
         return [
           {
             id: 1,
-            session_id: "hanna_user_71272569",
+            session_id: memoryKey,
             message: JSON.stringify({
               type: "system",
-              content: "Инициализация Main Agent для пользователя 71272569",
+              content: "Инициализация TutorBot для пользователя " + telegramId,
               additional_kwargs: {},
               response_metadata: {}
             })
           },
           {
             id: 2,
-            session_id: "hanna_user_71272569",
+            session_id: memoryKey,
             message: JSON.stringify({
               type: "human",
               content: "Привет Ханна! Как дела?",
@@ -524,7 +808,7 @@
           },
           {
             id: 3,
-            session_id: "hanna_user_71272569", 
+            session_id: memoryKey, 
             message: JSON.stringify({
               type: "ai",
               content: "Привет! У меня всё отлично, спасибо! Готова помочь с изучением языков. У тебя есть вопросы по французскому или английскому?",
@@ -536,21 +820,21 @@
         ];
       }
       
-      if (memoryKey === 'lead_937619983') {
+      if (agentType === 'lead') {
         return [
           {
             id: 1,
-            session_id: "lead_937619983",
+            session_id: memoryKey,
             message: JSON.stringify({
               type: "system",
-              content: "Инициализация Lead Agent для потенциального клиента 937619983",
+              content: "Инициализация Lead Agent для потенциального клиента " + telegramId,
               additional_kwargs: {},
               response_metadata: {}
             })
           },
           {
             id: 2,
-            session_id: "lead_937619983",
+            session_id: memoryKey,
             message: JSON.stringify({
               type: "human",
               content: "Здравствуйте! Хочу узнать про уроки французского",
@@ -560,7 +844,7 @@
           },
           {
             id: 3,
-            session_id: "lead_937619983",
+            session_id: memoryKey,
             message: JSON.stringify({
               type: "ai",
               content: "Здравствуйте! Рада, что вы заинтересовались изучением французского! Ханна - сертифицированный преподаватель CELTA Grade A с большим опытом.\n\nРасскажите немного о себе:\n- Какой у вас уровень французского сейчас?\n- Какие цели хотите достичь?\n- Сколько времени готовы уделять занятиям в неделю?\n\nЭто поможет мне предложить оптимальную программу обучения!",
@@ -589,7 +873,7 @@
           session_id: memoryKey,
           message: JSON.stringify({
             type: "ai",
-            content: `Привет! Я ${agentType === 'hanna_user' ? 'Main Agent Ханны' : agentType === 'student' ? 'Student Agent' : agentType === 'lead' ? 'Lead Agent' : 'агент системы'}. Telegram ID: ${telegramId}`,
+            content: `Привет! Я ${agentType === 'hanna_user' ? 'TutorBot' : agentType === 'student' ? 'Student Agent' : agentType === 'lead' ? 'Lead Agent' : 'агент системы'}. Telegram ID: ${telegramId}`,
             tool_calls: [],
             additional_kwargs: {},
             response_metadata: {}
@@ -620,7 +904,7 @@
       container.innerHTML = filteredMessages.map(msg => {
         try {
           const parsed = JSON.parse(msg.message);
-          const timestamp = new Date().toLocaleString('ru-RU'); // Если есть timestamp в данных, используйте его
+          const timestamp = new Date().toLocaleString('ru-RU');
           
           return `
             <div class="message ${parsed.type}">
@@ -706,13 +990,6 @@
       div.textContent = text;
       return div.innerHTML;
     }
-
-    // Обработка Enter в поле ввода ключа памяти
-    document.getElementById('customMemoryKey').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        loadChatHistory();
-      }
-    });
   </script>
 </body>
 </html>
