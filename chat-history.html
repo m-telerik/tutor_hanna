@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+<div class="chat-container" id="chatContainer">
+    <div class="loading">
+      <p>Выберите ученика и агента для просмотра истории памяти</p>
+      <div style="font-size: 12px; opacity: 0.7; margin-top<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
@@ -234,10 +237,16 @@
   <div class="header">
     <h1><span class="emoji">💬</span>История чатов</h1>
     <div class="session-selector">
-      <select id="sessionSelect">
-        <option value="">Выберите сессию...</option>
+      <select id="studentSelect">
+        <option value="">Выберите ученика...</option>
       </select>
-      <input type="text" id="customSession" placeholder="Или введите session_id" />
+      <select id="agentSelect">
+        <option value="">Выберите агента...</option>
+        <option value="hanna_user">🤖 Main Agent (основной)</option>
+        <option value="student">👤 Student Agent (ученик)</option>
+        <option value="lead">🌟 Lead Agent (лид)</option>
+      </select>
+      <input type="text" id="customMemoryKey" placeholder="Или введите ключ памяти (например: student_71272569)" />
       <button class="load-btn" onclick="loadChatHistory()">Загрузить</button>
     </div>
   </div>
@@ -252,7 +261,14 @@
   <div class="stats" id="stats" style="display: none;"></div>
 
   <div class="chat-container" id="chatContainer">
-    <div class="loading">Выберите сессию для просмотра истории чата</div>
+    <div class="loading">
+      <p>Выберите ученика и агента для просмотра истории памяти</p>
+      <div style="font-size: 12px; opacity: 0.7; margin-top: 1rem;">
+        <strong>Как это работает:</strong><br>
+        • Ключ памяти = тип_агента_telegram_id<br>
+        • Например: student_71272569, hanna_user_71272569, lead_937619983
+      </div>
+    </div>
   </div>
 
   <script>
@@ -266,84 +282,188 @@
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
       }
-      loadAvailableSessions();
+      loadAvailableStudents();
     });
 
-    async function loadAvailableSessions() {
+    async function loadAvailableStudents() {
       try {
-        // Загружаем список студентов для получения session_id
+        // Загружаем список студентов
         const response = await fetch('/api/students', {
           headers: { "x-telegram-id": userId }
         });
         
-        if (!response.ok) throw new Error('Failed to load sessions');
+        if (!response.ok) throw new Error('Failed to load students');
         
         const { students } = await response.json();
-        const sessionSelect = document.getElementById('sessionSelect');
+        const studentSelect = document.getElementById('studentSelect');
         
         // Очищаем и добавляем опции
-        sessionSelect.innerHTML = '<option value="">Выберите сессию...</option>';
+        studentSelect.innerHTML = '<option value="">Выберите ученика...</option>';
         
+        // Добавляем студентов из базы
         students.forEach(student => {
-          if (student.next_session_id) {
-            const option = document.createElement('option');
-            option.value = student.next_session_id;
-            option.textContent = `${student.name} - ${student.next_session || 'Без даты'}`;
-            sessionSelect.appendChild(option);
-          }
+          const option = document.createElement('option');
+          // Нужно получить telegram_id из базы данных пользователей
+          // Пока используем имя как placeholder
+          option.value = student.telegram_id || student.name.toLowerCase().replace(/\s+/g, '');
+          option.textContent = student.name;
+          option.dataset.telegramId = student.telegram_id || '';
+          studentSelect.appendChild(option);
         });
 
-        // Добавляем пример session_id из данных
-        const exampleOption = document.createElement('option');
-        exampleOption.value = 'student_71272569';
-        exampleOption.textContent = 'Пример: student_71272569 (Крис)';
-        sessionSelect.appendChild(exampleOption);
+        // Добавляем известные примеры с telegram_id
+        const knownStudents = [
+          { telegram_id: '71272569', name: 'Крис' },
+          { telegram_id: '937619983', name: 'Пример лида' },
+          { telegram_id: '123456789', name: 'Тестовый пользователь' }
+        ];
+
+        const separator = document.createElement('option');
+        separator.disabled = true;
+        separator.textContent = '--- Примеры ---';
+        studentSelect.appendChild(separator);
+
+        knownStudents.forEach(student => {
+          const option = document.createElement('option');
+          option.value = student.telegram_id;
+          option.textContent = `${student.name} (${student.telegram_id})`;
+          option.dataset.telegramId = student.telegram_id;
+          studentSelect.appendChild(option);
+        });
         
       } catch (error) {
-        console.error('Error loading sessions:', error);
-        document.getElementById('chatContainer').innerHTML = 
-          '<div class="error">Ошибка загрузки списка сессий</div>';
+        console.error('Error loading students:', error);
+        // В случае ошибки добавляем базовые примеры
+        const studentSelect = document.getElementById('studentSelect');
+        studentSelect.innerHTML = `
+          <option value="">Выберите ученика...</option>
+          <option value="71272569" data-telegram-id="71272569">Крис (71272569)</option>
+          <option value="937619983" data-telegram-id="937619983">Пример лида (937619983)</option>
+          <option value="123456789" data-telegram-id="123456789">Тестовый пользователь (123456789)</option>
+        `;
       }
     }
 
     async function loadChatHistory() {
-      const sessionSelect = document.getElementById('sessionSelect');
-      const customSession = document.getElementById('customSession');
-      const sessionId = customSession.value.trim() || sessionSelect.value;
+      const studentSelect = document.getElementById('studentSelect');
+      const agentSelect = document.getElementById('agentSelect');
+      const customMemoryKey = document.getElementById('customMemoryKey');
       
-      if (!sessionId) {
-        alert('Пожалуйста, выберите или введите session_id');
-        return;
+      let memoryKey;
+      
+      // Проверяем, ввели ли ключ памяти напрямую
+      if (customMemoryKey.value.trim()) {
+        memoryKey = customMemoryKey.value.trim();
+      } else {
+        // Генерируем ключ памяти из выбранных значений
+        const studentId = studentSelect.value;
+        const agentType = agentSelect.value;
+        
+        if (!studentId || !agentType) {
+          alert('Пожалуйста, выберите ученика и агента, или введите ключ памяти напрямую');
+          return;
+        }
+        
+        memoryKey = `${agentType}_${studentId}`;
       }
 
       const chatContainer = document.getElementById('chatContainer');
       chatContainer.innerHTML = '<div class="loading">Загрузка истории чата...</div>';
 
       try {
-        // Здесь должен быть API endpoint для получения истории чата
-        // Пока используем моковые данные на основе предоставленного примера
-        const mockData = await getMockChatData(sessionId);
+        // Запрос к API для получения истории чата по ключу памяти
+        const response = await fetch(`/api/chat-history?memory_key=${encodeURIComponent(memoryKey)}`, {
+          headers: { "x-telegram-id": userId }
+        });
         
-        allMessages = mockData;
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const { messages } = await response.json();
+        
+        if (!messages || messages.length === 0) {
+          // Если нет данных в API, показываем моковые данные для демонстрации
+          allMessages = await getMockChatData(memoryKey);
+        } else {
+          allMessages = messages;
+        }
+        
         renderMessages();
         updateStats();
         
         document.getElementById('filterControls').style.display = 'flex';
         document.getElementById('stats').style.display = 'flex';
         
+        // Показываем информацию о загруженном ключе памяти
+        updateMemoryKeyInfo(memoryKey);
+        
       } catch (error) {
         console.error('Error loading chat history:', error);
-        chatContainer.innerHTML = 
-          '<div class="error">Ошибка загрузки истории чата: ' + error.message + '</div>';
+        
+        // В случае ошибки API показываем моковые данные
+        console.log('Falling back to mock data...');
+        try {
+          allMessages = await getMockChatData(memoryKey);
+          renderMessages();
+          updateStats();
+          document.getElementById('filterControls').style.display = 'flex';
+          document.getElementById('stats').style.display = 'flex';
+          updateMemoryKeyInfo(memoryKey + ' (демо данные)');
+        } catch (mockError) {
+          chatContainer.innerHTML = 
+            '<div class="error">Ошибка загрузки истории чата: ' + error.message + '</div>';
+        }
       }
     }
 
-    // Моковые данные на основе предоставленного примера
-    async function getMockChatData(sessionId) {
+    function updateMemoryKeyInfo(memoryKey) {
+      const [agentType, telegramId] = memoryKey.split('_');
+      const agentNames = {
+        'hanna_user': '🤖 Main Agent (основной)',
+        'student': '👤 Student Agent (ученик)', 
+        'lead': '🌟 Lead Agent (лид)'
+      };
+      
+      const agentName = agentNames[agentType] || '❓ Неизвестный агент';
+      
+      // Добавляем информацию о текущем ключе памяти
+      const existingInfo = document.querySelector('.memory-key-info');
+      if (existingInfo) existingInfo.remove();
+      
+      const memoryKeyInfo = document.createElement('div');
+      memoryKeyInfo.className = 'memory-key-info';
+      memoryKeyInfo.style.cssText = `
+        background: var(--card-bg);
+        border-radius: 6px;
+        padding: 0.8rem;
+        margin: 1rem 0;
+        border: 1px solid var(--border-color);
+        font-size: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      `;
+      memoryKeyInfo.innerHTML = `
+        <span><strong>Ключ памяти:</strong> <code style="background: var(--bg-color); padding: 2px 6px; border-radius: 4px; font-family: monospace;">${memoryKey}</code></span>
+        <span><strong>Агент:</strong> ${agentName}</span>
+        <span><strong>Telegram ID:</strong> ${telegramId || 'не указан'}</span>
+      `;
+      
+      const filterControls = document.getElementById('filterControls');
+      filterControls.parentNode.insertBefore(memoryKeyInfo, filterControls);
+    }
+
+    // Моковые данные для разных агентов по ключам памяти
+    async function getMockChatData(memoryKey) {
       // Имитация API запроса
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      if (sessionId === 'student_71272569') {
+      const [agentType, telegramId] = memoryKey.split('_');
+      
+      if (memoryKey === 'student_71272569') {
         return [
           {
             id: 33,
@@ -376,40 +496,100 @@
               additional_kwargs: {},
               response_metadata: {}
             })
+          }
+        ];
+      }
+      
+      if (memoryKey === 'hanna_user_71272569') {
+        return [
+          {
+            id: 1,
+            session_id: "hanna_user_71272569",
+            message: JSON.stringify({
+              type: "system",
+              content: "Инициализация Main Agent для пользователя 71272569",
+              additional_kwargs: {},
+              response_metadata: {}
+            })
           },
           {
-            id: 36,
-            session_id: "student_71272569",
+            id: 2,
+            session_id: "hanna_user_71272569",
+            message: JSON.stringify({
+              type: "human",
+              content: "Привет Ханна! Как дела?",
+              additional_kwargs: {},
+              response_metadata: {}
+            })
+          },
+          {
+            id: 3,
+            session_id: "hanna_user_71272569", 
             message: JSON.stringify({
               type: "ai",
-              content: "Отлично! Вот несколько упражнений с словом 'ringard':\n\n**Упражнение 1: Переводы**\n1. Этот свитер немного старомодный.\n2. Не будь некрутым!\n3. Он рассказывает банальные шутки.\n\n**Упражнение 2: Ситуации**\nОпишите, что бы вы сказали по-французски:\n- Ваш друг носит очень старомодную шляпу\n- Кто-то предлагает послушать музыку 80-х\n- Вы видите декор в стиле китч\n\nХотите проверить ответы или добавить ещё слова?",
+              content: "Привет! У меня всё отлично, спасибо! Готова помочь с изучением языков. У тебя есть вопросы по французскому или английскому?",
               tool_calls: [],
               additional_kwargs: {},
-              response_metadata: {},
-              invalid_tool_calls: []
+              response_metadata: {}
             })
           }
         ];
       }
       
-      // Для других session_id возвращаем пустой массив или генерируем данные
+      if (memoryKey === 'lead_937619983') {
+        return [
+          {
+            id: 1,
+            session_id: "lead_937619983",
+            message: JSON.stringify({
+              type: "system",
+              content: "Инициализация Lead Agent для потенциального клиента 937619983",
+              additional_kwargs: {},
+              response_metadata: {}
+            })
+          },
+          {
+            id: 2,
+            session_id: "lead_937619983",
+            message: JSON.stringify({
+              type: "human",
+              content: "Здравствуйте! Хочу узнать про уроки французского",
+              additional_kwargs: {},
+              response_metadata: {}
+            })
+          },
+          {
+            id: 3,
+            session_id: "lead_937619983",
+            message: JSON.stringify({
+              type: "ai",
+              content: "Здравствуйте! Рада, что вы заинтересовались изучением французского! Ханна - сертифицированный преподаватель CELTA Grade A с большим опытом.\n\nРасскажите немного о себе:\n- Какой у вас уровень французского сейчас?\n- Какие цели хотите достичь?\n- Сколько времени готовы уделять занятиям в неделю?\n\nЭто поможет мне предложить оптимальную программу обучения!",
+              tool_calls: [],
+              additional_kwargs: {},
+              response_metadata: {}
+            })
+          }
+        ];
+      }
+      
+      // Для других ключей памяти генерируем базовые данные
       return [
         {
           id: 1,
-          session_id: sessionId,
+          session_id: memoryKey,
           message: JSON.stringify({
             type: "system",
-            content: `Начата сессия ${sessionId}`,
+            content: `Инициализация агента с ключом памяти: ${memoryKey}`,
             additional_kwargs: {},
             response_metadata: {}
           })
         },
         {
           id: 2, 
-          session_id: sessionId,
+          session_id: memoryKey,
           message: JSON.stringify({
             type: "ai",
-            content: "Привет! Я твой помощник по изучению языков. Как дела?",
+            content: `Привет! Я ${agentType === 'hanna_user' ? 'Main Agent Ханны' : agentType === 'student' ? 'Student Agent' : agentType === 'lead' ? 'Lead Agent' : 'агент системы'}. Telegram ID: ${telegramId}`,
             tool_calls: [],
             additional_kwargs: {},
             response_metadata: {}
@@ -527,8 +707,8 @@
       return div.innerHTML;
     }
 
-    // Обработка Enter в поле ввода
-    document.getElementById('customSession').addEventListener('keypress', function(e) {
+    // Обработка Enter в поле ввода ключа памяти
+    document.getElementById('customMemoryKey').addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
         loadChatHistory();
       }
