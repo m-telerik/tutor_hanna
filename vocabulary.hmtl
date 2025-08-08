@@ -432,3 +432,30 @@
           applyFilters();
         } else {
           alert('Ошибка при обновлении статуса слова');
+        }
+      } catch (error) {
+        console.error('Error marking word as studied:', error);
+        alert('Ошибка при обновлении статуса слова');
+      }
+    }
+
+    // Обработчики событий
+    searchInput.addEventListener('input', applyFilters);
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        applyFilters();
+      });
+    });
+
+    // Инициализация Telegram WebApp
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+  </script>
+</body>
+</html>
