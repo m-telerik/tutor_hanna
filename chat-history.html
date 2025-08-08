@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>История чатов</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: #fff;
+      --text-color: #202124;
+      --border-color: #e0e0e0;
+      --header-bg: #f1f3f4;
+      --accent-color: #007aff;
+      --card-bg: #f8f9fa;
+      --ai-bg: #e3f2fd;
+      --human-bg: #f3e5f5;
+      --system-bg: #fff3e0;
+      --ai-border: #2196f3;
+      --human-border: #9c27b0;
+      --system-border: #ff9800;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1a1a1a;
+        --text-color: #e1e1e1;
+        --border-color: #333;
+        --header-bg: #2d2d2d;
+        --accent-color: #0a84ff;
+        --card-bg: #2d2d2d;
+        --ai-bg: #1e3a5f;
+        --human-bg: #3d1a78;
+        --system-bg: #5d4037;
+        --ai-border: #64b5f6;
+        --human-border: #ba68c8;
+        --system-border: #ffb74d;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      font-size: 14px;
+      margin: 0.5rem;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .header {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .session-selector {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    select, input {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-color);
+      color: var(--text-color);
+      font-size: 14px;
+    }
+
+    .load-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .load-btn:hover {
+      opacity: 0.9;
+    }
+
+    .chat-container {
+      max-height: 70vh;
+      overflow-y: auto;
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .message {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      border-radius: 12px;
+      border-left: 4px solid;
+      position: relative;
+    }
+
+    .message.ai {
+      background: var(--ai-bg);
+      border-left-color: var(--ai-border);
+    }
+
+    .message.human {
+      background: var(--human-bg);
+      border-left-color: var(--human-border);
+    }
+
+    .message.system {
+      background: var(--system-bg);
+      border-left-color: var(--system-border);
+    }
+
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .message-type {
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.1);
+    }
+
+    .message-content {
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .tool-calls {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      background: rgba(0,0,0,0.05);
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-color);
+    }
+
+    .error {
+      color: #ff3b30;
+      text-align: center;
+      padding: 1rem;
+      background: rgba(255, 59, 48, 0.1);
+      border-radius: 6px;
+      margin: 1rem 0;
+    }
+
+    .stats {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .filter-controls {
+      margin-bottom: 1rem;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 4px 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-color);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .filter-btn.active {
+      background: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--accent-color);
+      cursor: pointer;
+      padding: 0.5rem 0;
+      font-size: 14px;
+    }
+
+    .back-btn:hover {
+      text-decoration: underline;
+    }
+
+    .emoji {
+      margin-right: 0.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .session-selector {
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button class="back-btn" onclick="history.back()">← Назад</button>
+
+  <div class="header">
+    <h1><span class="emoji">💬</span>История чатов</h1>
+    <div class="session-selector">
+      <select id="sessionSelect">
+        <option value="">Выберите сессию...</option>
+      </select>
+      <input type="text" id="customSession" placeholder="Или введите session_id" />
+      <button class="load-btn" onclick="loadChatHistory()">Загрузить</button>
+    </div>
+  </div>
+
+  <div class="filter-controls" id="filterControls" style="display: none;">
+    <button class="filter-btn active" onclick="filterMessages('all')">Все</button>
+    <button class="filter-btn" onclick="filterMessages('ai')">AI</button>
+    <button class="filter-btn" onclick="filterMessages('human')">Human</button>
+    <button class="filter-btn" onclick="filterMessages('system')">System</button>
+  </div>
+
+  <div class="stats" id="stats" style="display: none;"></div>
+
+  <div class="chat-container" id="chatContainer">
+    <div class="loading">Выберите сессию для просмотра истории чата</div>
+  </div>
+
+  <script>
+    const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 618647337;
+    let allMessages = [];
+    let currentFilter = 'all';
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.Telegram?.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      }
+      loadAvailableSessions();
+    });
+
+    async function loadAvailableSessions() {
+      try {
+        // Загружаем список студентов для получения session_id
+        const response = await fetch('/api/students', {
+          headers: { "x-telegram-id": userId }
+        });
+        
+        if (!response.ok) throw new Error('Failed to load sessions');
+        
+        const { students } = await response.json();
+        const sessionSelect = document.getElementById('sessionSelect');
+        
+        // Очищаем и добавляем опции
+        sessionSelect.innerHTML = '<option value="">Выберите сессию...</option>';
+        
+        students.forEach(student => {
+          if (student.next_session_id) {
+            const option = document.createElement('option');
+            option.value = student.next_session_id;
+            option.textContent = `${student.name} - ${student.next_session || 'Без даты'}`;
+            sessionSelect.appendChild(option);
+          }
+        });
+
+        // Добавляем пример session_id из данных
+        const exampleOption = document.createElement('option');
+        exampleOption.value = 'student_71272569';
+        exampleOption.textContent = 'Пример: student_71272569 (Крис)';
+        sessionSelect.appendChild(exampleOption);
+        
+      } catch (error) {
+        console.error('Error loading sessions:', error);
+        document.getElementById('chatContainer').innerHTML = 
+          '<div class="error">Ошибка загрузки списка сессий</div>';
+      }
+    }
+
+    async function loadChatHistory() {
+      const sessionSelect = document.getElementById('sessionSelect');
+      const customSession = document.getElementById('customSession');
+      const sessionId = customSession.value.trim() || sessionSelect.value;
+      
+      if (!sessionId) {
+        alert('Пожалуйста, выберите или введите session_id');
+        return;
+      }
+
+      const chatContainer = document.getElementById('chatContainer');
+      chatContainer.innerHTML = '<div class="loading">Загрузка истории чата...</div>';
+
+      try {
+        // Здесь должен быть API endpoint для получения истории чата
+        // Пока используем моковые данные на основе предоставленного примера
+        const mockData = await getMockChatData(sessionId);
+        
+        allMessages = mockData;
+        renderMessages();
+        updateStats();
+        
+        document.getElementById('filterControls').style.display = 'flex';
+        document.getElementById('stats').style.display = 'flex';
+        
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+        chatContainer.innerHTML = 
+          '<div class="error">Ошибка загрузки истории чата: ' + error.message + '</div>';
+      }
+    }
+
+    // Моковые данные на основе предоставленного примера
+    async function getMockChatData(sessionId) {
+      // Имитация API запроса
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (sessionId === 'student_71272569') {
+        return [
+          {
+            id: 33,
+            session_id: "student_71272569",
+            message: JSON.stringify({
+              type: "human",
+              content: "Привет! Можешь добавить слово 'ringard' в мой словарь?",
+              additional_kwargs: {},
+              response_metadata: {}
+            })
+          },
+          {
+            id: 34,
+            session_id: "student_71272569", 
+            message: JSON.stringify({
+              type: "ai",
+              content: "Готово, Крис — я добавила слово ringard / ringarde в твой словарь. \n\nВот что я сохранила:\n- ringard / ringarde — франц. (разг.)\n- Значение: старомодный, немодный, безвкусный; «некрутой»\n- Произношение: [ʁɛ̃ɡaʁ] (примерно «рэн-гар»), ringarde — [ʁɛ̃ɡaʁd]\n- Синонимы: démodé, dépassé, vieillot, kitsch\n- Примеры: Ce pull est un peu ringard. / Ne sois pas ringard ! / Il fait des blagues ringardes.\n- session_id не указан\n\nХочешь, я составлю пару коротких упражнений/диалогов с этим словом или добавлю ещё 2-3 похожих слова в словарь?",
+              tool_calls: [],
+              additional_kwargs: {},
+              response_metadata: {},
+              invalid_tool_calls: []
+            })
+          },
+          {
+            id: 35,
+            session_id: "student_71272569",
+            message: JSON.stringify({
+              type: "human", 
+              content: "Да, составь упражнения с этим словом!",
+              additional_kwargs: {},
+              response_metadata: {}
+            })
+          },
+          {
+            id: 36,
+            session_id: "student_71272569",
+            message: JSON.stringify({
+              type: "ai",
+              content: "Отлично! Вот несколько упражнений с словом 'ringard':\n\n**Упражнение 1: Переводы**\n1. Этот свитер немного старомодный.\n2. Не будь некрутым!\n3. Он рассказывает банальные шутки.\n\n**Упражнение 2: Ситуации**\nОпишите, что бы вы сказали по-французски:\n- Ваш друг носит очень старомодную шляпу\n- Кто-то предлагает послушать музыку 80-х\n- Вы видите декор в стиле китч\n\nХотите проверить ответы или добавить ещё слова?",
+              tool_calls: [],
+              additional_kwargs: {},
+              response_metadata: {},
+              invalid_tool_calls: []
+            })
+          }
+        ];
+      }
+      
+      // Для других session_id возвращаем пустой массив или генерируем данные
+      return [
+        {
+          id: 1,
+          session_id: sessionId,
+          message: JSON.stringify({
+            type: "system",
+            content: `Начата сессия ${sessionId}`,
+            additional_kwargs: {},
+            response_metadata: {}
+          })
+        },
+        {
+          id: 2, 
+          session_id: sessionId,
+          message: JSON.stringify({
+            type: "ai",
+            content: "Привет! Я твой помощник по изучению языков. Как дела?",
+            tool_calls: [],
+            additional_kwargs: {},
+            response_metadata: {}
+          })
+        }
+      ];
+    }
+
+    function renderMessages() {
+      const container = document.getElementById('chatContainer');
+      
+      const filteredMessages = currentFilter === 'all' 
+        ? allMessages 
+        : allMessages.filter(msg => {
+            try {
+              const parsed = JSON.parse(msg.message);
+              return parsed.type === currentFilter;
+            } catch {
+              return false;
+            }
+          });
+
+      if (filteredMessages.length === 0) {
+        container.innerHTML = '<div class="loading">Нет сообщений для отображения</div>';
+        return;
+      }
+
+      container.innerHTML = filteredMessages.map(msg => {
+        try {
+          const parsed = JSON.parse(msg.message);
+          const timestamp = new Date().toLocaleString('ru-RU'); // Если есть timestamp в данных, используйте его
+          
+          return `
+            <div class="message ${parsed.type}">
+              <div class="message-header">
+                <span class="message-type">${getTypeEmoji(parsed.type)} ${parsed.type}</span>
+                <span>ID: ${msg.id} | ${timestamp}</span>
+              </div>
+              <div class="message-content">${escapeHtml(parsed.content)}</div>
+              ${parsed.tool_calls && parsed.tool_calls.length > 0 ? `
+                <div class="tool-calls">
+                  <strong>Tool calls:</strong> ${JSON.stringify(parsed.tool_calls, null, 2)}
+                </div>
+              ` : ''}
+              ${parsed.invalid_tool_calls && parsed.invalid_tool_calls.length > 0 ? `
+                <div class="tool-calls">
+                  <strong>Invalid tool calls:</strong> ${JSON.stringify(parsed.invalid_tool_calls, null, 2)}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        } catch (error) {
+          return `
+            <div class="message system">
+              <div class="message-header">
+                <span class="message-type">⚠️ ERROR</span>
+                <span>ID: ${msg.id}</span>
+              </div>
+              <div class="message-content">Ошибка парсинга сообщения: ${escapeHtml(msg.message)}</div>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    function filterMessages(type) {
+      currentFilter = type;
+      
+      // Обновляем активную кнопку
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      renderMessages();
+      updateStats();
+    }
+
+    function updateStats() {
+      const stats = document.getElementById('stats');
+      const typeCounts = { ai: 0, human: 0, system: 0, error: 0 };
+      
+      allMessages.forEach(msg => {
+        try {
+          const parsed = JSON.parse(msg.message);
+          typeCounts[parsed.type] = (typeCounts[parsed.type] || 0) + 1;
+        } catch {
+          typeCounts.error++;
+        }
+      });
+      
+      stats.innerHTML = `
+        <span>Всего: ${allMessages.length}</span>
+        <span>AI: ${typeCounts.ai}</span>
+        <span>Human: ${typeCounts.human}</span>
+        <span>System: ${typeCounts.system}</span>
+        ${typeCounts.error > 0 ? `<span>Ошибки: ${typeCounts.error}</span>` : ''}
+      `;
+    }
+
+    function getTypeEmoji(type) {
+      const emojis = {
+        ai: '🤖',
+        human: '👤', 
+        system: '⚙️',
+        assistant: '🤖',
+        user: '👤'
+      };
+      return emojis[type] || '❓';
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Обработка Enter в поле ввода
+    document.getElementById('customSession').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        loadChatHistory();
+      }
+    });
+  </script>
+</body>
+</html>
