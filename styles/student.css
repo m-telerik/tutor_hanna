@@ -1,3 +1,57 @@
+/* ===== ОБНОВЛЕННЫЕ СТИЛИ ТАБЛИЦЫ СТУДЕНТОВ ===== */
+
+/* Имя студента с email */
+.student-name a {
+  color: var(--text-color) !important;
+  text-decoration: none !important;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.student-name a:hover {
+  color: var(--accent-color) !important;
+  text-decoration: none !important;
+}
+
+.student-email {
+  color: var(--text-color);
+  font-size: 11px;
+  margin-top: 2px;
+  opacity: 0.7;
+  font-style: italic;
+}
+
+/* Колонка Telegram */
+.telegram-column {
+  width: 120px;
+  min-width: 120px;
+  text-align: center;
+}
+
+.telegram-link {
+  display: inline-block;
+  background: var(--accent-color);
+  color: white !important;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none !important;
+  transition: all 0.2s;
+}
+
+.telegram-link:hover {
+  opacity: 0.9;
+  text-decoration: none !important;
+  transform: translateY(-1px);
+}
+
+.no-telegram {
+  color: var(--text-color);
+  opacity: 0.5;
+  font-size: 12px;
+}
+
 /* ===== СТИЛИ ДЛЯ СТУДЕНТОВ ===== */
 
 /* ===== ХЕДЕР С ПОМОЩЬЮ ===== */
@@ -697,6 +751,21 @@
     font-size: 16px;
   }
   
+  /* Таблица студентов на мобильных */
+  .telegram-column {
+    width: 100px;
+    min-width: 100px;
+  }
+  
+  .telegram-link {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  
+  .student-email {
+    font-size: 10px;
+  }
+  
   .info-item {
     flex-direction: column;
     align-items: flex-start;
@@ -804,6 +873,25 @@
   
   .help-link .emoji {
     font-size: 14px;
+  }
+  
+  /* Таблица студентов на очень маленьких экранах */
+  .telegram-column {
+    width: 80px;
+    min-width: 80px;
+  }
+  
+  .telegram-link {
+    font-size: 9px;
+    padding: 2px 4px;
+  }
+  
+  .student-name {
+    font-size: 12px;
+  }
+  
+  .student-email {
+    font-size: 9px;
   }
   
   .vocab-table th,
