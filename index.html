@@ -5,385 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hanna English & French</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root {
-      --bg-color: #fff;
-      --text-color: #202124;
-      --border-color: #e0e0e0;
-      --header-bg: #f1f3f4;
-      --accent-color: #007aff;
-      --button-bg: #007aff;
-      --button-text: #fff;
-      --card-bg: #f8f9fa;
-      --tutor-accent: #28a745;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-color: #1a1a1a;
-        --text-color: #e1e1e1;
-        --border-color: #333;
-        --header-bg: #2d2d2d;
-        --accent-color: #0a84ff;
-        --button-bg: #0a84ff;
-        --button-text: #fff;
-        --card-bg: #2d2d2d;
-        --tutor-accent: #34d058;
-      }
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-      font-size: 14px;
-      margin: 0.5rem;
-      padding: 0;
-      background: var(--bg-color);
-      color: var(--text-color);
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    h1, h2, h3 {
-      font-size: 1.2rem;
-      margin: 0.5rem 0;
-    }
-
-    .welcome-card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 1.2rem;
-      margin: 0.8rem 0;
-      text-align: center;
-      border: 1px solid var(--border-color);
-    }
-
-    .welcome-card.gradient {
-      background: linear-gradient(135deg, var(--accent-color) 0%, #5856d6 100%);
-      color: white;
-      border: none;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .welcome-card.gradient::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      z-index: 1;
-    }
-
-    .welcome-card.gradient * {
-      position: relative;
-      z-index: 2;
-    }
-
-    .welcome-card.gradient p {
-      opacity: 0.9;
-      margin: 0.5rem 0;
-    }
-
-    .welcome-card.gradient h2 {
-      margin: 0 0 0.8rem 0;
-    }
-
-    .student-info {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 1rem;
-      margin: 1rem 0;
-      border: 1px solid var(--border-color);
-    }
-
-    .next-lesson {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 1rem;
-      margin: 1rem 0;
-      border: 1px solid var(--border-color);
-    }
-
-    .student-actions {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 12px;
-      margin: 1.5rem 0;
-    }
-
-    .action-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 1rem;
-      text-align: center;
-      text-decoration: none;
-      color: var(--text-color);
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-
-    .action-card:hover {
-      background: var(--accent-color);
-      color: white;
-      text-decoration: none;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
-    }
-
-    .action-card .emoji {
-      font-size: 1.5em;
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-
-    .action-card strong {
-      display: block;
-      margin-bottom: 0.25rem;
-    }
-
-    .action-card small {
-      display: block;
-      opacity: 0.8;
-      margin-top: 0.25rem;
-    }
-
-    .book-lesson-btn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: var(--button-bg);
-      color: var(--button-text);
-      border: none;
-      border-radius: 25px;
-      padding: 12px 20px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-      z-index: 1000;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .book-lesson-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
-    }
-
-    a {
-      color: var(--accent-color);
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 2rem;
-      color: var(--text-color);
-    }
-
-    .error {
-      color: #ff3b30;
-      text-align: center;
-      padding: 1rem;
-    }
-
-    .emoji {
-      font-size: 1.5em;
-      margin: 0 0.5rem;
-    }
-
-    .contact-link {
-      display: inline-block;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      text-decoration: none;
-      margin-top: 1rem;
-      font-weight: 500;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      transition: all 0.2s;
-    }
-
-    .contact-link:hover {
-      background: rgba(255, 255, 255, 0.3);
-      text-decoration: none;
-      transform: translateY(-1px);
-    }
-
-    .tutor-section {
-      background: linear-gradient(135deg, var(--tutor-accent) 0%, #20c997 100%);
-      border-radius: 12px;
-      padding: 1.2rem;
-      margin: 1.5rem 0 0.8rem 0;
-      text-align: center;
-      color: white;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .tutor-section::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      right: -50%;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      z-index: 1;
-    }
-
-    .tutor-section * {
-      position: relative;
-      z-index: 2;
-    }
-
-    .tutor-section h3 {
-      margin: 0 0 0.8rem 0;
-      font-size: 1.1rem;
-    }
-
-    .tutor-section p {
-      margin: 0 0 1.2rem 0;
-      opacity: 0.9;
-      line-height: 1.4;
-    }
-
-    .tutor-link {
-      display: inline-block;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      text-decoration: none;
-      font-weight: 500;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      transition: all 0.2s;
-    }
-
-    .tutor-link:hover {
-      background: rgba(255, 255, 255, 0.3);
-      text-decoration: none;
-      transform: translateY(-1px);
-    }
-
-    .footer-divider {
-      height: 1px;
-      background: var(--border-color);
-      margin: 1.5rem 0 0.8rem 0;
-      opacity: 0.5;
-    }
-
-    .admin-link {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #ff6b35;
-      color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 8px 12px;
-      font-size: 12px;
-      font-weight: 500;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
-      z-index: 1000;
-      transition: transform 0.2s;
-      text-decoration: none;
-    }
-
-    .admin-link:hover {
-      transform: translateY(-1px);
-      text-decoration: none;
-    }
-  </style>
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/student.css">
 </head>
 <body>
-  <div id="app">
-    <div class="loading">Загрузка...</div>
+  <div class="page-content">
+    <div id="app">
+      <div class="loading">Загрузка...</div>
+    </div>
   </div>
 
   <script>
+    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
 
-const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
-
-// Проверяем, есть ли валидный userId
-if (!userId) {
-  console.warn('User ID not available from Telegram WebApp');
-}
-
-// Ссылка на календарь Ханны
-const CALENDAR_LINK = 'https://calendar.google.com/calendar/u/0?cid=Y18yZmI3ZjY5ODg5MjUyODY3MzM5YTUwZGE4ZDE4M2Q5NzQ4ZjFkMmMwYjdhZTZhYTBhMzQ1MTM2MTJhZjUzOTE3QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20';
-
-// Проверка на админа (ТОЛЬКО если userId валиден)
-const ADMIN_IDS = [618647337, 2341205];
-const isAdmin = userId && ADMIN_IDS.includes(userId);
-
-async function loadUserRole() {
-  try {
-    // Если нет userId, показываем вид для потенциального студента
+    // Проверяем, есть ли валидный userId
     if (!userId) {
-      renderProspectView();
-      return;
+      console.warn('User ID not available from Telegram WebApp');
     }
 
-    const response = await fetch("/api/user-role", {
-      headers: { "x-telegram-id": userId }
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch user role');
-    }
-    
-    const data = await response.json();
-    renderContent(data);
-  } catch (error) {
-    console.error('Error loading user role:', error);
-    // Если ошибка API, показываем view для потенциального студента
-    renderProspectView();
-  }
-}
+    // Ссылка на календарь Ханны
+    const CALENDAR_LINK = 'https://calendar.google.com/calendar/u/0?cid=Y18yZmI3ZjY5ODg5MjUyODY3MzM5YTUwZGE4ZDE4M2Q5NzQ4ZjFkMmMwYjdhZTZhYTBhMzQ1MTM2MTJhZjUzOTE3QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20';
 
-function renderContent(userData) {
-  const app = document.getElementById('app');
-  
-  // Показываем ссылку на админку ТОЛЬКО для валидных админов
-  if (isAdmin && userId) {
-    const adminLink = document.createElement('a');
-    adminLink.href = 'admin.html';
-    adminLink.className = 'admin-link';
-    adminLink.innerHTML = '<span class="emoji">👑</span>Админка';
-    document.body.appendChild(adminLink);
-  }
-  
-  if (userData.role === 'admin') {
-    // Редирект админов на админку
-    window.location.href = 'admin.html';
-    return;
-  } else if (userData.role === 'student') {
-    renderStudentView(userData);
-  } else {
-    renderProspectView();
-  }
-}
+    // Проверка на админа (ТОЛЬКО если userId валиден)
+    const ADMIN_IDS = [618647337, 2341205];
+    const isAdmin = userId && ADMIN_IDS.includes(userId);
+
+    async function loadUserRole() {
+      try {
+        // Если нет userId, показываем вид для потенциального студента
+        if (!userId) {
+          renderProspectView();
+          return;
+        }
+
+        const response = await fetch("/api/user-role", {
+          headers: { "x-telegram-id": userId }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch user role');
+        }
+        
+        const data = await response.json();
+        renderContent(data);
+      } catch (error) {
+        console.error('Error loading user role:', error);
+        // Если ошибка API, показываем view для потенциального студента
+        renderProspectView();
+      }
+    }
 
     function renderContent(userData) {
       const app = document.getElementById('app');
       
-      // Показываем ссылку на админку для админов
-      if (isAdmin) {
+      // Показываем ссылку на админку ТОЛЬКО для валидных админов
+      if (isAdmin && userId) {
         const adminLink = document.createElement('a');
         adminLink.href = 'admin.html';
         adminLink.className = 'admin-link';
@@ -419,9 +95,7 @@ function renderContent(userData) {
               <p>Язык: ${nextLesson.language || '—'}</p>
             </div>
             <div>
-              <a href="lesson.html?session_id=${nextLesson.session_id}" 
-                 style="background: var(--button-bg); color: var(--button-text); 
-                        padding: 8px 16px; border-radius: 16px; text-decoration: none;">
+              <a href="lesson.html?session_id=${nextLesson.session_id}" class="btn-primary">
                 Открыть урок
               </a>
             </div>
