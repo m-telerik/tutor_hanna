@@ -1,0 +1,132 @@
+/* ===== СТИЛИ ДЛЯ ИСТОРИИ ЧАТОВ ===== */
+
+/* Специальные переменные */
+:root {
+  --ai-bg: #e3f2fd;
+  --human-bg: #f3e5f5;
+  --system-bg: #fff3e0;
+  --ai-border: #2196f3;
+  --human-border: #9c27b0;
+  --system-border: #ff9800;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ai-bg: #1e3a5f;
+    --human-bg: #3d1a78;
+    --system-bg: #5d4037;
+    --ai-border: #64b5f6;
+    --human-border: #ba68c8;
+    --system-border: #ffb74d;
+  }
+}
+
+/* Заголовок */
+.header {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+/* Типы сообщений */
+.type-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.type-badge.ai {
+  background: var(--ai-bg);
+  color: var(--ai-border);
+}
+
+.type-badge.human {
+  background: var(--human-bg);
+  color: var(--human-border);
+}
+
+.type-badge.system {
+  background: var(--system-bg);
+  color: var(--system-border);
+}
+
+/* Агенты */
+.agent-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* Контент */
+.content-cell {
+  max-width: 400px;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+
+/* Статистика */
+.stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 12px;
+  opacity: 0.7;
+  flex-wrap: wrap;
+}
+
+/* Информация о ключе памяти */
+.memory-key-info {
+  background: var(--card-bg);
+  border-radius: 6px;
+  padding: 0.8rem;
+  margin: 1rem 0;
+  border: 1px solid var(--border-color);
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Статус контейнер */
+#statusContainer {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+  .content-cell {
+    max-width: 200px;
+  }
+
+  .data-table {
+    font-size: 12px;
+  }
+
+  .memory-key-info {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
