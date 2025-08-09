@@ -35,4 +35,194 @@
     </div>
 
     <div class="filters">
-      <input type="text" class=
+      <input type="text" class="search-box" id="search" placeholder="Поиск по словам..." />
+      <button class="filter-btn active" data-filter="all">Все</button>
+      <button class="filter-btn" data-filter="english">English</button>
+      <button class="filter-btn" data-filter="french">French</button>
+      <button class="filter-btn" data-filter="studied">Изучено</button>
+      <button class="filter-btn" data-filter="new">Новые</button>
+    </div>
+
+    <div class="vocab-list">
+      <div class="table-container">
+        <table id="vocab-table">
+          <thead>
+            <tr>
+              <th>Дата урока</th>
+              <th>Слово</th>
+              <th>Перевод</th>
+              <th>Пример</th>
+              <th>Язык</th>
+              <th>Изучено</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody id="vocab-tbody">
+            <tr>
+              <td colspan="7" class="loading">Загрузка...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const studentName = new URLSearchParams(window.location.search).get("student_name");
+    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
+    const vocabTbody = document.getElementById("vocab-tbody");
+    const searchInput = document.getElementById("search");
+    
+    let allWords = [];
+    let filteredWords = [];
+    let currentFilter = 'all';
+
+    if (!studentName || !userId) {
+      vocabTbody.innerHTML = '<tr><td colspan="7" class="error">Недостаточно данных для отображения</td></tr>';
+    } else {
+      document.querySelector('h1').innerHTML = `<span class="emoji">📚</span>Словарь: ${studentName}`;
+      loadVocabulary();
+    }
+
+    async function loadVocabulary() {
+      try {
+        const res = await fetch(`/api/vocab?user_name=${encodeURIComponent(studentName)}`, {
+          headers: { "x-telegram-id": userId }
+        });
+        const { words = [] } = await res.json();
+        
+        allWords = words;
+        updateStats();
+        applyFilters();
+      } catch (error) {
+        console.error('Error loading vocabulary:', error);
+        vocabTbody.innerHTML = '<tr><td colspan="7" class="error">Ошибка загрузки словаря</td></tr>';
+      }
+    }
+
+    function updateStats() {
+      const englishWords = allWords.filter(w => w.language === 'english');
+      const frenchWords = allWords.filter(w => w.language === 'french');
+      const studiedWords = allWords.filter(w => w.studied_count > 0);
+
+      document.getElementById('total-words').textContent = allWords.length;
+      document.getElementById('english-words').textContent = englishWords.length;
+      document.getElementById('french-words').textContent = frenchWords.length;
+      document.getElementById('studied-words').textContent = studiedWords.length;
+    }
+
+    function applyFilters() {
+      let filtered = [...allWords];
+      
+      // Фильтр по языку и статусу
+      if (currentFilter === 'english') {
+        filtered = filtered.filter(w => w.language === 'english');
+      } else if (currentFilter === 'french') {
+        filtered = filtered.filter(w => w.language === 'french');
+      } else if (currentFilter === 'studied') {
+        filtered = filtered.filter(w => w.studied_count > 0);
+      } else if (currentFilter === 'new') {
+        filtered = filtered.filter(w => w.studied_count === 0);
+      }
+
+      // Поиск
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      if (searchTerm) {
+        filtered = filtered.filter(w => 
+          w.word.toLowerCase().includes(searchTerm) ||
+          (w.translation && w.translation.toLowerCase().includes(searchTerm)) ||
+          (w.example && w.example.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      filteredWords = filtered;
+      renderTable();
+    }
+
+    function renderTable() {
+      if (filteredWords.length === 0) {
+        vocabTbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-state">
+              <div class="emoji">🔍</div>
+              <p>Слова не найдены</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      vocabTbody.innerHTML = filteredWords.map(w => `
+        <tr class="word-row ${w.studied_count > 0 ? 'studied' : ''}">
+          <td>${w.session_date ? new Date(w.session_date).toLocaleDateString('ru-RU') : '—'}</td>
+          <td><strong>${w.word}</strong></td>
+          <td>${w.translation || ''}</td>
+          <td>${w.example || ''}</td>
+          <td>
+            ${w.language ? `<span class="language-badge ${w.language}">${w.language}</span>` : '—'}
+          </td>
+          <td>
+            ${w.studied_count > 0 ? `<span style="color: var(--success-color);">${w.studied_count}x</span>` : '—'}
+          </td>
+          <td>
+            <div class="word-actions">
+              <button class="action-btn ${w.studied_count > 0 ? 'studied' : ''}" 
+                      onclick="markStudied('${w.id}')">
+                ${w.studied_count > 0 ? '✓' : 'Изучить'}
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function markStudied(wordId) {
+      try {
+        const res = await fetch('/api/vocab', {
+          method: 'PUT',
+          headers: {
+            "Content-Type": "application/json",
+            "x-telegram-id": userId
+          },
+          body: JSON.stringify({ id: wordId, studied: true })
+        });
+
+        if (res.ok) {
+          // Обновляем локальные данные
+          const word = allWords.find(w => w.id === wordId);
+          if (word) {
+            word.studied_count = (word.studied_count || 0) + 1;
+            word.last_studied_at = new Date().toISOString();
+          }
+          
+          updateStats();
+          applyFilters();
+        } else {
+          alert('Ошибка при обновлении статуса слова');
+        }
+      } catch (error) {
+        console.error('Error marking word as studied:', error);
+        alert('Ошибка при обновлении статуса слова');
+      }
+    }
+
+    // Обработчики событий
+    searchInput.addEventListener('input', applyFilters);
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        applyFilters();
+      });
+    });
+
+    // Инициализация Telegram WebApp
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+  </script>
+</body>
+</html>
