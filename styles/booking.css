@@ -1,96 +1,96 @@
-/* ===== СТИЛИ ДЛЯ БРОНИРОВАНИЯ ===== */
+/* ===== СТИЛИ ДЛЯ РЕЖИМОВ БРОНИРОВАНИЯ ===== */
 
-/* Контейнер календаря */
-.calendar-container {
-  background: var(--card-bg);
+/* Контейнеры режимов бронирования */
+.booking-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.student-booking .booking-badge {
+  background: #28a745;
+  color: white;
+}
+
+.teacher-booking .booking-badge {
+  background: #6f42c1;
+  color: white;
+}
+
+/* Бейджи режимов бронирования */
+.booking-badge {
+  padding: 3px 8px;
   border-radius: 12px;
-  padding: 1rem;
-  margin: 1rem 0;
-  border: 1px solid var(--border-color);
-  min-height: 60vh;
+  font-size: 10px;
+  font-weight: 500;
+  display: inline-block;
+  text-align: center;
+  min-width: 80px;
 }
 
-.iframe-container {
-  width: 100%;
-  height: 500px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
+.booking-badge.student {
+  background: var(--success-color);
+  color: white;
 }
 
-.calendar-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background: var(--bg-color);
+.booking-badge.teacher {
+  background: var(--admin-accent);
+  color: white;
 }
 
-/* Навигационная панель */
-.navigation-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.step {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.step-label {
+/* Обновленные стили для имен студентов */
+.student-name a {
+  color: var(--text-color) !important;
+  text-decoration: none !important;
   font-weight: 600;
-  font-size: 13px;
+  transition: color 0.2s;
+}
+
+.student-name a:hover {
+  color: var(--accent-color) !important;
+  text-decoration: none !important;
+}
+
+.student-username a {
+  color: var(--accent-color) !important;
+  font-size: 11px;
+  text-decoration: none !important;
+  transition: opacity 0.2s;
+}
+
+.student-username a:hover {
+  opacity: 0.8;
+  text-decoration: none !important;
+}
+
+/* Улучшенные стили для таблицы */
+.table-container table th {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   color: var(--text-color);
   opacity: 0.8;
 }
 
-.step-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.load-btn {
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: opacity 0.2s;
-}
-
-.load-btn:hover {
-  opacity: 0.9;
-}
-
-.load-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Анимации загрузки */
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.table-container table td {
+  vertical-align: top;
+  padding: 14px 12px;
 }
 
 /* Адаптивность */
-@media (max-width: 600px) {
-  .step-controls {
-    flex-direction: column;
-    align-items: stretch;
+@media (max-width: 768px) {
+  .booking-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    min-width: 70px;
   }
   
-  select, input {
-    min-width: auto;
-    width: 100%;
+  .student-name {
+    font-size: 13px;
   }
-
-  .iframe-container {
-    height: 400px;
+  
+  .student-username {
+    font-size: 10px;
   }
 }
