@@ -1,0 +1,181 @@
+/* ===== СТИЛИ ДЛЯ СЛОВАРЯ ===== */
+
+/* Фильтры */
+.filters {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid var(--border-color);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-btn {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn.active {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.search-box {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--input-bg);
+  color: var(--text-color);
+}
+
+/* Список слов */
+.vocab-list {
+  margin: 2rem 0;
+}
+
+.vocab-section {
+  margin-bottom: 2rem;
+}
+
+.vocab-section h3 {
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--accent-color);
+}
+
+.word-row.studied {
+  opacity: 0.7;
+}
+
+.word-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.action-btn.studied {
+  background: var(--success-color);
+  color: white;
+  border-color: var(--success-color);
+}
+
+/* Языковые бейджи */
+.language-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.language-badge.english {
+  background: #007aff;
+}
+
+.language-badge.french {
+  background: #5856d6;
+}
+
+/* Ссылка на словарь */
+.vocabulary-link {
+  background: var(--success-color);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-block;
+  margin: 1rem 0;
+}
+
+.vocabulary-link:hover {
+  opacity: 0.9;
+  text-decoration: none;
+}
+
+/* Формы добавления слов */
+form {
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  border: 1px solid var(--border-color);
+}
+
+form h3 {
+  margin-top: 0;
+}
+
+button[type="submit"] {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+button[type="submit"]:hover {
+  opacity: 0.9;
+  text-decoration: none;
+}
+
+/* Специальные строки */
+tr.current-lesson {
+  background-color: var(--accent-color) !important;
+  color: white;
+}
+
+tr.current-lesson:hover {
+  background-color: var(--accent-color) !important;
+  opacity: 0.9;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-box {
+    min-width: auto;
+    width: 100%;
+  }
+
+  .word-actions {
+    flex-direction: column;
+  }
+}
