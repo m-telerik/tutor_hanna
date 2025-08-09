@@ -1,0 +1,316 @@
+/* ===== АДМИН ПАНЕЛЬ ===== */
+.admin-header {
+  background: linear-gradient(135deg, var(--admin-accent) 0%, #e91e63 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 0.8rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.admin-header * {
+  position: relative;
+  z-index: 2;
+}
+
+.admin-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.4rem;
+}
+
+.admin-header .user-info {
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.logout-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.admin-link {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--admin-accent);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+  z-index: 1000;
+  transition: transform 0.2s;
+  text-decoration: none;
+}
+
+.admin-link:hover {
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+/* ===== ЭКРАН АВТОРИЗАЦИИ ===== */
+.auth-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: 2rem;
+}
+
+.auth-card {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  border: 1px solid var(--border-color);
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.auth-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--admin-accent);
+}
+
+.auth-subtitle {
+  opacity: 0.8;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.auth-button {
+  background: linear-gradient(135deg, var(--admin-accent) 0%, #e91e63 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.auth-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.3);
+}
+
+.auth-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error-message {
+  background: rgba(220, 53, 69, 0.1);
+  color: var(--error-color);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+/* ===== ИНСТРУМЕНТЫ ===== */
+.quick-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 1.5rem 0;
+}
+
+.tool-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: var(--text-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.tool-card:hover {
+  background: var(--accent-color);
+  color: white;
+  text-decoration: none;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.3);
+}
+
+.tool-card .emoji {
+  font-size: 2em;
+  display: block;
+  margin-bottom: 0.8rem;
+}
+
+.tool-card .title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.tool-card .subtitle {
+  font-size: 0.9em;
+  opacity: 0.8;
+  line-height: 1.4;
+}
+
+/* ===== СЕКЦИИ ===== */
+.students-section {
+  margin: 2rem 0;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.refresh-btn {
+  background: var(--success-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.refresh-btn:hover {
+  opacity: 0.9;
+}
+
+/* ===== СПЕЦИФИЧНЫЕ ЭЛЕМЕНТЫ ===== */
+.student-name {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.student-username {
+  color: var(--accent-color);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.next-lesson-link {
+  background: var(--success-color);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.next-lesson-link:hover {
+  opacity: 0.9;
+  text-decoration: none;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  background: var(--card-bg);
+  color: var(--text-color);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-decoration: none;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  text-decoration: none;
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 768px) {
+  .quick-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 2rem 1rem;
+  }
+
+  .admin-header {
+    padding: 1rem;
+  }
+
+  .admin-header h1 {
+    font-size: 1.2rem;
+  }
+}
