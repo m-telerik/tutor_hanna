@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Профиль ученика</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="styles/main.css">
@@ -15,40 +16,42 @@
       <div></div>
     </div>
 
-    <div class="student-info" id="student-info">
-      <div class="loading">
-        <span class="loading-spinner"></span>
-        Загрузка информации о студенте...
+    <div class="page-layout">
+      <!-- Левая колонка: Информация о студенте -->
+      <div class="left-column">
+        <div class="student-header">
+          <h2><span class="emoji">👤</span>Информация</h2>
+        </div>
+        
+        <div id="student-info">
+          <div class="loading-state">
+            <span class="loading-spinner"></span>
+            <p>Загрузка...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Правая колонка: Словарь -->
+      <div class="right-column">
+        <div class="vocab-header">
+          <h2><span class="emoji">📚</span>Словарь</h2>
+          <div class="vocab-count" id="vocab-count">0 слов</div>
+        </div>
+        
+        <div id="vocabulary-content">
+          <div class="loading-state">
+            <span class="loading-spinner"></span>
+            <p>Загрузка словаря...</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="quick-actions" id="quick-actions" style="display: none;">
-      <a href="#" class="action-card" id="vocab-link">
-        <span class="emoji">📚</span>
-        <div class="title">Словарь</div>
-        <div class="subtitle">Все изученные слова</div>
-      </a>
-      
-      <a href="#" class="action-card" id="next-lesson-link" style="display: none;">
-        <span class="emoji">📅</span>
-        <div class="title">Следующий урок</div>
-        <div class="subtitle">Перейти к уроку</div>
-      </a>
-
-      <a href="https://t.me/hanna_teaches" class="action-card" target="_blank">
-        <span class="emoji">💬</span>
-        <div class="title">Написать Ханне</div>
-        <div class="subtitle">Обсудить вопросы</div>
-      </a>
-    </div>
-
-    <!-- Контактная информация -->
-    <div class="contact-info" id="contact-info" style="display: none;">
-      <h3><span class="emoji">📞</span>Контакты</h3>
-      <p>
-        Есть вопросы? Напишите Ханне напрямую в Telegram: 
-        <a href="https://t.me/hanna_teaches" target="_blank" style="color: var(--accent-color);">@hanna_teaches</a>
-      </p>
+    <!-- Футер -->
+    <div class="footer">
+      Проблемы? Вопросы? Предложения? 
+      <a href="https://t.me/tutor_hanna_bot" target="_blank">Напиши Ханна боту</a> 
+      и он передаст твоё сообщение по адресу
     </div>
   </div>
 
@@ -56,190 +59,258 @@
     const urlParams = new URLSearchParams(window.location.search);
     const studentName = urlParams.get("name");
     
-    // Пытаемся получить userId из Telegram WebApp, если не получается - используем тестовый
+    // Получаем userId
     let userId = null;
-    
     try {
       userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
     } catch (error) {
       console.log('Telegram WebApp недоступен:', error);
     }
     
-    // Если нет userId из Telegram, используем тестовый ID админа
     if (!userId) {
       userId = 618647337; // Тестовый ID админа
-      console.log('Используем тестовый userId:', userId);
     }
     
-    const studentInfoDiv = document.getElementById("student-info");
-    const quickActions = document.getElementById("quick-actions");
-    const vocabLink = document.getElementById("vocab-link");
-    const nextLessonLink = document.getElementById("next-lesson-link");
-    const contactInfo = document.getElementById("contact-info");
+    let studentData = null;
 
     if (!studentName) {
-      studentInfoDiv.innerHTML = `
-        <div class="error">
+      document.getElementById('student-info').innerHTML = `
+        <div class="error-state">
           <h3>Ошибка</h3>
-          <p>Не указано имя студента в URL</p>
-          <button onclick="history.back()" class="btn-primary">Назад</button>
+          <p>Не указано имя студента</p>
         </div>
       `;
     } else {
       loadStudentInfo();
+      loadVocabulary();
     }
 
     async function loadStudentInfo() {
       try {
-        console.log('Загружаем информацию о студенте:', studentName);
-        console.log('Используем userId:', userId);
-        
         const response = await fetch('/api/students', {
           headers: { "x-telegram-id": userId.toString() }
         });
         
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          throw new Error(`HTTP ${response.status}`);
         }
         
         const { students } = await response.json();
         const student = students.find(s => s.name === studentName);
 
         if (!student) {
-          studentInfoDiv.innerHTML = `
-            <div class="error">
-              <h3>Студент не найден</h3>
-              <p>Студент "${studentName}" не найден в системе</p>
-              <button onclick="history.back()" class="btn-primary">Назад</button>
+          throw new Error('Студент не найден');
+        }
+
+        studentData = student;
+        
+        // Обновляем заголовок
+        document.title = `Профиль: ${student.name}`;
+        document.querySelector('h1').innerHTML = `<span class="emoji">👤</span>Профиль: ${student.name}`;
+
+        // Режим бронирования
+        const bookingMode = student.booking_mode === 'by_student' 
+          ? '📅 Самостоятельно' 
+          : '🎓 Преподавателем';
+
+        const bookingClass = student.booking_mode === 'by_student' ? 'by-student' : 'by-teacher';
+
+        // Получаем дополнительные занятия (пока показываем только следующее)
+        const lessonsHtml = student.next_session ? `
+          <a href="lesson.html?session_id=${student.next_session_id}" class="lesson-item">
+            <div class="lesson-date">${student.next_session}</div>
+            <div class="lesson-language">${student.language}</div>
+          </a>
+        ` : `
+          <div class="no-lessons">
+            Нет запланированных занятий
+          </div>
+        `;
+
+        // Рендерим информацию
+        document.getElementById('student-info').innerHTML = `
+          <ul class="info-list">
+            <li class="info-item">
+              <span class="info-label">Имя:</span>
+              <span class="info-value">${student.name}</span>
+            </li>
+            
+            ${student.email ? `
+              <li class="info-item">
+                <span class="info-label">Email:</span>
+                <span class="info-value">${student.email}</span>
+              </li>
+            ` : ''}
+            
+            ${student.username ? `
+              <li class="info-item">
+                <span class="info-label">Telegram:</span>
+                <span class="info-value">
+                  <a href="https://t.me/${student.username}" target="_blank" style="color: var(--accent-color);">
+                    @${student.username}
+                  </a>
+                </span>
+              </li>
+            ` : ''}
+            
+            <li class="info-item">
+              <span class="info-label">Язык:</span>
+              <span class="info-value">
+                <span class="language-badge">${student.language || '—'}</span>
+              </span>
+            </li>
+            
+            <li class="info-item">
+              <span class="info-label">Бронирование:</span>
+              <span class="info-value">
+                <span class="booking-badge ${bookingClass}">${bookingMode}</span>
+              </span>
+            </li>
+            
+            ${student.frequency ? `
+              <li class="info-item">
+                <span class="info-label">Частота:</span>
+                <span class="info-value">${student.frequency}x в неделю</span>
+              </li>
+            ` : ''}
+            
+            ${student.preferred_time ? `
+              <li class="info-item">
+                <span class="info-label">Время:</span>
+                <span class="info-value">${student.preferred_time}</span>
+              </li>
+            ` : ''}
+            
+            ${student.preferred_days && student.preferred_days.length > 0 ? `
+              <li class="info-item">
+                <span class="info-label">Дни:</span>
+                <span class="info-value">${student.preferred_days.join(', ')}</span>
+              </li>
+            ` : ''}
+          </ul>
+
+          <div class="lessons-section">
+            <h3><span class="emoji">📅</span>Занятия</h3>
+            <div class="lessons-list" id="lessons-list">
+              ${lessonsHtml}
+            </div>
+          </div>
+
+          <button class="book-button" onclick="openBooking()">
+            <span class="emoji">📅</span>
+            Забронировать занятие
+          </button>
+        `;
+
+      } catch (error) {
+        console.error('Ошибка загрузки студента:', error);
+        document.getElementById('student-info').innerHTML = `
+          <div class="error-state">
+            <h3>Ошибка загрузки</h3>
+            <p>${error.message}</p>
+            <button onclick="loadStudentInfo()" class="btn-primary" style="margin-top: 1rem;">
+              Попробовать снова
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    async function loadVocabulary() {
+      try {
+        // Используем обновленный API с новой схемой
+        const response = await fetch(`/api/vocab?user_name=${encodeURIComponent(studentName)}`, {
+          headers: { "x-telegram-id": userId.toString() }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const { words = [] } = await response.json();
+        
+        // Обновляем счетчик
+        document.getElementById('vocab-count').textContent = `${words.length} слов`;
+
+        if (words.length === 0) {
+          document.getElementById('vocabulary-content').innerHTML = `
+            <div class="empty-vocab">
+              <span class="emoji">📚</span>
+              <p>Словарь пока пуст</p>
+              <p style="font-size: 11px; opacity: 0.7;">Слова будут появляться после уроков</p>
             </div>
           `;
           return;
         }
 
-        console.log('Студент найден:', student);
+        // Группируем по языкам для статистики
+        const englishWords = words.filter(w => w.language === 'english').length;
+        const frenchWords = words.filter(w => w.language === 'french').length;
+        const studiedWords = words.filter(w => w.studied_count > 0).length;
 
-        // Обновляем заголовок страницы
-        document.title = `Профиль: ${student.name}`;
-        document.querySelector('h1').innerHTML = `<span class="emoji">👤</span>Профиль: ${student.name}`;
-
-        // Определяем режим бронирования
-        const bookingModeText = student.booking_mode === 'by_student' 
-          ? '📅 Самостоятельное бронирование' 
-          : '🎓 Преподаватель планирует занятия';
-
-        // Обновляем основную информацию
-        studentInfoDiv.innerHTML = `
-          <div class="student-header">
-            <h2><span class="emoji">👋</span>Информация о студенте</h2>
-          </div>
-          
-          <div class="info-grid">
-            <div class="info-item">
-              <strong><span class="emoji">👤</span>Имя:</strong> 
-              <span>${student.name}</span>
-            </div>
-            
-            ${student.username ? `
-              <div class="info-item">
-                <strong><span class="emoji">💬</span>Telegram:</strong> 
-                <a href="https://t.me/${student.username}" target="_blank" style="color: var(--accent-color);">
-                  @${student.username}
-                </a>
-              </div>
-            ` : ''}
-            
-            ${student.email ? `
-              <div class="info-item">
-                <strong><span class="emoji">📧</span>Email:</strong> 
-                <span>${student.email}</span>
-              </div>
-            ` : ''}
-            
-            <div class="info-item">
-              <strong><span class="emoji">🌍</span>Язык:</strong> 
-              <span class="language-badge">${student.language || '—'}</span>
-            </div>
-            
-            ${student.frequency ? `
-              <div class="info-item">
-                <strong><span class="emoji">📅</span>Частота:</strong> 
-                <span>${student.frequency} раз в неделю</span>
-              </div>
-            ` : ''}
-            
-            <div class="info-item">
-              <strong><span class="emoji">⚙️</span>Бронирование:</strong> 
-              <span>${bookingModeText}</span>
-            </div>
-            
-            ${student.preferred_time ? `
-              <div class="info-item">
-                <strong><span class="emoji">🕐</span>Предпочитаемое время:</strong> 
-                <span>${student.preferred_time}</span>
-              </div>
-            ` : ''}
-            
-            ${student.preferred_days && student.preferred_days.length > 0 ? `
-              <div class="info-item">
-                <strong><span class="emoji">📆</span>Предпочитаемые дни:</strong> 
-                <span>${student.preferred_days.join(', ')}</span>
-              </div>
-            ` : ''}
-          </div>
-
-          ${student.next_session ? `
-            <div class="next-lesson-card">
-              <h3><span class="emoji">📅</span>Следующее занятие</h3>
-              <div class="lesson-details">
-                <span class="lesson-date">${student.next_session}</span>
-                <a href="lesson.html?session_id=${student.next_session_id}" class="lesson-link">
-                  Перейти к уроку →
-                </a>
-              </div>
-            </div>
-          ` : `
-            <div class="next-lesson-card no-lesson">
-              <h3><span class="emoji">📅</span>Следующее занятие</h3>
-              <p>Занятие не запланировано</p>
-              ${student.booking_mode === 'by_student' ? `
-                <a href="https://calendar.app.google/SQGJj626MUyQ6DYL6" target="_blank" class="btn-primary">
-                  <span class="emoji">📅</span>Забронировать занятие
-                </a>
-              ` : `
-                <p style="font-size: 12px; opacity: 0.7;">
-                  Занятия планирует преподаватель
-                </p>
-              `}
-            </div>
-          `}
+        // Обновляем счетчик с деталями
+        document.getElementById('vocab-count').innerHTML = `
+          ${words.length} слов
+          ${englishWords > 0 || frenchWords > 0 ? `<br><small style="opacity: 0.8; font-size: 10px;">
+            ${englishWords > 0 ? `EN: ${englishWords}` : ''}
+            ${englishWords > 0 && frenchWords > 0 ? ' • ' : ''}
+            ${frenchWords > 0 ? `FR: ${frenchWords}` : ''}
+          </small>` : ''}
         `;
 
-        // Настраиваем быстрые действия
-        vocabLink.href = `vocabulary.html?student_name=${encodeURIComponent(student.name)}`;
-        
-        if (student.next_session_id) {
-          nextLessonLink.href = `lesson.html?session_id=${student.next_session_id}`;
-          nextLessonLink.style.display = 'block';
-        }
-
-        // Показываем интерфейс
-        quickActions.style.display = 'grid';
-        contactInfo.style.display = 'block';
+        // Рендерим таблицу словаря
+        document.getElementById('vocabulary-content').innerHTML = `
+          <table class="vocab-table">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Слово</th>
+                <th>Перевод</th>
+                <th>Пример</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${words.map(word => `
+                <tr>
+                  <td class="date-cell">
+                    ${word.created_at ? new Date(word.created_at).toLocaleDateString('ru-RU', {
+                      day: '2-digit',
+                      month: '2-digit'
+                    }) : '—'}
+                  </td>
+                  <td class="word-cell">
+                    ${word.word}
+                    ${word.language ? `<br><small style="color: var(--accent-color); font-size: 9px; opacity: 0.8;">${word.language.toUpperCase()}</small>` : ''}
+                  </td>
+                  <td class="translation-cell">${word.translation || '—'}</td>
+                  <td class="example-cell" title="${word.example || ''}">${word.example || '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
 
       } catch (error) {
-        console.error('Ошибка загрузки информации о студенте:', error);
-        studentInfoDiv.innerHTML = `
-          <div class="error">
-            <h3>Ошибка загрузки</h3>
-            <p>Не удалось загрузить информацию о студенте: ${error.message}</p>
-            <button onclick="loadStudentInfo()" class="btn-primary">
+        console.error('Ошибка загрузки словаря:', error);
+        document.getElementById('vocabulary-content').innerHTML = `
+          <div class="error-state">
+            <h3>Ошибка загрузки словаря</h3>
+            <p>${error.message}</p>
+            <button onclick="loadVocabulary()" class="btn-primary" style="margin-top: 1rem;">
               Попробовать снова
-            </button>
-            <button onclick="history.back()" class="btn-secondary" style="margin-left: 10px;">
-              Назад
             </button>
           </div>
         `;
+      }
+    }
+
+    function openBooking() {
+      const bookingUrl = 'https://calendar.app.google/SQGJj626MUyQ6DYL6';
+      
+      if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(bookingUrl);
+      } else {
+        window.open(bookingUrl, '_blank');
       }
     }
 
@@ -253,98 +324,7 @@
       }
     }
 
-    console.log('Student page загружена для:', studentName);
+    console.log('Student profile загружен для:', studentName);
   </script>
-
-  <style>
-    .info-grid {
-      display: grid;
-      gap: 1rem;
-      margin: 1.5rem 0;
-    }
-    
-    .info-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.8rem;
-      background: var(--bg-color);
-      border-radius: 6px;
-      border: 1px solid var(--border-color);
-    }
-    
-    .info-item strong {
-      color: var(--text-color);
-      font-weight: 600;
-      min-width: 180px;
-    }
-    
-    .language-badge {
-      background: var(--accent-color);
-      color: white;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-    }
-    
-    .next-lesson-card {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin: 1.5rem 0;
-      border: 1px solid var(--border-color);
-    }
-    
-    .next-lesson-card.no-lesson {
-      text-align: center;
-      opacity: 0.8;
-    }
-    
-    .lesson-details {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 1rem;
-    }
-    
-    .lesson-date {
-      font-weight: 600;
-      color: var(--success-color);
-    }
-    
-    .lesson-link {
-      background: var(--success-color);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 6px;
-      text-decoration: none;
-      font-weight: 500;
-      transition: opacity 0.2s;
-    }
-    
-    .lesson-link:hover {
-      opacity: 0.9;
-      text-decoration: none;
-    }
-    
-    @media (max-width: 768px) {
-      .info-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-      }
-      
-      .info-item strong {
-        min-width: auto;
-      }
-      
-      .lesson-details {
-        flex-direction: column;
-        gap: 1rem;
-        text-align: center;
-      }
-    }
-  </style>
 </body>
 </html>
