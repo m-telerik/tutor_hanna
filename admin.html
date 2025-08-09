@@ -505,12 +505,35 @@
         <div class="auth-icon">🔐</div>
         <h1 class="auth-title">Админ панель</h1>
         <p class="auth-subtitle">
-          Для доступа к админ панели необходима авторизация через Telegram
+          Для доступа к админ панели войдите через свой аккаунт Telegram
         </p>
-        <button id="authButton" class="auth-button" onclick="authenticate()">
-          <span class="loading-spinner" id="authSpinner" style="display: none;"></span>
-          Войти через Telegram
-        </button>
+        
+        <!-- Telegram Login Widget -->
+        <div id="telegram-login-container" style="display: flex; justify-content: center; margin: 1.5rem 0;">
+          <script async src="https://telegram.org/js/telegram-widget.js?22" 
+                  data-telegram-login="hanna_teaches_bot" 
+                  data-size="large" 
+                  data-radius="8"
+                  data-onauth="onTelegramAuth(user)" 
+                  data-request-access="write"></script>
+        </div>
+        
+        <div style="text-align: center; opacity: 0.7; font-size: 12px; margin: 1rem 0;">
+          Нажмите кнопку выше для входа через Telegram
+        </div>
+        
+        <!-- Альтернативная авторизация для разработки -->
+        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+          <p style="font-size: 12px; opacity: 0.6; text-align: center; margin-bottom: 1rem;">
+            Режим разработки
+          </p>
+          <button id="devAuthButton" class="auth-button" onclick="authenticateDev()" 
+                  style="background: #6c757d; font-size: 14px; padding: 8px 16px;">
+            <span class="loading-spinner" id="devAuthSpinner" style="display: none;"></span>
+            Войти как тестовый админ
+          </button>
+        </div>
+        
         <div id="authError" style="display: none;"></div>
       </div>
     </div>
@@ -596,92 +619,151 @@
     document.addEventListener('DOMContentLoaded', function() {
       console.log('🚀 Инициализация админ панели...');
       
-      // Настройка Telegram WebApp
+      // Проверяем сохраненную сессию
+      const savedUser = localStorage.getItem('adminUser');
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser);
+          console.log('💾 Найдена сохраненная сессия:', userData);
+          
+          // Проверяем, не истекла ли сессия (24 часа)
+          const sessionTime = userData.sessionTime || 0;
+          const now = Date.now();
+          if (now - sessionTime < 24 * 60 * 60 * 1000) {
+            console.log('✅ Сессия действительна');
+            currentUser = userData;
+            showAdminPanel();
+            loadInitialData();
+            return;
+          } else {
+            console.log('⏰ Сессия истекла');
+            localStorage.removeItem('adminUser');
+          }
+        } catch (error) {
+          console.error('❌ Ошибка восстановления сессии:', error);
+          localStorage.removeItem('adminUser');
+        }
+      }
+      
+      // Если нет сохраненной сессии, показываем авторизацию
+      showAuthScreen();
+      
+      // Настройка Telegram WebApp (если доступен)
       if (window.Telegram?.WebApp) {
         console.log('📱 Telegram WebApp обнаружен');
         window.Telegram.WebApp.ready();
         window.Telegram.WebApp.expand();
         
-        // Проверяем данные пользователя
+        // Проверяем данные пользователя из WebApp
         const user = window.Telegram.WebApp.initDataUnsafe?.user;
-        if (user) {
-          console.log('👤 Данные пользователя:', user);
-          checkAuthentication(user);
-        } else {
-          console.log('❌ Данные пользователя недоступны');
-          showAuthScreen();
+        if (user && ADMIN_IDS.includes(user.id)) {
+          console.log('👤 Автоматическая авторизация через WebApp:', user);
+          await checkAuthentication(user);
         }
-      } else {
-        console.log('⚠️ Telegram WebApp недоступен, показываем экран авторизации');
-        showAuthScreen();
       }
     });
 
-    // Проверка авторизации
-    async function checkAuthentication(user) {
-      console.log('🔍 Проверка авторизации для пользователя:', user.id);
+    // Авторизация через Telegram Login Widget (вызывается виджетом)
+    window.onTelegramAuth = function(user) {
+      console.log('📱 Авторизация через Telegram:', user);
       
-      if (!ADMIN_IDS.includes(user.id)) {
-        console.log('❌ Пользователь не является админом');
-        showAuthError('У вас нет прав доступа к админ панели');
+      if (!user || !user.id) {
+        showAuthError('Не удалось получить данные пользователя из Telegram');
         return;
       }
+      
+      // Проверяем права доступа
+      if (!ADMIN_IDS.includes(user.id)) {
+        showAuthError(`Пользователь ${user.first_name} (ID: ${user.id}) не имеет прав доступа к админ панели`);
+        return;
+      }
+      
+      // Авторизуем пользователя
+      authenticateUser({
+        telegram_id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        username: user.username,
+        photo_url: user.photo_url,
+        role: 'admin',
+        sessionTime: Date.now()
+      });
+    };
 
+    // Разработческая авторизация
+    async function authenticateDev() {
+      const devAuthButton = document.getElementById('devAuthButton');
+      const devAuthSpinner = document.getElementById('devAuthSpinner');
+      
+      console.log('🔧 Разработческая авторизация...');
+      
+      devAuthButton.disabled = true;
+      devAuthSpinner.style.display = 'inline-block';
+      
       try {
-        // Проверяем роль через API
-        const response = await fetch('/api/user-role', {
-          headers: { 'x-telegram-id': user.id }
+        // Симулируем задержку
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Авторизуем как тестового админа
+        authenticateUser({
+          telegram_id: 618647337, // Первый ID из ADMIN_IDS
+          first_name: 'Test',
+          last_name: 'Admin',
+          username: 'testadmin',
+          photo_url: null,
+          role: 'admin',
+          sessionTime: Date.now(),
+          isDev: true
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('✅ Роль пользователя:', data);
-
-        if (data.role === 'admin') {
-          currentUser = { ...user, ...data };
-          showAdminPanel();
-          loadInitialData();
-        } else {
-          showAuthError('У вас нет прав доступа к админ панели');
-        }
+        
       } catch (error) {
-        console.error('❌ Ошибка проверки авторизации:', error);
-        showAuthError('Ошибка проверки прав доступа: ' + error.message);
+        console.error('❌ Ошибка разработческой авторизации:', error);
+        showAuthError('Ошибка разработческой авторизации: ' + error.message);
+      } finally {
+        devAuthButton.disabled = false;
+        devAuthSpinner.style.display = 'none';
       }
     }
 
-    // Функция авторизации (вызывается кнопкой)
-    async function authenticate() {
-      const authButton = document.getElementById('authButton');
-      const authSpinner = document.getElementById('authSpinner');
-      
-      console.log('🔐 Попытка авторизации...');
-      
-      authButton.disabled = true;
-      authSpinner.style.display = 'inline-block';
+    // Единая функция авторизации пользователя
+    async function authenticateUser(userData) {
+      console.log('🔐 Авторизация пользователя:', userData);
       
       try {
-        // Проверяем доступность Telegram WebApp
-        if (!window.Telegram?.WebApp) {
-          throw new Error('Telegram WebApp недоступен');
-        }
+        // Проверяем роль через API (если не dev режим)
+        if (!userData.isDev) {
+          const response = await fetch('/api/user-role', {
+            headers: { 'x-telegram-id': userData.telegram_id }
+          });
 
-        const user = window.Telegram.WebApp.initDataUnsafe?.user;
-        if (!user) {
-          throw new Error('Не удалось получить данные пользователя');
-        }
+          if (!response.ok) {
+            throw new Error(`API вернул ошибку: ${response.status}`);
+          }
 
-        await checkAuthentication(user);
+          const apiData = await response.json();
+          console.log('✅ API подтвердил роль:', apiData);
+
+          if (apiData.role !== 'admin') {
+            throw new Error('API не подтвердил права администратора');
+          }
+          
+          // Обновляем данные пользователя данными от API
+          userData = { ...userData, ...apiData };
+        }
+        
+        // Сохраняем пользователя
+        currentUser = userData;
+        
+        // Сохраняем сессию в localStorage
+        localStorage.setItem('adminUser', JSON.stringify(userData));
+        
+        showAdminPanel();
+        loadInitialData();
+        showNotification(`👋 Добро пожаловать, ${userData.first_name}!`, 'success');
         
       } catch (error) {
         console.error('❌ Ошибка авторизации:', error);
         showAuthError('Ошибка авторизации: ' + error.message);
-      } finally {
-        authButton.disabled = false;
-        authSpinner.style.display = 'none';
       }
     }
 
@@ -949,6 +1031,9 @@
         currentUser = null;
         studentsData = [];
         isAuthenticated = false;
+        
+        // Удаляем сохраненную сессию
+        localStorage.removeItem('adminUser');
         
         // Очищаем ошибки авторизации
         document.getElementById('authError').style.display = 'none';
