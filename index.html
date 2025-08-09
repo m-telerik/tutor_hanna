@@ -3,226 +3,429 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Hanna English & French</title>
+  <title>Админ панель - Hanna English & French</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="styles/main.css">
-  <link rel="stylesheet" href="styles/student.css">
+  <link rel="stylesheet" href="styles/admin.css">
 </head>
 <body>
-  <div class="page-content">
-    <div id="app">
-      <div class="loading">Загрузка...</div>
+  <div class="container">
+    <!-- Основная админка -->
+    <div id="adminPanel">
+      <div class="admin-header">
+        <h1><span class="emoji">👑</span>Админ панель</h1>
+        <div class="user-info" id="userInfo">
+          Тестовый режим админки
+        </div>
+      </div>
+
+      <!-- Статистика -->
+      <div class="stats-grid" id="statsGrid" style="display: none;">
+        <div class="stat-card">
+          <div class="stat-number" id="totalStudents">0</div>
+          <div class="stat-label">Всего студентов</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="upcomingLessons">0</div>
+          <div class="stat-label">Предстоящих занятий</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="totalWords">0</div>
+          <div class="stat-label">Слов в словарях</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="weeklyLessons">0</div>
+          <div class="stat-label">Занятий в неделю</div>
+        </div>
+      </div>
+
+      <!-- Быстрые инструменты -->
+      <div class="quick-tools">
+        <a href="chat-history.html" class="tool-card">
+          <span class="emoji">💬</span>
+          <div class="title">История чатов</div>
+          <div class="subtitle">Просмотр диалогов с агентами</div>
+        </a>
+        
+        <div class="tool-card" onclick="exportData()">
+          <span class="emoji">📊</span>
+          <div class="title">Экспорт данных</div>
+          <div class="subtitle">Выгрузка информации о студентах</div>
+        </div>
+      </div>
+
+      <!-- Список студентов -->
+      <div class="students-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="emoji">🧑‍🎓</span>Список студентов
+          </h2>
+          <button class="refresh-btn" onclick="loadStudents()">
+            <span class="emoji">🔄</span>Обновить
+          </button>
+        </div>
+        
+        <div class="table-container">
+          <div id="studentsContent">
+            <div class="loading">
+              <span class="loading-spinner"></span>
+              Загрузка списка студентов...
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
+    // Конфигурация
+    const ADMIN_IDS = [618647337, 2341205];
+    
+    // Глобальные переменные
+    let currentUser = null;
+    let studentsData = [];
+    let isAuthenticated = false;
 
-    // Проверяем, есть ли валидный userId
-    if (!userId) {
-      console.warn('User ID not available from Telegram WebApp');
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 Инициализация админ панели...');
+      
+      // Настройка Telegram WebApp (если доступен)
+      if (window.Telegram?.WebApp) {
+        console.log('📱 Telegram WebApp обнаружен');
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      }
+      
+      // Сразу показываем админку с тестовыми данными
+      currentUser = {
+        telegram_id: 618647337,
+        first_name: 'Test',
+        last_name: 'Admin',
+        username: 'testadmin',
+        role: 'admin',
+        sessionTime: Date.now(),
+        isDev: true
+      };
+      
+      showAdminPanel();
+      loadInitialData();
+    });
+
+    // Единая функция авторизации пользователя
+    async function authenticateUser(userData) {
+      console.log('🔐 Авторизация пользователя:', userData);
+      
+      try {
+        // Проверяем роль через API (если не dev режим)
+        if (!userData.isDev) {
+          const response = await fetch('/api/user-role', {
+            headers: { 'x-telegram-id': userData.telegram_id }
+          });
+
+          if (!response.ok) {
+            throw new Error(`API вернул ошибку: ${response.status}`);
+          }
+
+          const apiData = await response.json();
+          console.log('✅ API подтвердил роль:', apiData);
+
+          if (apiData.role !== 'admin') {
+            throw new Error('API не подтвердил права администратора');
+          }
+          
+          // Обновляем данные пользователя данными от API
+          userData = { ...userData, ...apiData };
+        }
+        
+        // Сохраняем пользователя
+        currentUser = userData;
+        
+        showAdminPanel();
+        loadInitialData();
+        showNotification(`👋 Добро пожаловать, ${userData.first_name}!`, 'success');
+        
+      } catch (error) {
+        console.error('❌ Ошибка авторизации:', error);
+        showAuthError('Ошибка авторизации: ' + error.message);
+      }
     }
 
-    // Ссылка на календарь Ханны
-    const CALENDAR_LINK = 'https://calendar.google.com/calendar/u/0?cid=Y18yZmI3ZjY5ODg5MjUyODY3MzM5YTUwZGE4ZDE4M2Q5NzQ4ZjFkMmMwYjdhZTZhYTBhMzQ1MTM2MTJhZjUzOTE3QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20';
+    // Отображение админ панели
+    function showAdminPanel() {
+      console.log('✅ Показываем админ панель');
+      
+      // Проверяем, существует ли элемент authScreen перед попыткой его скрыть
+      const authScreen = document.getElementById('authScreen');
+      if (authScreen) {
+        authScreen.style.display = 'none';
+      }
+      
+      const adminPanel = document.getElementById('adminPanel');
+      if (adminPanel) {
+        adminPanel.style.display = 'block';
+      }
+      
+      isAuthenticated = true;
+      
+      // Обновляем информацию о пользователе
+      const userInfo = document.getElementById('userInfo');
+      if (userInfo) {
+        userInfo.innerHTML = `
+          Добро пожаловать, ${currentUser.first_name || 'Админ'}! 
+          <small>ID: ${currentUser.telegram_id}</small>
+        `;
+      }
+    }
 
-    // Проверка на админа (ТОЛЬКО если userId валиден)
-    const ADMIN_IDS = [618647337, 2341205];
-    const isAdmin = userId && ADMIN_IDS.includes(userId);
+    // Загрузка начальных данных
+    async function loadInitialData() {
+      console.log('📊 Загрузка начальных данных...');
+      
+      // Небольшая задержка для уверенности, что DOM готов
+      setTimeout(async () => {
+        await loadStudents();
+      }, 100);
+    }
 
-    async function loadUserRole() {
+    // Загрузка списка студентов
+    async function loadStudents() {
+      console.log('👥 Загрузка списка студентов...');
+      const studentsContent = document.getElementById('studentsContent');
+      
+      if (!studentsContent) {
+        console.error('❌ Элемент studentsContent не найден');
+        return;
+      }
+
+      if (!isAuthenticated) {
+        console.log('❌ Пользователь не авторизован');
+        return;
+      }
+
+      // Показываем индикатор загрузки
+      studentsContent.innerHTML = `
+        <div class="loading">
+          <span class="loading-spinner"></span>
+          Загрузка списка студентов...
+        </div>
+      `;
+
       try {
-        // Если нет userId, показываем вид для потенциального студента
-        if (!userId) {
-          renderProspectView();
-          return;
+        const response = await fetch('/api/students', {
+          headers: { 'x-telegram-id': currentUser.telegram_id }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
-        const response = await fetch("/api/user-role", {
-          headers: { "x-telegram-id": userId }
+        const data = await response.json();
+        console.log('✅ Студенты загружены:', data.students?.length || 0);
+        
+        if (!data.students) {
+          throw new Error('Некорректный ответ API: отсутствует поле students');
+        }
+        
+        studentsData = data.students;
+        renderStudentsTable(studentsData);
+        updateStats(studentsData);
+        
+      } catch (error) {
+        console.error('❌ Ошибка загрузки студентов:', error);
+        studentsContent.innerHTML = `
+          <div class="error">
+            <h3>Ошибка загрузки</h3>
+            <p>Не удалось загрузить список студентов: ${error.message}</p>
+            <button onclick="loadStudents()" class="btn-primary">
+              Попробовать снова
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Отрисовка таблицы студентов
+    function renderStudentsTable(students) {
+      const studentsContent = document.getElementById('studentsContent');
+      
+      if (students.length === 0) {
+        studentsContent.innerHTML = `
+          <div class="empty-state">
+            <span class="emoji" style="font-size: 3em;">👥</span>
+            <p>Пока нет активных студентов</p>
+          </div>
+        `;
+        return;
+      }
+
+      studentsContent.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Студент</th>
+              <th>Контакты</th>
+              <th>Язык</th>
+              <th>Следующее занятие</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${students.map(student => `
+              <tr>
+                <td>
+                  <div class="student-name">${student.name}</div>
+                  ${student.username ? `<div class="student-username">@${student.username}</div>` : ''}
+                </td>
+                <td>
+                  ${student.email || '—'}<br>
+                  ${student.preferred_time ? `<small style="opacity: 0.7;">⏰ ${student.preferred_time}</small>` : ''}
+                  ${student.preferred_days?.length ? `<br><small style="opacity: 0.7;">📅 ${student.preferred_days.join(', ')}</small>` : ''}
+                </td>
+                <td>
+                  <span class="badge badge-primary">
+                    ${student.language || '—'}
+                  </span>
+                  ${student.frequency ? `<br><small style="opacity: 0.7;">${student.frequency}x в неделю</small>` : ''}
+                </td>
+                <td>
+                  ${student.next_session 
+                    ? `<a href="lesson.html?session_id=${student.next_session_id}" class="next-lesson-link">${student.next_session}</a>`
+                    : '<span style="opacity: 0.6;">Не запланировано</span>'
+                  }
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a href="student.html?name=${encodeURIComponent(student.name)}" class="action-btn">
+                      👤 Профиль
+                    </a>
+                    <a href="vocabulary.html?student_name=${encodeURIComponent(student.name)}" class="action-btn">
+                      📚 Словарь
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // Обновление статистики
+    function updateStats(students) {
+      console.log('📊 Обновление статистики для', students.length, 'студентов');
+      
+      const totalStudents = students.length;
+      const upcomingLessons = students.filter(s => s.next_session).length;
+      const weeklyLessons = students.reduce((sum, s) => sum + (s.frequency || 0), 0);
+      
+      // Безопасное обновление элементов
+      const totalStudentsEl = document.getElementById('totalStudents');
+      const upcomingLessonsEl = document.getElementById('upcomingLessons');
+      const totalWordsEl = document.getElementById('totalWords');
+      const weeklyLessonsEl = document.getElementById('weeklyLessons');
+      const statsGridEl = document.getElementById('statsGrid');
+      
+      if (totalStudentsEl) totalStudentsEl.textContent = totalStudents;
+      if (upcomingLessonsEl) upcomingLessonsEl.textContent = upcomingLessons;
+      if (totalWordsEl) totalWordsEl.textContent = '—'; // Можно добавить API для подсчета
+      if (weeklyLessonsEl) weeklyLessonsEl.textContent = weeklyLessons;
+      if (statsGridEl) statsGridEl.style.display = 'grid';
+    }
+
+    // Экспорт данных
+    async function exportData() {
+      console.log('📊 Экспорт данных...');
+      
+      if (!isAuthenticated || !studentsData.length) {
+        alert('Нет данных для экспорта');
+        return;
+      }
+
+      try {
+        const dataToExport = {
+          students: studentsData,
+          exportDate: new Date().toISOString(),
+          exportedBy: currentUser.first_name || 'Админ',
+          totalStudents: studentsData.length,
+          upcomingLessons: studentsData.filter(s => s.next_session).length
+        };
+        
+        const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { 
+          type: 'application/json' 
         });
         
-        if (!response.ok) {
-          throw new Error('Failed to fetch user role');
-        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hanna_students_export_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
         
-        const data = await response.json();
-        renderContent(data);
+        // Показываем уведомление
+        showNotification('✅ Данные экспортированы успешно', 'success');
+        
       } catch (error) {
-        console.error('Error loading user role:', error);
-        // Если ошибка API, показываем view для потенциального студента
-        renderProspectView();
+        console.error('❌ Ошибка экспорта:', error);
+        showNotification('❌ Ошибка экспорта данных', 'error');
       }
     }
 
-    function renderContent(userData) {
-      const app = document.getElementById('app');
-      
-      // Показываем ссылку на админку ТОЛЬКО для валидных админов
-      if (isAdmin && userId) {
-        const adminLink = document.createElement('a');
-        adminLink.href = 'admin.html';
-        adminLink.className = 'admin-link';
-        adminLink.innerHTML = '<span class="emoji">👑</span>Админка';
-        document.body.appendChild(adminLink);
-      }
-      
-      if (userData.role === 'admin') {
-        // Редирект админов на админку
-        window.location.href = 'admin.html';
-        return;
-      } else if (userData.role === 'student') {
-        renderStudentView(userData);
-      } else {
-        renderProspectView();
-      }
-    }
-
-    function renderStudentView(userData) {
-      const nextLesson = userData.next_session;
-      
-      document.getElementById('app').innerHTML = `
-        <div class="student-info">
-          <h2><span class="emoji">👋</span>Привет, ${userData.name || userName}!</h2>
-          <p>Добро пожаловать в твой личный кабинет для изучения языков с Ханной</p>
-        </div>
-        
-        ${nextLesson ? `
-          <div class="next-lesson">
-            <div>
-              <h3><span class="emoji">📅</span>Следующее занятие</h3>
-              <p><strong>${nextLesson.date}</strong></p>
-              <p>Язык: ${nextLesson.language || '—'}</p>
-            </div>
-            <div>
-              <a href="lesson.html?session_id=${nextLesson.session_id}" class="btn-primary">
-                Открыть урок
-              </a>
-            </div>
-          </div>
-        ` : `
-          <div class="welcome-card">
-            <h3><span class="emoji">📚</span>Занятий пока не запланировано</h3>
-            <p>Забронируй следующее занятие, чтобы продолжить изучение языка!</p>
-          </div>
-        `}
-
-        <div class="student-actions">
-          <a href="vocabulary.html?student_name=${encodeURIComponent(userData.name)}" class="action-card">
-            <span class="emoji">📚</span>
-            <strong>Мой словарь</strong>
-            <small>Все изученные слова</small>
-          </a>
-          
-          <a href="booking.html" class="action-card">
-            <span class="emoji">📅</span>
-            <strong>Забронировать</strong>
-            <small>Следующее занятие</small>
-          </a>
-          
-          <a href="https://t.me/hanna_teaches" class="action-card">
-            <span class="emoji">💬</span>
-            <strong>Написать Ханне</strong>
-            <small>Задать вопрос</small>
-          </a>
-          
-          <div class="action-card" onclick="openCalendar()">
-            <span class="emoji">📋</span>
-            <strong>Календарь</strong>
-            <small>Все занятия</small>
-          </div>
-        </div>
-        
-        <button class="book-lesson-btn" onclick="openBookingPage()">
-          <span class="emoji">📅</span>Забронировать занятие
-        </button>
+    // Показ уведомлений
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        background: ${type === 'success' ? 'var(--success-color)' : type === 'error' ? 'var(--error-color)' : 'var(--accent-color)'}; 
+        color: white; 
+        padding: 12px 20px; 
+        border-radius: 8px; 
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        max-width: 300px;
+        font-size: 14px;
+        animation: slideIn 0.3s ease-out;
       `;
-    }
-
-    function renderProspectView() {
-      document.getElementById('app').innerHTML = `
-        <div class="welcome-card gradient">
-          <h2><span class="emoji">🌟</span>Добро пожаловать!</h2>
-          <p>Изучайте <strong>английский</strong> и <strong>французский</strong> с Ханной — сертифицированным преподавателем CELTA Grade A</p>
-          <p>Ханна поможет достичь языковых целей и стать увереннее в общении</p>
-          <a href="https://t.me/annalesf" class="contact-link">
-            <span class="emoji">💬</span>Написать Ханне
-          </a>
-        </div>
-        
-        <div class="student-actions">
-          <a href="https://t.me/hanna_teaches" class="action-card">
-            <span class="emoji">💬</span>
-            <strong>Телеграм канал</strong>
-            <small>Полезные материалы</small>
-          </a>
-          
-          <a href="booking.html" class="action-card">
-            <span class="emoji">📅</span>
-            <strong>Записаться на урок</strong>
-            <small>Первое занятие</small>
-          </a>
-          
-          <div class="action-card" onclick="showPricing()">
-            <span class="emoji">💰</span>
-            <strong>Цены</strong>
-            <small>Стоимость занятий</small>
-          </div>
-          
-          <div class="action-card" onclick="showAbout()">
-            <span class="emoji">👩‍🏫</span>
-            <strong>О преподавателе</strong>
-            <small>Опыт и квалификация</small>
-          </div>
-        </div>
-        
-        <div class="footer-divider"></div>
-        
-        <div class="tutor-section">
-          <h3><span class="emoji">🎓</span>Для преподавателей</h3>
-          <p>Хотите учить языкам и не отвлекаться на операционку? Ваш персональный тьюторбот поможет!</p>
-          <a href="https://t.me/naumenko" class="tutor-link">
-            <span class="emoji">📝</span>Оставить заявку
-          </a>
-        </div>
-        
-        <div style="margin-top: 1.5rem; text-align: center; opacity: 0.5;">
-          <p style="font-size: 11px; margin: 0;">
-            <a href="https://marinaumenko.com/" style="color: inherit; text-decoration: none;">© by Nau production</a>
-          </p>
-        </div>
-      `;
-    }
-
-    function openCalendar() {
-      if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(CALENDAR_LINK);
-      } else if (window.Telegram?.WebApp?.openTelegramLink) {
-        window.Telegram.WebApp.openTelegramLink(CALENDAR_LINK);
-      } else {
-        window.open(CALENDAR_LINK, '_blank');
+      
+      // Добавляем CSS анимацию
+      if (!document.getElementById('notificationStyles')) {
+        const style = document.createElement('style');
+        style.id = 'notificationStyles';
+        style.textContent = `
+          @keyframes slideIn {
+            from {
+              transform: translateX(100%);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+        `;
+        document.head.appendChild(style);
       }
+      
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          notification.style.animation = 'slideIn 0.3s ease-out reverse';
+          setTimeout(() => {
+            if (document.body.contains(notification)) {
+              document.body.removeChild(notification);
+            }
+          }, 300);
+        }
+      }, 3000);
     }
 
-    function openBookingPage() {
-      window.location.href = 'https://calendar.app.google/SQGJj626MUyQ6DYL6';
-    }
-
-    function showPricing() {
-      alert('💰 Стоимость занятий:\n\n🇬🇧 Английский:\n• Индивидуально: 2000₽/час\n• Группа 2-3 чел: 1200₽/час\n\n🇫🇷 Французский:\n• Индивидуально: 2500₽/час\n• Группа 2-3 чел: 1500₽/час\n\n📞 Для записи напишите @hanna_teaches');
-    }
-
-    function showAbout() {
-      alert('👩‍🏫 О преподавателе:\n\n🎓 Ханна - сертифицированный преподаватель CELTA Grade A\n📚 Более 5 лет опыта преподавания\n🌍 Опыт работы с учениками разных уровней\n🏆 Специализация: разговорная практика и подготовка к экзаменам\n\n💬 Для знакомства напишите @hanna_teaches');
-    }
-
-    // Инициализация
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
-    }
-    
-    loadUserRole();
+    console.log('✅ Админ панель инициализирована');
   </script>
 </body>
 </html>
