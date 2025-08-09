@@ -27,8 +27,6 @@
   font-size: 12px;
   font-weight: 500;
   transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
 }
 
 .help-link:hover {
@@ -47,36 +45,6 @@
 
 .help-text {
   white-space: nowrap;
-}
-
-/* Пульсирующий эффект для привлечения внимания */
-.help-link::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 8px;
-  width: 14px;
-  height: 14px;
-  background: var(--success-color);
-  border-radius: 50%;
-  transform: translateY(-50%);
-  opacity: 0;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    opacity: 0;
-    transform: translateY(-50%) scale(0.8);
-  }
-  50% {
-    opacity: 0.6;
-    transform: translateY(-50%) scale(1.2);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-50%) scale(1.4);
-  }
 }
 
 /* ===== НОВЫЙ МАКЕТ ПРОФИЛЯ ===== */
