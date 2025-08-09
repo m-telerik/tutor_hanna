@@ -18,7 +18,7 @@
 
     <div class="page-layout">
       <!-- Левая колонка: Информация о студенте -->
-      <div class="left-column">
+      <div class="left-column" id="left-column">
         <div class="student-header">
           <h2><span class="emoji">👤</span>Информация</h2>
         </div>
@@ -32,7 +32,7 @@
       </div>
 
       <!-- Правая колонка: Словарь -->
-      <div class="right-column">
+      <div class="right-column" id="right-column">
         <div class="vocab-header">
           <h2><span class="emoji">📚</span>Словарь</h2>
           <div class="vocab-count" id="vocab-count">0 слов</div>
@@ -42,6 +42,22 @@
           <div class="loading-state">
             <span class="loading-spinner"></span>
             <p>Загрузка словаря...</p>
+          </div>
+        </div>
+
+        <!-- Пагинация -->
+        <div class="pagination-container" id="pagination-container" style="display: none;">
+          <div class="pagination-info">
+            <span id="pagination-info">Показано: 1-10 из 25</span>
+          </div>
+          <div class="pagination-controls">
+            <button class="pagination-btn" id="prev-btn" onclick="changePage(-1)" disabled>
+              ← Назад
+            </button>
+            <span class="page-indicator" id="page-indicator">1 / 3</span>
+            <button class="pagination-btn" id="next-btn" onclick="changePage(1)">
+              Вперёд →
+            </button>
           </div>
         </div>
       </div>
@@ -72,6 +88,9 @@
     }
     
     let studentData = null;
+    let allVocabWords = [];
+    let currentPage = 1;
+    const wordsPerPage = 10;
 
     if (!studentName) {
       document.getElementById('student-info').innerHTML = `
@@ -202,6 +221,9 @@
           </button>
         `;
 
+        // Синхронизируем высоту колонок
+        syncColumnHeights();
+
       } catch (error) {
         console.error('Ошибка загрузки студента:', error);
         document.getElementById('student-info').innerHTML = `
@@ -218,7 +240,6 @@
 
     async function loadVocabulary() {
       try {
-        // Используем обновленный API с новой схемой
         const response = await fetch(`/api/vocab?user_name=${encodeURIComponent(studentName)}`, {
           headers: { "x-telegram-id": userId.toString() }
         });
@@ -229,66 +250,17 @@
 
         const { words = [] } = await response.json();
         
-        // Обновляем счетчик
-        document.getElementById('vocab-count').textContent = `${words.length} слов`;
-
-        if (words.length === 0) {
-          document.getElementById('vocabulary-content').innerHTML = `
-            <div class="empty-vocab">
-              <span class="emoji">📚</span>
-              <p>Словарь пока пуст</p>
-              <p style="font-size: 11px; opacity: 0.7;">Слова будут появляться после уроков</p>
-            </div>
-          `;
-          return;
-        }
-
-        // Группируем по языкам для статистики
-        const englishWords = words.filter(w => w.language === 'english').length;
-        const frenchWords = words.filter(w => w.language === 'french').length;
-        const studiedWords = words.filter(w => w.studied_count > 0).length;
-
-        // Обновляем счетчик с деталями
-        document.getElementById('vocab-count').innerHTML = `
-          ${words.length} слов
-          ${englishWords > 0 || frenchWords > 0 ? `<br><small style="opacity: 0.8; font-size: 10px;">
-            ${englishWords > 0 ? `EN: ${englishWords}` : ''}
-            ${englishWords > 0 && frenchWords > 0 ? ' • ' : ''}
-            ${frenchWords > 0 ? `FR: ${frenchWords}` : ''}
-          </small>` : ''}
-        `;
-
-        // Рендерим таблицу словаря
-        document.getElementById('vocabulary-content').innerHTML = `
-          <table class="vocab-table">
-            <thead>
-              <tr>
-                <th>Дата</th>
-                <th>Слово</th>
-                <th>Перевод</th>
-                <th>Пример</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${words.map(word => `
-                <tr>
-                  <td class="date-cell">
-                    ${word.created_at ? new Date(word.created_at).toLocaleDateString('ru-RU', {
-                      day: '2-digit',
-                      month: '2-digit'
-                    }) : '—'}
-                  </td>
-                  <td class="word-cell">
-                    ${word.word}
-                    ${word.language ? `<br><small style="color: var(--accent-color); font-size: 9px; opacity: 0.8;">${word.language.toUpperCase()}</small>` : ''}
-                  </td>
-                  <td class="translation-cell">${word.translation || '—'}</td>
-                  <td class="example-cell" title="${word.example || ''}">${word.example || '—'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        `;
+        // Сохраняем все слова и сортируем по дате добавления (новые сначала)
+        allVocabWords = words.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        // Сбрасываем на первую страницу
+        currentPage = 1;
+        
+        // Обновляем отображение
+        updateVocabularyDisplay();
+        
+        // Синхронизируем высоту колонок
+        setTimeout(syncColumnHeights, 100);
 
       } catch (error) {
         console.error('Ошибка загрузки словаря:', error);
@@ -301,6 +273,130 @@
             </button>
           </div>
         `;
+      }
+    }
+
+    function updateVocabularyDisplay() {
+      const totalWords = allVocabWords.length;
+      const totalPages = Math.ceil(totalWords / wordsPerPage);
+      
+      // Обновляем счетчик
+      const englishWords = allVocabWords.filter(w => w.language === 'english').length;
+      const frenchWords = allVocabWords.filter(w => w.language === 'french').length;
+      
+      document.getElementById('vocab-count').innerHTML = `
+        ${totalWords} слов
+        ${englishWords > 0 || frenchWords > 0 ? `<br><small style="opacity: 0.8; font-size: 10px;">
+          ${englishWords > 0 ? `EN: ${englishWords}` : ''}
+          ${englishWords > 0 && frenchWords > 0 ? ' • ' : ''}
+          ${frenchWords > 0 ? `FR: ${frenchWords}` : ''}
+        </small>` : ''}
+      `;
+
+      if (totalWords === 0) {
+        document.getElementById('vocabulary-content').innerHTML = `
+          <div class="empty-vocab">
+            <span class="emoji">📚</span>
+            <p>Словарь пока пуст</p>
+            <p style="font-size: 11px; opacity: 0.7;">Слова будут появляться после уроков</p>
+          </div>
+        `;
+        document.getElementById('pagination-container').style.display = 'none';
+        return;
+      }
+
+      // Получаем слова для текущей страницы
+      const startIndex = (currentPage - 1) * wordsPerPage;
+      const endIndex = startIndex + wordsPerPage;
+      const currentWords = allVocabWords.slice(startIndex, endIndex);
+
+      // Рендерим таблицу
+      document.getElementById('vocabulary-content').innerHTML = `
+        <table class="vocab-table">
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Слово</th>
+              <th>Перевод</th>
+              <th>Пример</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${currentWords.map(word => `
+              <tr>
+                <td class="date-cell">
+                  ${word.created_at ? new Date(word.created_at).toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit'
+                  }) : '—'}
+                </td>
+                <td class="word-cell">
+                  ${word.word}
+                  ${word.language ? `<br><small style="color: var(--accent-color); font-size: 9px; opacity: 0.8;">${word.language.toUpperCase()}</small>` : ''}
+                </td>
+                <td class="translation-cell">${word.translation || '—'}</td>
+                <td class="example-cell" title="${word.example || ''}">${word.example || '—'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+
+      // Обновляем пагинацию
+      if (totalPages > 1) {
+        document.getElementById('pagination-container').style.display = 'flex';
+        updatePaginationControls(startIndex + 1, Math.min(endIndex, totalWords), totalWords, currentPage, totalPages);
+      } else {
+        document.getElementById('pagination-container').style.display = 'none';
+      }
+    }
+
+    function updatePaginationControls(start, end, total, page, totalPages) {
+      document.getElementById('pagination-info').textContent = `Показано: ${start}-${end} из ${total}`;
+      document.getElementById('page-indicator').textContent = `${page} / ${totalPages}`;
+      
+      document.getElementById('prev-btn').disabled = page === 1;
+      document.getElementById('next-btn').disabled = page === totalPages;
+    }
+
+    function changePage(direction) {
+      const totalPages = Math.ceil(allVocabWords.length / wordsPerPage);
+      const newPage = currentPage + direction;
+      
+      if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        updateVocabularyDisplay();
+        
+        // Прокручиваем к началу таблицы
+        document.getElementById('vocabulary-content').scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+        
+        // Синхронизируем высоту после обновления
+        setTimeout(syncColumnHeights, 100);
+      }
+    }
+
+    function syncColumnHeights() {
+      const leftColumn = document.getElementById('left-column');
+      const rightColumn = document.getElementById('right-column');
+      
+      if (leftColumn && rightColumn) {
+        // Сбрасываем высоту
+        leftColumn.style.height = 'auto';
+        rightColumn.style.height = 'auto';
+        
+        // Ждем рендеринга
+        setTimeout(() => {
+          const rightHeight = rightColumn.offsetHeight;
+          const leftHeight = leftColumn.offsetHeight;
+          
+          // Устанавливаем одинаковую высоту
+          const maxHeight = Math.max(rightHeight, leftHeight);
+          leftColumn.style.height = maxHeight + 'px';
+          rightColumn.style.height = maxHeight + 'px';
+        }, 50);
       }
     }
 
@@ -323,6 +419,11 @@
         console.log('Ошибка инициализации Telegram WebApp:', error);
       }
     }
+
+    // Синхронизация высоты при изменении размера окна
+    window.addEventListener('resize', () => {
+      setTimeout(syncColumnHeights, 100);
+    });
 
     console.log('Student profile загружен для:', studentName);
   </script>
