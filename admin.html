@@ -246,70 +246,97 @@
     }
 
     // Отрисовка таблицы студентов
-    function renderStudentsTable(students) {
-      const studentsContent = document.getElementById('studentsContent');
-      
-      if (students.length === 0) {
-        studentsContent.innerHTML = `
-          <div class="empty-state">
-            <span class="emoji" style="font-size: 3em;">👥</span>
-            <p>Пока нет активных студентов</p>
-          </div>
-        `;
-        return;
-      }
+function renderStudentsTable(students) {
+  const studentsContent = document.getElementById('studentsContent');
+  
+  if (students.length === 0) {
+    studentsContent.innerHTML = `
+      <div class="empty-state">
+        <span class="emoji" style="font-size: 3em;">👥</span>
+        <p>Пока нет активных студентов</p>
+      </div>
+    `;
+    return;
+  }
 
-      studentsContent.innerHTML = `
-        <table>
-          <thead>
-            <tr>
-              <th>Студент</th>
-              <th>Контакты</th>
-              <th>Язык</th>
-              <th>Следующее занятие</th>
-              <th>Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${students.map(student => `
-              <tr>
-                <td>
-                  <div class="student-name">${student.name}</div>
-                  ${student.username ? `<div class="student-username">@${student.username}</div>` : ''}
-                </td>
-                <td>
-                  ${student.email || '—'}<br>
-                  ${student.preferred_time ? `<small style="opacity: 0.7;">⏰ ${student.preferred_time}</small>` : ''}
-                  ${student.preferred_days?.length ? `<br><small style="opacity: 0.7;">📅 ${student.preferred_days.join(', ')}</small>` : ''}
-                </td>
-                <td>
-                  <span class="language-badge">
-                    ${student.language || '—'}
-                  </span>
-                  ${student.frequency ? `<br><small style="opacity: 0.7;">${student.frequency}x в неделю</small>` : ''}
-                </td>
-                <td>
-                  ${student.next_session 
-                    ? `<a href="lesson.html?session_id=${student.next_session_id}" class="next-lesson-link">${student.next_session}</a>`
-                    : '<span style="opacity: 0.6;">Не запланировано</span>'
-                  }
-                </td>
-                <td>
-                  <div class="action-buttons">
-                    <a href="student.html?name=${encodeURIComponent(student.name)}" class="action-btn">
-                      👤 Профиль
-                    </a>
-                    <a href="vocabulary.html?student_name=${encodeURIComponent(student.name)}" class="action-btn">
-                      📚 Словарь
-                    </a>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-    }
+  studentsContent.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Студент</th>
+          <th>Email</th>
+          <th>Бронирование</th>
+          <th>Язык</th>
+          <th>Следующее занятие</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${students.map(student => `
+          <tr>
+            <td>
+              <div class="student-name">
+                <a href="student.html?name=${encodeURIComponent(student.name)}" style="color: var(--text-color); text-decoration: none; font-weight: 600;">
+                  ${student.name}
+                </a>
+              </div>
+              ${student.username ? `
+                <div class="student-username">
+                  <a href="https://t.me/${student.username}" target="_blank" style="color: var(--accent-color); font-size: 11px; text-decoration: none;">
+                    @${student.username}
+                  </a>
+                </div>
+              ` : ''}
+            </td>
+            <td>
+              ${student.email || '—'}
+            </td>
+            <td>
+              ${getBookingModeDisplay(student.booking_mode, student.preferred_time, student.preferred_days)}
+            </td>
+            <td>
+              <span class="badge badge-primary">
+                ${student.language || '—'}
+              </span>
+              ${student.frequency ? `<br><small style="opacity: 0.7;">${student.frequency}x в неделю</small>` : ''}
+            </td>
+            <td>
+              ${student.next_session 
+                ? `<a href="lesson.html?session_id=${student.next_session_id}" class="next-lesson-link">${student.next_session}</a>`
+                : '<span style="opacity: 0.6;">Не запланировано</span>'
+              }
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// Функция для отображения режима бронирования
+function getBookingModeDisplay(bookingMode, preferredTime, preferredDays) {
+  if (bookingMode === 'by_student') {
+    return `
+      <div class="booking-mode student-booking">
+        <span class="booking-badge student">📅 Студент</span>
+        <small style="opacity: 0.7; display: block; margin-top: 2px;">
+          Самостоятельное бронирование
+        </small>
+      </div>
+    `;
+  } else {
+    const timeInfo = preferredTime ? `⏰ ${preferredTime}` : '';
+    const daysInfo = preferredDays && preferredDays.length > 0 ? `📅 ${preferredDays.join(', ')}` : '';
+    
+    return `
+      <div class="booking-mode teacher-booking">
+        <span class="booking-badge teacher">🎓 Преподаватель</span>
+        <small style="opacity: 0.7; display: block; margin-top: 2px;">
+          ${timeInfo}<br>${daysInfo}
+        </small>
+      </div>
+    `;
+  }
+}
 
     // Обновление статистики
     function updateStats(students) {
