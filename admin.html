@@ -333,6 +333,9 @@
         return `
           <div class="booking-mode student-booking">
             <span class="booking-badge student">📅 Студент</span>
+              <small style="opacity: 0.7; display: block; margin-top: 2px;">
+              Самостоятельное бронирование
+              </small>
           </div>
         `;
       } else {
@@ -341,7 +344,7 @@
         
         return `
           <div class="booking-mode teacher-booking">
-            <span class="booking-badge teacher">🤖 Бот</span>
+            <span class="booking-badge teacher">🤖 Преподаватель</span>
             <small style="opacity: 0.7; display: block; margin-top: 2px;">
               ${timeInfo} ${daysInfo}
             </small>
