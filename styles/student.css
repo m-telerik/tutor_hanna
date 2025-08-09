@@ -255,6 +255,68 @@
   cursor: help;
 }
 
+/* ===== ПАГИНАЦИЯ ===== */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding: 1rem 0;
+  border-top: 1px solid var(--border-color);
+  gap: 1rem;
+}
+
+.pagination-info {
+  font-size: 11px;
+  opacity: 0.7;
+  color: var(--text-color);
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination-btn {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 70px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+  background: var(--border-color);
+  color: var(--text-color);
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.page-indicator {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color);
+  min-width: 50px;
+  text-align: center;
+}
+
+/* ===== СИНХРОНИЗАЦИЯ ВЫСОТЫ КОЛОНОК ===== */
+.left-column, .right-column {
+  transition: height 0.3s ease;
+}
+
 /* ===== ПУСТЫЕ СОСТОЯНИЯ ===== */
 .empty-vocab {
   text-align: center;
@@ -566,6 +628,7 @@
   
   .left-column, .right-column {
     padding: 1rem;
+    height: auto !important; /* Отключаем синхронизацию высоты на мобильных */
   }
   
   .info-item {
@@ -621,6 +684,32 @@
     flex-direction: column;
     gap: 1rem;
     text-align: center;
+  }
+  
+  /* Пагинация на мобильных */
+  .pagination-container {
+    flex-direction: column;
+    gap: 0.8rem;
+    text-align: center;
+  }
+  
+  .pagination-controls {
+    gap: 0.8rem;
+  }
+  
+  .pagination-btn {
+    min-width: 60px;
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+  
+  .page-indicator {
+    font-size: 11px;
+    min-width: 40px;
+  }
+  
+  .pagination-info {
+    font-size: 10px;
   }
 }
 
