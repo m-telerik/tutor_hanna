@@ -1,5 +1,84 @@
 /* ===== СТИЛИ ДЛЯ СТУДЕНТОВ ===== */
 
+/* ===== ХЕДЕР С ПОМОЩЬЮ ===== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+}
+
+.header-help {
+  display: flex;
+  align-items: center;
+}
+
+.help-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.help-link:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+}
+
+.help-link .emoji {
+  font-size: 14px;
+  margin: 0;
+}
+
+.help-text {
+  white-space: nowrap;
+}
+
+/* Пульсирующий эффект для привлечения внимания */
+.help-link::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  width: 14px;
+  height: 14px;
+  background: var(--success-color);
+  border-radius: 50%;
+  transform: translateY(-50%);
+  opacity: 0;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateY(-50%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scale(1.4);
+  }
+}
+
 /* ===== НОВЫЙ МАКЕТ ПРОФИЛЯ ===== */
 .page-layout {
   display: grid;
@@ -631,6 +710,25 @@
     height: auto !important; /* Отключаем синхронизацию высоты на мобильных */
   }
   
+  /* Хедер на мобильных */
+  .header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .help-link {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .help-text {
+    display: none; /* Скрываем текст, оставляем только эмодзи */
+  }
+  
+  .help-link .emoji {
+    font-size: 16px;
+  }
+  
   .info-item {
     flex-direction: column;
     align-items: flex-start;
@@ -720,6 +818,24 @@
   
   .left-column, .right-column {
     padding: 0.8rem;
+  }
+  
+  /* Хедер на очень маленьких экранах */
+  .header {
+    margin-bottom: 0.5rem;
+  }
+  
+  .header h1 {
+    font-size: 1.1rem;
+  }
+  
+  .help-link {
+    padding: 4px 8px;
+    border-radius: 16px;
+  }
+  
+  .help-link .emoji {
+    font-size: 14px;
   }
   
   .vocab-table th,
