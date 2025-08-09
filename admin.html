@@ -643,22 +643,38 @@
     // Отображение админ панели
     function showAdminPanel() {
       console.log('✅ Показываем админ панель');
-      document.getElementById('authScreen').style.display = 'none';
-      document.getElementById('adminPanel').style.display = 'block';
+      
+      // Проверяем, существует ли элемент authScreen перед попыткой его скрыть
+      const authScreen = document.getElementById('authScreen');
+      if (authScreen) {
+        authScreen.style.display = 'none';
+      }
+      
+      const adminPanel = document.getElementById('adminPanel');
+      if (adminPanel) {
+        adminPanel.style.display = 'block';
+      }
+      
       isAuthenticated = true;
       
       // Обновляем информацию о пользователе
       const userInfo = document.getElementById('userInfo');
-      userInfo.innerHTML = `
-        Добро пожаловать, ${currentUser.first_name || 'Админ'}! 
-        <small>ID: ${currentUser.telegram_id}</small>
-      `;
+      if (userInfo) {
+        userInfo.innerHTML = `
+          Добро пожаловать, ${currentUser.first_name || 'Админ'}! 
+          <small>ID: ${currentUser.telegram_id}</small>
+        `;
+      }
     }
 
     // Загрузка начальных данных
     async function loadInitialData() {
       console.log('📊 Загрузка начальных данных...');
-      await loadStudents();
+      
+      // Небольшая задержка для уверенности, что DOM готов
+      setTimeout(async () => {
+        await loadStudents();
+      }, 100);
     }
 
     // Загрузка списка студентов
@@ -666,6 +682,11 @@
       console.log('👥 Загрузка списка студентов...');
       const studentsContent = document.getElementById('studentsContent');
       
+      if (!studentsContent) {
+        console.error('❌ Элемент studentsContent не найден');
+        return;
+      }
+
       if (!isAuthenticated) {
         console.log('❌ Пользователь не авторизован');
         return;
@@ -689,7 +710,11 @@
         }
 
         const data = await response.json();
-        console.log('✅ Студенты загружены:', data.students.length);
+        console.log('✅ Студенты загружены:', data.students?.length || 0);
+        
+        if (!data.students) {
+          throw new Error('Некорректный ответ API: отсутствует поле students');
+        }
         
         studentsData = data.students;
         renderStudentsTable(studentsData);
@@ -777,16 +802,24 @@
 
     // Обновление статистики
     function updateStats(students) {
+      console.log('📊 Обновление статистики для', students.length, 'студентов');
+      
       const totalStudents = students.length;
       const upcomingLessons = students.filter(s => s.next_session).length;
       const weeklyLessons = students.reduce((sum, s) => sum + (s.frequency || 0), 0);
       
-      document.getElementById('totalStudents').textContent = totalStudents;
-      document.getElementById('upcomingLessons').textContent = upcomingLessons;
-      document.getElementById('totalWords').textContent = '—'; // Можно добавить API для подсчета
-      document.getElementById('weeklyLessons').textContent = weeklyLessons;
+      // Безопасное обновление элементов
+      const totalStudentsEl = document.getElementById('totalStudents');
+      const upcomingLessonsEl = document.getElementById('upcomingLessons');
+      const totalWordsEl = document.getElementById('totalWords');
+      const weeklyLessonsEl = document.getElementById('weeklyLessons');
+      const statsGridEl = document.getElementById('statsGrid');
       
-      document.getElementById('statsGrid').style.display = 'grid';
+      if (totalStudentsEl) totalStudentsEl.textContent = totalStudents;
+      if (upcomingLessonsEl) upcomingLessonsEl.textContent = upcomingLessons;
+      if (totalWordsEl) totalWordsEl.textContent = '—'; // Можно добавить API для подсчета
+      if (weeklyLessonsEl) weeklyLessonsEl.textContent = weeklyLessons;
+      if (statsGridEl) statsGridEl.style.display = 'grid';
     }
 
     // Экспорт данных
