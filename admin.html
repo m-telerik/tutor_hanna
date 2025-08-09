@@ -333,9 +333,9 @@
         return `
           <div class="booking-mode student-booking">
             <span class="booking-badge student">📅 Студент</span>
-              <small style="opacity: 0.7; display: block; margin-top: 2px;">
+            <small style="opacity: 0.7; display: block; margin-top: 2px;">
               Самостоятельное бронирование
-              </small>
+            </small>
           </div>
         `;
       } else {
@@ -344,9 +344,9 @@
         
         return `
           <div class="booking-mode teacher-booking">
-            <span class="booking-badge teacher">🤖 Преподаватель</span>
+            <span class="booking-badge teacher">🎓 Преподаватель</span>
             <small style="opacity: 0.7; display: block; margin-top: 2px;">
-              ${timeInfo} ${daysInfo}
+              ${timeInfo}<br>${daysInfo}
             </small>
           </div>
         `;
@@ -401,12 +401,13 @@ function renderStudentsTable(students) {
               ` : '<span class="no-telegram">—</span>'}
             </td>
             <td>
-              ${getBookingModeDisplay(student.preferred_time, student.preferred_days)}
+              ${getBookingModeDisplay(student.booking_mode, student.preferred_time, student.preferred_days)}
             </td>
             <td>
               <span class="badge badge-primary">
                 ${student.language || '—'}
               </span>
+              ${student.frequency ? `<br><small style="opacity: 0.7;">${student.frequency}x в неделю</small>` : ''}
             </td>
             <td>
               ${student.next_session 
