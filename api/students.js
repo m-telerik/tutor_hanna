@@ -15,10 +15,10 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  // Добавляем username и email в SELECT
+  // Добавляем booking_mode в SELECT
   const { data: users, error: userError } = await supabase
     .from('hanna_users')
-    .select('id, name, username, email, languages, preferred_days, preferred_time')
+    .select('id, name, username, email, languages, preferred_days, preferred_time, booking_mode')
     .eq('is_active', true)
     .eq('role', 'student');
 
@@ -60,6 +60,7 @@ export default async function handler(req, res) {
       language: Array.isArray(u.languages) ? u.languages.join(', ') : (u.languages || '—'),
       preferred_days: u.preferred_days || [],
       preferred_time: u.preferred_time || null,
+      booking_mode: u.booking_mode || 'by_teacher', // значение по умолчанию
       next_session: session.session_datetime ? 
         new Date(session.session_datetime).toLocaleString('ru-RU', {
           timeZone: 'Asia/Bangkok',
