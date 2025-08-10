@@ -114,12 +114,7 @@ async function handleTelegramIdFilter(req, res, target_telegram_id) {
       .single();
     
     if (studentData) {
-      userInfo = {
-        name: studentData.name,
-        telegram_id: parseInt(studentData.telegram_id),
-        username: studentData.username || null,
-        email: studentData.email || null
-      };
+      userInfo = studentData;
     } else {
       // Если не студент, возможно админ
       const adminNames = {
@@ -161,11 +156,10 @@ async function handleTelegramIdFilter(req, res, target_telegram_id) {
       if (allMessages) {
         additionalMessages = allMessages.filter(msg => {
           try {
-            // Проверяем, что message это строка перед парсингом
+            // Проверяем, что message - строка перед парсингом
             if (typeof msg.message !== 'string') {
               return false;
             }
-            
             const parsed = JSON.parse(msg.message);
             // Ищем telegram_id в метаданных сообщения
             const metadata = parsed.metadata || {};
@@ -187,13 +181,10 @@ async function handleTelegramIdFilter(req, res, target_telegram_id) {
     );
 
     // Добавляем искусственное время создания на основе ID (чем больше ID, тем новее)
-    // Также проверяем, что message является строкой
-    const messagesWithTime = uniqueMessages
-      .filter(msg => msg.message && typeof msg.message === 'string') // Фильтруем только валидные сообщения
-      .map(msg => ({
-        ...msg,
-        created_at: new Date(Date.now() - (Math.max(...uniqueMessages.map(m => m.id)) - msg.id) * 1000).toISOString()
-      }));
+    const messagesWithTime = uniqueMessages.map(msg => ({
+      ...msg,
+      created_at: new Date(Date.now() - (Math.max(...uniqueMessages.map(m => m.id)) - msg.id) * 1000).toISOString()
+    }));
 
     console.log(`Найдено ${messagesWithTime.length} сообщений для telegram_id ${target_telegram_id}`);
 
