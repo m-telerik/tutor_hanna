@@ -283,19 +283,17 @@
       
       tbody.innerHTML = allMessages.map((msg, index) => {
         try {
-          // Проверяем, что message - строка перед парсингом
-          if (typeof msg.message !== 'string') {
-            console.error('Message не является строкой:', msg.message);
-            return `
-              <tr class="error-row">
-                <td colspan="5" style="background: rgba(220, 53, 69, 0.1); color: var(--error-color); text-align: center; padding: 1rem;">
-                  ⚠️ Ошибка: сообщение ID ${msg.id} имеет неверный формат
-                </td>
-              </tr>
-            `;
+          let parsed;
+          
+          // Обрабатываем разные типы message (JSONB может прийти как объект или строка)
+          if (typeof msg.message === 'string') {
+            parsed = JSON.parse(msg.message);
+          } else if (typeof msg.message === 'object' && msg.message !== null) {
+            parsed = msg.message; // Уже объект
+          } else {
+            throw new Error('Неподдерживаемый тип message');
           }
 
-          const parsed = JSON.parse(msg.message);
           const timestamp = formatTimeAgo(msg.created_at);
           
           // Определяем тип агента из session_id
