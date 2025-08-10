@@ -170,7 +170,33 @@
           <ul class="info-list">
             <li class="info-item">
               <span class="info-label">Имя:</span>
-              <span class="info-value">${student.name}            </li>
+              <span class="info-value">${student.name}</span>
+            </li>
+            
+            ${student.email ? `
+              <li class="info-item">
+                <span class="info-label">Email:</span>
+                <span class="info-value">${student.email}</span>
+              </li>
+            ` : ''}
+            
+            ${student.username ? `
+              <li class="info-item">
+                <span class="info-label">Telegram:</span>
+                <span class="info-value">
+                  <a href="https://t.me/${student.username}" target="_blank" style="color: var(--accent-color);">
+                    @${student.username}
+                  </a>
+                </span>
+              </li>
+            ` : ''}
+            
+            <li class="info-item">
+              <span class="info-label">Язык:</span>
+              <span class="info-value">
+                <span class="language-badge">${student.language || '—'}</span>
+              </span>
+            </li>
             
             <li class="info-item">
               <span class="info-label">Бронирование:</span>
@@ -403,12 +429,11 @@
 
     function showError(message) {
       document.body.innerHTML = `
-        <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; text-align: center; padding: 2rem;">
-          <div style="background: var(--card-bg); border-radius: 16px; padding: 3rem 2rem; max-width: 400px; width: 100%; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);">
-            <div style="font-size: 4rem; margin-bottom: 1.5rem;">❌</div>
-            <h2 style="color: var(--error-color); margin: 0 0 1rem 0;">Ошибка</h2>
-            <p style="margin: 0 0 2rem 0; line-height: 1.5;">${message}</p>
-            <button onclick="history.back()" style="background: var(--accent-color); color: white; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer;">
+        <div class="error-state" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+          <div>
+            <h3>Ошибка</h3>
+            <p>${message}</p>
+            <button onclick="history.back()" class="btn-primary" style="margin-top: 1rem;">
               ← Назад
             </button>
           </div>
@@ -425,27 +450,3 @@
   </script>
 </body>
 </html>
-            
-            ${student.email ? `
-              <li class="info-item">
-                <span class="info-label">Email:</span>
-                <span class="info-value">${student.email}</span>
-              </li>
-            ` : ''}
-            
-            ${student.username ? `
-              <li class="info-item">
-                <span class="info-label">Telegram:</span>
-                <span class="info-value">
-                  <a href="https://t.me/${student.username}" target="_blank" style="color: var(--accent-color);">
-                    @${student.username}
-                  </a>
-                </span>
-              </li>
-            ` : ''}
-            
-            <li class="info-item">
-              <span class="info-label">Язык:</span>
-              <span class="info-value">
-                <span class="language-badge">${student.language || '—'}</span>
-              </span>
