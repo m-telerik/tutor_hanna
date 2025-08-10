@@ -1,5 +1,6 @@
 // /api/chat-history.js
 import { createClient } from '@supabase/supabase-js';
+import { authenticate } from './_auth-middleware.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -7,39 +8,18 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  const telegram_id = parseInt(req.headers["x-telegram-id"]);
   const { telegram_id: target_telegram_id, memory_key, date, agent_type, user_filter } = req.query;
   
-  if (!telegram_id) {
-    return res.status(400).json({ error: 'Missing telegram_id' });
-  }
-
   try {
-    // Проверяем роль пользователя
-    const { data: requestingUser, error: userError } = await supabase
-      .from('hanna_users')
-      .select('role, is_active')
-      .eq('telegram_id', telegram_id)
-      .single();
+    // Универсальная проверка авторизации (Telegram или браузер)
+    const user = await authenticate(req, res, ['admin', 'tutor']);
+    if (!user) return; // Ошибка уже отправлена в authenticate()
 
-    if (userError && userError.code !== 'PGRST116') {
-      return res.status(500).json({ error: userError.message });
-    }
-
-    const userRole = requestingUser?.role;
-    const allowedRoles = ['admin', 'tutor'];
-    
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      return res.status(403).json({ 
-        error: 'Access denied',
-        message: 'Требуется роль admin или tutor для просмотра истории чатов',
-        your_role: userRole || 'unknown'
-      });
-    }
+    console.log('✅ Chat History API - авторизован:', user.name, '- роль:', user.role, '- метод:', user.auth_method);
 
     // Новая логика: фильтрация по telegram_id
     if (target_telegram_id) {
-      return await handleTelegramIdFilter(req, res, target_telegram_id, userRole);
+      return await handleTelegramIdFilter(req, res, target_telegram_id, user);
     }
     
     // Старая логика для обратной совместимости
@@ -111,7 +91,11 @@ export default async function handler(req, res) {
       messages: enrichedMessages,
       total: enrichedMessages.length,
       filters: { memory_key, agent_type, date, user_filter },
-      requester_role: userRole
+      requester: {
+        name: user.name,
+        role: user.role,
+        auth_method: user.auth_method
+      }
     });
 
   } catch (error) {
@@ -120,7 +104,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function handleTelegramIdFilter(req, res, target_telegram_id, requesterRole) {
+async function handleTelegramIdFilter(req, res, target_telegram_id, requester) {
   try {
     console.log('Загружаем чаты для telegram_id:', target_telegram_id);
     
@@ -147,7 +131,7 @@ async function handleTelegramIdFilter(req, res, target_telegram_id, requesterRol
     }
 
     // Ограничения доступа для тьюторов
-    if (requesterRole === 'tutor') {
+    if (requester.role === 'tutor') {
       // Тьюторы могут просматривать только чаты своих студентов
       // В будущем здесь можно добавить проверку через таблицу связей
       if (userData && userData.role === 'admin') {
@@ -218,7 +202,11 @@ async function handleTelegramIdFilter(req, res, target_telegram_id, requesterRol
       user_info: userInfo,
       total: messagesWithTime.length,
       telegram_id: target_telegram_id,
-      requester_role: requesterRole
+      requester: {
+        name: requester.name,
+        role: requester.role,
+        auth_method: requester.auth_method
+      }
     });
 
   } catch (error) {
