@@ -93,15 +93,6 @@
           const { students } = await response.json();
           console.log('✅ Загружено студентов:', students.length);
           
-          // Обрабатываем студентов с правильными типами данных
-          const processedStudents = students.map(student => ({
-            name: student.name,
-            telegram_id: student.telegram_id || undefined, // Может отсутствовать в данных
-            username: student.username || null, // Может быть null/undefined
-            email: student.email || null,
-            role: 'student'
-          })).filter(student => student.telegram_id !== undefined); // Убираем студентов без telegram_id
-          
           // Добавляем админов в начало списка
           const adminUsers = [
             { 
@@ -121,7 +112,7 @@
           ];
           
           // Сортируем студентов по имени для удобства
-          const sortedStudents = processedStudents.sort((a, b) => a.name.localeCompare(b.name));
+          const sortedStudents = students.sort((a, b) => a.name.localeCompare(b.name));
           
           availableUsers = [...adminUsers, ...sortedStudents];
           populateUserSelect();
@@ -136,8 +127,7 @@
           { name: 'Анна (админ)', telegram_id: 618647337, username: 'admin1', role: 'admin' },
           { name: 'Марина (админ)', telegram_id: 2341205, username: 'admin2', role: 'admin' },
           { name: 'Михаил', telegram_id: 96911488, username: 'YoroolGui', role: 'student' },
-          { name: 'Юлия', telegram_id: 396796964, username: 'juliia_go', role: 'student' },
-          { name: 'Тестовый пользователь', telegram_id: 123456789, username: null, role: 'student' }
+          { name: 'Юлия', telegram_id: 396796964, username: 'juliia_go', role: 'student' }
         ];
         populateUserSelect();
         
@@ -162,13 +152,8 @@
         admins.forEach(user => {
           const option = document.createElement('option');
           option.value = user.telegram_id;
-          
-          // Правильно форматируем отображение
-          const displayName = user.name;
-          const displayUsername = user.username ? `@${user.username}` : 'без username';
-          const displayId = `ID: ${user.telegram_id}`;
-          
-          option.textContent = `${displayName} (${displayUsername}) - ${displayId}`;
+          const usernameText = user.username ? `@${user.username}` : 'нет username';
+          option.textContent = `${user.name} (${usernameText}) - ID: ${user.telegram_id}`;
           adminGroup.appendChild(option);
         });
         select.appendChild(adminGroup);
@@ -181,13 +166,8 @@
         students.forEach(user => {
           const option = document.createElement('option');
           option.value = user.telegram_id;
-          
-          // Правильно форматируем отображение для студентов
-          const displayName = user.name;
-          const displayUsername = user.username ? `@${user.username}` : 'без username';
-          const displayId = `ID: ${user.telegram_id}`;
-          
-          option.textContent = `${displayName} (${displayUsername}) - ${displayId}`;
+          const usernameText = user.username ? `@${user.username}` : 'нет username';
+          option.textContent = `${user.name} (${usernameText}) - ID: ${user.telegram_id}`;
           studentGroup.appendChild(option);
         });
         select.appendChild(studentGroup);
@@ -235,13 +215,6 @@
         }
         
         const { messages, user_info } = await response.json();
-        
-        console.log('📊 Полученные данные:', {
-          messages: messages?.length || 0,
-          user_info,
-          firstMessage: messages?.[0],
-          messageTypes: messages?.map(m => typeof m.message).slice(0, 5)
-        });
         
         if (!messages || messages.length === 0) {
           statusContainer.innerHTML = '<div class="loading">Нет сообщений для выбранного пользователя</div>';
@@ -310,14 +283,13 @@
       
       tbody.innerHTML = allMessages.map((msg, index) => {
         try {
-          // Проверяем, что message существует и является строкой
-          if (!msg.message || typeof msg.message !== 'string') {
-            console.warn('Некорректное сообщение:', msg);
+          // Проверяем, что message - строка перед парсингом
+          if (typeof msg.message !== 'string') {
+            console.error('Message не является строкой:', msg.message);
             return `
               <tr class="error-row">
                 <td colspan="5" style="background: rgba(220, 53, 69, 0.1); color: var(--error-color); text-align: center; padding: 1rem;">
-                  ⚠️ Некорректный формат сообщения ID: ${msg.id}
-                  <br><small>Тип данных: ${typeof msg.message}</small>
+                  ⚠️ Ошибка: сообщение ID ${msg.id} имеет неверный формат
                 </td>
               </tr>
             `;
@@ -344,10 +316,9 @@
             agentLabel = '📅 Calendar Agent';
           }
           
-          // Безопасно обрабатываем контент
+          // Обрезаем контент для превью
           const content = parsed.content || 'Нет содержимого';
-          const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
-          const contentPreview = contentStr.length > 120 ? contentStr.substring(0, 120) + '...' : contentStr;
+          const contentPreview = content.length > 120 ? content.substring(0, 120) + '...' : content;
           
           // Добавляем класс для четных/нечетных строк
           const rowClass = index % 2 === 0 ? 'even-row' : 'odd-row';
@@ -356,7 +327,7 @@
             <tr class="${rowClass}" data-message-id="${msg.id}">
               <td style="font-family: monospace; font-size: 11px; max-width: 200px; word-break: break-all;">
                 <div style="background: var(--card-bg); padding: 4px 6px; border-radius: 4px; border: 1px solid var(--border-color);">
-                  ${escapeHtml(msg.session_id)}
+                  ${msg.session_id}
                 </div>
                 <small style="opacity: 0.6; margin-top: 2px; display: block;">ID: ${msg.id}</small>
               </td>
@@ -364,11 +335,11 @@
                 <span class="agent-badge ${agentType}">${agentLabel}</span>
               </td>
               <td style="text-align: center;">
-                <span class="type-badge ${parsed.type || 'unknown'}">${getTypeEmoji(parsed.type || 'unknown')} ${parsed.type || 'unknown'}</span>
+                <span class="type-badge ${parsed.type}">${getTypeEmoji(parsed.type)} ${parsed.type}</span>
               </td>
-              <td class="content-cell" title="${escapeHtml(contentStr)}">
+              <td class="content-cell" title="${escapeHtml(content)}">
                 ${escapeHtml(contentPreview)}
-                ${contentStr.length > 120 ? '<br><small style="opacity: 0.6; font-style: italic;">Наведите для полного текста</small>' : ''}
+                ${content.length > 120 ? '<br><small style="opacity: 0.6; font-style: italic;">Наведите для полного текста</small>' : ''}
               </td>
               <td style="white-space: nowrap; font-size: 12px;">
                 <div title="${msg.created_at ? new Date(msg.created_at).toLocaleString('ru-RU') : 'Время не доступно (сортировка по ID)'}">
@@ -384,7 +355,6 @@
               <td colspan="5" style="background: rgba(220, 53, 69, 0.1); color: var(--error-color); text-align: center; padding: 1rem;">
                 ⚠️ Ошибка парсинга сообщения ID: ${msg.id}
                 <br><small>Ошибка: ${error.message}</small>
-                <br><small>Данные: ${typeof msg.message === 'string' ? escapeHtml(msg.message.substring(0, 100)) : 'Некорректный тип данных'}...</small>
               </td>
             </tr>
           `;
@@ -401,15 +371,8 @@
       
       allMessages.forEach(msg => {
         try {
-          // Проверяем, что message является строкой
-          if (!msg.message || typeof msg.message !== 'string') {
-            typeCounts.error++;
-            return;
-          }
-          
           const parsed = JSON.parse(msg.message);
-          const messageType = parsed.type || 'unknown';
-          typeCounts[messageType] = (typeCounts[messageType] || 0) + 1;
+          typeCounts[parsed.type] = (typeCounts[parsed.type] || 0) + 1;
           
           // Подсчет по агентам
           if (msg.session_id.startsWith('hanna_user_')) agentCounts.tutor++;
@@ -417,41 +380,32 @@
           else if (msg.session_id.startsWith('lead_')) agentCounts.lead++;
           else if (msg.session_id.startsWith('calendar_')) agentCounts.calendar++;
           else agentCounts.unknown++;
-        } catch (error) {
+        } catch {
           typeCounts.error++;
-          console.warn('Ошибка обработки сообщения в статистике:', error, msg);
         }
       });
       
       stats.innerHTML = `
         <span><strong>Всего:</strong> ${allMessages.length}</span>
-        <span><strong>AI:</strong> ${typeCounts.ai || 0}</span>
-        <span><strong>Human:</strong> ${typeCounts.human || 0}</span>
-        <span><strong>System:</strong> ${typeCounts.system || 0}</span>
+        <span><strong>AI:</strong> ${typeCounts.ai}</span>
+        <span><strong>Human:</strong> ${typeCounts.human}</span>
+        <span><strong>System:</strong> ${typeCounts.system}</span>
         <span><strong>TutorBot:</strong> ${agentCounts.tutor}</span>
         <span><strong>Student:</strong> ${agentCounts.student}</span>
         <span><strong>Lead:</strong> ${agentCounts.lead}</span>
         <span><strong>Calendar:</strong> ${agentCounts.calendar}</span>
         ${typeCounts.error > 0 ? `<span style="color: var(--error-color);"><strong>Ошибки:</strong> ${typeCounts.error}</span>` : ''}
-        ${agentCounts.unknown > 0 ? `<span style="color: var(--error-color);"><strong>Неизвестные:</strong> ${agentCounts.unknown}</span>` : ''}
       `;
     }
 
     function showUserInfo(userInfo) {
       const userInfoDiv = document.getElementById('userInfo');
       
-      // Безопасно обрабатываем данные пользователя
-      const name = userInfo?.name || 'Неизвестный пользователь';
-      const telegramId = userInfo?.telegram_id || currentTelegramId;
-      const username = userInfo?.username || null;
-      const email = userInfo?.email || null;
-      
       userInfoDiv.innerHTML = `
         <div class="memory-key-info">
-          <span><strong>Пользователь:</strong> ${escapeHtml(name)}</span>
-          <span><strong>Telegram ID:</strong> ${telegramId}</span>
-          <span><strong>Username:</strong> ${username ? `@${escapeHtml(username)}` : 'не указан'}</span>
-          ${email ? `<span><strong>Email:</strong> ${escapeHtml(email)}</span>` : ''}
+          <span><strong>Пользователь:</strong> ${userInfo.name}</span>
+          <span><strong>Telegram ID:</strong> ${userInfo.telegram_id}</span>
+          <span><strong>Username:</strong> ${userInfo.username ? `@${userInfo.username}` : 'не указан'}</span>
           <span><strong>Всего сообщений:</strong> ${allMessages.length}</span>
         </div>
       `;
