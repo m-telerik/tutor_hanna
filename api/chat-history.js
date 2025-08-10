@@ -156,11 +156,8 @@ async function handleTelegramIdFilter(req, res, target_telegram_id) {
       if (allMessages) {
         additionalMessages = allMessages.filter(msg => {
           try {
-            // Проверяем, что message - строка перед парсингом
-            if (typeof msg.message !== 'string') {
-              return false;
-            }
-            const parsed = JSON.parse(msg.message);
+            // JSONB поле может быть уже объектом, не нужно парсить
+            const parsed = typeof msg.message === 'string' ? JSON.parse(msg.message) : msg.message;
             // Ищем telegram_id в метаданных сообщения
             const metadata = parsed.metadata || {};
             return metadata.telegram_id == target_telegram_id || 
