@@ -5,99 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Админ панель - Hanna English & French</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="js/auth.js"></script>
   <link rel="stylesheet" href="styles/main.css">
   <link rel="stylesheet" href="styles/admin.css">
-  <style>
-    /* ===== СТИЛИ ДЛЯ РЕЖИМОВ БРОНИРОВАНИЯ ===== */
-    .booking-mode {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .booking-badge {
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 10px;
-      font-weight: 500;
-      display: inline-block;
-      text-align: center;
-      min-width: 80px;
-    }
-
-    .booking-badge.student {
-      background: var(--success-color);
-      color: white;
-    }
-
-    .booking-badge.teacher {
-      background: var(--admin-accent);
-      color: white;
-    }
-
-    .student-name a {
-      color: var(--text-color) !important;
-      text-decoration: none !important;
-      font-weight: 600;
-      transition: color 0.2s;
-    }
-
-    .student-name a:hover {
-      color: var(--accent-color) !important;
-      text-decoration: none !important;
-    }
-
-    .student-username a {
-      color: var(--accent-color) !important;
-      font-size: 11px;
-      text-decoration: none !important;
-      transition: opacity 0.2s;
-    }
-
-    .student-username a:hover {
-      opacity: 0.8;
-      text-decoration: none !important;
-    }
-
-    .table-container table th {
-      font-weight: 600;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-color);
-      opacity: 0.8;
-    }
-
-    .table-container table td {
-      vertical-align: top;
-      padding: 14px 12px;
-    }
-
-    @media (max-width: 768px) {
-      .booking-badge {
-        font-size: 9px;
-        padding: 2px 6px;
-        min-width: 70px;
-      }
-      
-      .student-name {
-        font-size: 13px;
-      }
-      
-      .student-username {
-        font-size: 10px;
-      }
-    }
-  </style>
 </head>
 <body>
   <div class="container">
     <!-- Основная админка -->
-    <div id="adminPanel">
+    <div id="adminPanel" style="display: none;">
       <div class="admin-header">
         <h1><span class="emoji">👑</span>Админ панель</h1>
         <div class="user-info" id="userInfo">
-          Тестовый режим админки
+          Загрузка...
         </div>
       </div>
 
@@ -160,114 +79,47 @@
   </div>
 
   <script>
-    // Конфигурация
-    const ADMIN_IDS = [618647337, 2341205];
-    
     // Глобальные переменные
-    let currentUser = null;
+    let auth = null;
     let studentsData = [];
-    let isAuthenticated = false;
 
     // Инициализация при загрузке страницы
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
       console.log('🚀 Инициализация админ панели...');
       
-      // Настройка Telegram WebApp (если доступен)
-      if (window.Telegram?.WebApp) {
-        console.log('📱 Telegram WebApp обнаружен');
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-      }
-      
-      // Сразу показываем админку с тестовыми данными
-      currentUser = {
-        telegram_id: 618647337,
-        first_name: 'Test',
-        last_name: 'Admin',
-        username: 'testadmin',
-        role: 'admin',
-        sessionTime: Date.now(),
-        isDev: true
-      };
-      
-      showAdminPanel();
-      loadInitialData();
-    });
-
-    // Единая функция авторизации пользователя
-    async function authenticateUser(userData) {
-      console.log('🔐 Авторизация пользователя:', userData);
-      
       try {
-        // Проверяем роль через API (если не dev режим)
-        if (!userData.isDev) {
-          const response = await fetch('/api/user-role', {
-            headers: { 'x-telegram-id': userData.telegram_id }
-          });
-
-          if (!response.ok) {
-            throw new Error(`API вернул ошибку: ${response.status}`);
-          }
-
-          const apiData = await response.json();
-          console.log('✅ API подтвердил роль:', apiData);
-
-          if (apiData.role !== 'admin') {
-            throw new Error('API не подтвердил права администратора');
-          }
-          
-          // Обновляем данные пользователя данными от API
-          userData = { ...userData, ...apiData };
-        }
-        
-        // Сохраняем пользователя
-        currentUser = userData;
-        
-        showAdminPanel();
-        loadInitialData();
-        showNotification(`👋 Добро пожаловать, ${userData.first_name}!`, 'success');
+        // Инициализируем авторизацию - только для админов
+        auth = new AuthSystem();
+        const user = await auth.init(['admin'], onAuthSuccess, onAuthFail);
         
       } catch (error) {
-        console.error('❌ Ошибка авторизации:', error);
-        showAuthError('Ошибка авторизации: ' + error.message);
+        console.error('❌ Ошибка инициализации:', error);
+        // Ошибка уже обработана в AuthSystem
       }
-    }
+    });
 
-    // Отображение админ панели
-    function showAdminPanel() {
-      console.log('✅ Показываем админ панель');
+    // Успешная авторизация
+    function onAuthSuccess(user) {
+      console.log('✅ Админ авторизован:', user);
       
-      // Проверяем, существует ли элемент authScreen перед попыткой его скрыть
-      const authScreen = document.getElementById('authScreen');
-      if (authScreen) {
-        authScreen.style.display = 'none';
-      }
-      
-      const adminPanel = document.getElementById('adminPanel');
-      if (adminPanel) {
-        adminPanel.style.display = 'block';
-      }
-      
-      isAuthenticated = true;
+      // Показываем панель
+      document.getElementById('adminPanel').style.display = 'block';
       
       // Обновляем информацию о пользователе
       const userInfo = document.getElementById('userInfo');
-      if (userInfo) {
-        userInfo.innerHTML = `
-          Добро пожаловать, ${currentUser.first_name || 'Админ'}! 
-          <small>ID: ${currentUser.telegram_id}</small>
-        `;
-      }
+      userInfo.innerHTML = `
+        Добро пожаловать, ${user.first_name || user.name || 'Админ'}! 
+        <small>ID: ${user.telegram_id}</small>
+      `;
+      
+      // Загружаем данные
+      loadStudents();
     }
 
-    // Загрузка начальных данных
-    async function loadInitialData() {
-      console.log('📊 Загрузка начальных данных...');
-      
-      // Небольшая задержка для уверенности, что DOM готов
-      setTimeout(async () => {
-        await loadStudents();
-      }, 100);
+    // Неудачная авторизация
+    function onAuthFail(error) {
+      console.error('❌ Ошибка авторизации:', error);
+      // AuthSystem сам покажет экран ошибки
     }
 
     // Загрузка списка студентов
@@ -275,13 +127,8 @@
       console.log('👥 Загрузка списка студентов...');
       const studentsContent = document.getElementById('studentsContent');
       
-      if (!studentsContent) {
-        console.error('❌ Элемент studentsContent не найден');
-        return;
-      }
-
-      if (!isAuthenticated) {
-        console.log('❌ Пользователь не авторизован');
+      if (!auth || !auth.isAuth()) {
+        console.error('❌ Пользователь не авторизован');
         return;
       }
 
@@ -294,9 +141,7 @@
       `;
 
       try {
-        const response = await fetch('/api/students', {
-          headers: { 'x-telegram-id': currentUser.telegram_id }
-        });
+        const response = await auth.apiRequest('/api/students');
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -351,73 +196,73 @@
     }
 
     // Отрисовка таблицы студентов
-function renderStudentsTable(students) {
-  const studentsContent = document.getElementById('studentsContent');
-  
-  if (students.length === 0) {
-    studentsContent.innerHTML = `
-      <div class="empty-state">
-        <span class="emoji" style="font-size: 3em;">👥</span>
-        <p>Пока нет активных студентов</p>
-      </div>
-    `;
-    return;
-  }
+    function renderStudentsTable(students) {
+      const studentsContent = document.getElementById('studentsContent');
+      
+      if (students.length === 0) {
+        studentsContent.innerHTML = `
+          <div class="empty-state">
+            <span class="emoji" style="font-size: 3em;">👥</span>
+            <p>Пока нет активных студентов</p>
+          </div>
+        `;
+        return;
+      }
 
-  studentsContent.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Студент</th>
-          <th>Telegram</th>
-          <th>Бронирование</th>
-          <th>Язык</th>
-          <th>Следующее занятие</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${students.map(student => `
-          <tr>
-            <td>
-              <div class="student-name">
-                <a href="student.html?name=${encodeURIComponent(student.name)}">
-                  ${student.name}
-                </a>
-              </div>
-              ${student.email ? `
-                <div class="student-email">
-                  ${student.email}
-                </div>
-              ` : ''}
-            </td>
-            <td class="telegram-column">
-              ${student.username ? `
-                <a href="https://t.me/${student.username}" target="_blank" class="telegram-link">
-                  @${student.username}
-                </a>
-              ` : '<span class="no-telegram">—</span>'}
-            </td>
-            <td>
-              ${getBookingModeDisplay(student.booking_mode, student.preferred_time, student.preferred_days)}
-            </td>
-            <td>
-              <span class="badge badge-primary">
-                ${student.language || '—'}
-              </span>
-              ${student.frequency ? `<br><small style="opacity: 0.7;">${student.frequency}x в неделю</small>` : ''}
-            </td>
-            <td>
-              ${student.next_session 
-                ? `<a href="lesson.html?session_id=${student.next_session_id}" class="next-lesson-link">${student.next_session}</a>`
-                : '<span style="opacity: 0.6;">Не запланировано</span>'
-              }
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-}
+      studentsContent.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Студент</th>
+              <th>Telegram</th>
+              <th>Бронирование</th>
+              <th>Язык</th>
+              <th>Следующее занятие</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${students.map(student => `
+              <tr>
+                <td>
+                  <div class="student-name">
+                    <a href="student.html?name=${encodeURIComponent(student.name)}">
+                      ${student.name}
+                    </a>
+                  </div>
+                  ${student.email ? `
+                    <div class="student-email">
+                      ${student.email}
+                    </div>
+                  ` : ''}
+                </td>
+                <td class="telegram-column">
+                  ${student.username ? `
+                    <a href="https://t.me/${student.username}" target="_blank" class="telegram-link">
+                      @${student.username}
+                    </a>
+                  ` : '<span class="no-telegram">—</span>'}
+                </td>
+                <td>
+                  ${getBookingModeDisplay(student.booking_mode, student.preferred_time, student.preferred_days)}
+                </td>
+                <td>
+                  <span class="badge badge-primary">
+                    ${student.language || '—'}
+                  </span>
+                  ${student.frequency ? `<br><small style="opacity: 0.7;">${student.frequency}x в неделю</small>` : ''}
+                </td>
+                <td>
+                  ${student.next_session 
+                    ? `<a href="lesson.html?session_id=${student.next_session_id}" class="next-lesson-link">${student.next_session}</a>`
+                    : '<span style="opacity: 0.6;">Не запланировано</span>'
+                  }
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
 
     // Обновление статистики
     function updateStats(students) {
@@ -445,16 +290,17 @@ function renderStudentsTable(students) {
     async function exportData() {
       console.log('📊 Экспорт данных...');
       
-      if (!isAuthenticated || !studentsData.length) {
+      if (!auth || !auth.isAuth() || !studentsData.length) {
         alert('Нет данных для экспорта');
         return;
       }
 
       try {
+        const user = auth.getCurrentUser();
         const dataToExport = {
           students: studentsData,
           exportDate: new Date().toISOString(),
-          exportedBy: currentUser.first_name || 'Админ',
+          exportedBy: user.first_name || user.name || 'Админ',
           totalStudents: studentsData.length,
           upcomingLessons: studentsData.filter(s => s.next_session).length
         };
