@@ -290,80 +290,98 @@
     }
 
     // НОВАЯ ФУНКЦИЯ: Отрисовка карточки расписания
-    function renderScheduleCard(schedule) {
-      const participants = schedule.participant_names || [];
-      const nextSession = schedule.next_session_datetime ? 
-        new Date(schedule.next_session_datetime).toLocaleDateString('ru-RU') : 'Не запланировано';
-      
-      return `
-        <div class="schedule-card ${schedule.is_active ? 'active' : 'inactive'}" data-id="${schedule.id}">
-          <div class="schedule-header">
-            <div class="schedule-time">
-              <span class="time">${schedule.time_start}</span>
-              <span class="duration">${schedule.duration_minutes} мин</span>
-            </div>
-            <div class="schedule-status">
-              <span class="status-badge ${schedule.is_active ? 'active' : 'inactive'}">
-                ${schedule.is_active ? '✅' : '⏸️'}
-              </span>
-            </div>
-          </div>
-          
-          <div class="schedule-body">
-            <h4 class="schedule-name">${schedule.name}</h4>
-            
-            <div class="schedule-details">
-              <div class="detail-row">
-                <span class="detail-label">Тип:</span>
-                <span class="type-badge ${schedule.type}">${getTypeLabel(schedule.type)}</span>
-              </div>
-              
-              ${schedule.language ? `
-                <div class="detail-row">
-                  <span class="detail-label">Язык:</span>
-                  <span class="language-badge">${schedule.language}</span>
-                </div>
-              ` : ''}
-              
-              <div class="detail-row">
-                <span class="detail-label">Студенты:</span>
-                <span class="participants">${participants.join(', ')}</span>
-              </div>
-              
-              <div class="detail-row">
-                <span class="detail-label">Следующий:</span>
-                <span class="next-session">${nextSession}</span>
-              </div>
-              
-              ${schedule.zoom_link ? `
-                <div class="detail-row">
-                  <span class="detail-label">Zoom:</span>
-                  <a href="${schedule.zoom_link}" target="_blank" class="zoom-link">
-                    🔗 Ссылка
-                  </a>
-                </div>
-              ` : ''}
-            </div>
-          </div>
-          
-          <div class="schedule-actions">
-            <button class="action-btn primary" onclick="editRecurringSchedule('${schedule.id}')" title="Редактировать">
-              ✏️
-            </button>
-            <button class="action-btn secondary" onclick="toggleScheduleStatus('${schedule.id}', ${!schedule.is_active})" 
-                    title="${schedule.is_active ? 'Приостановить' : 'Активировать'}">
-              ${schedule.is_active ? '⏸️' : '▶️'}
-            </button>
-            <button class="action-btn secondary" onclick="viewScheduleSessions('${schedule.id}')" title="Просмотреть созданные уроки">
-              📅
-            </button>
-            <button class="action-btn danger" onclick="deleteRecurringSchedule('${schedule.id}')" title="Удалить">
-              🗑️
-            </button>
-          </div>
+    function renderRecurringSchedules(schedules) {
+  const recurringContent = document.getElementById('recurringContent');
+
+  if (!schedules.length) {
+    recurringContent.innerHTML = `
+      <div class="empty-state">
+        <span class="emoji" style="font-size: 3em;">📅</span>
+        <p>Нет настроенных регулярных расписаний</p>
+        <button onclick="createRecurringSchedule()" class="btn-primary">
+          <span class="emoji">➕</span>Создать первое расписание
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  // Группируем по дням
+  const schedulesByDay = groupSchedulesByDay(schedules);
+  const daysOrder = [1, 2, 3, 4, 5, 6, 7];
+
+  // Табы
+  const tabsHtml = daysOrder.map(day => `
+    <button class="day-tab" data-day="${day}">
+      ${getDayName(day)}
+    </button>
+  `).join('');
+
+  // Контент по дням
+  const contentHtml = daysOrder.map(day => {
+    const daySchedules = schedulesByDay[day] || [];
+    return `
+      <div class="day-schedule" data-day="${day}" style="display:none;">
+        ${daySchedules.map(s => renderCompactScheduleCard(s)).join('')}
+      </div>
+    `;
+  }).join('');
+
+  recurringContent.innerHTML = `
+    <div class="day-tabs">${tabsHtml}</div>
+    ${contentHtml}
+  `;
+
+  // Навешиваем события на табы
+  const tabs = recurringContent.querySelectorAll('.day-tab');
+  const dayBlocks = recurringContent.querySelectorAll('.day-schedule');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const day = tab.dataset.day;
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      dayBlocks.forEach(block => {
+        block.style.display = block.dataset.day === day ? 'block' : 'none';
+      });
+    });
+  });
+
+  // Активируем первый таб с занятиями (или сегодня)
+  const today = new Date().getDay() || 7;
+  const firstDayWithLessons = daysOrder.find(d => (schedulesByDay[d] || []).length > 0) || today;
+  const firstTab = recurringContent.querySelector(`.day-tab[data-day="${firstDayWithLessons}"]`);
+  if (firstTab) firstTab.click();
+}
+
+function renderCompactScheduleCard(schedule) {
+  const participants = schedule.participant_names?.join(', ') || '—';
+  const nextSession = schedule.next_session_datetime ?
+    new Date(schedule.next_session_datetime).toLocaleDateString('ru-RU') : 'Не запланировано';
+
+  return `
+    <div class="schedule-card ${schedule.is_active ? 'active' : 'inactive'}">
+      <div class="time-badge">${schedule.time_start}</div>
+      <div class="schedule-info">
+        <h4>${schedule.name}</h4>
+        <div class="meta">
+          <span class="type-badge ${schedule.type}">${getTypeLabel(schedule.type)}</span>
+          ${schedule.language ? `<span class="language-badge">${schedule.language}</span>` : ''}
         </div>
-      `;
-    }
+        <div class="participants">👥 ${participants}</div>
+        <div class="next-session">📅 ${nextSession}</div>
+        ${schedule.zoom_link ? `<a href="${schedule.zoom_link}" target="_blank" class="zoom-link">🔗 Zoom</a>` : ''}
+      </div>
+      <div class="actions">
+        <button class="action-btn primary" onclick="editRecurringSchedule('${schedule.id}')">✏️</button>
+        <button class="action-btn secondary" onclick="toggleScheduleStatus('${schedule.id}', ${!schedule.is_active})">
+          ${schedule.is_active ? '⏸️' : '▶️'}
+        </button>
+        <button class="action-btn secondary" onclick="viewScheduleSessions('${schedule.id}')">📅</button>
+        <button class="action-btn danger" onclick="deleteRecurringSchedule('${schedule.id}')">🗑️</button>
+      </div>
+    </div>
+  `;
+}
 
     // Вспомогательные функции
     function groupSchedulesByDay(schedules) {
