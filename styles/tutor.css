@@ -1058,3 +1058,94 @@ min-width: auto;
 font-size: 1.3rem;
 }
 }
+
+
+.day-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.day-tab {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.day-tab.active {
+  background: var(--tutor-primary);
+  color: white;
+  border-color: var(--tutor-primary);
+}
+
+.day-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.schedule-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.8rem;
+}
+.schedule-card.active {
+  border-left: 4px solid var(--tutor-primary);
+}
+.schedule-card.inactive {
+  opacity: 0.6;
+}
+
+.time-badge {
+  background: var(--tutor-primary);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.schedule-info {
+  flex: 1;
+}
+.schedule-info h4 {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.schedule-info .meta {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+.schedule-info .participants,
+.schedule-info .next-session {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+.schedule-info .zoom-link {
+  font-size: 0.85rem;
+  color: var(--tutor-primary);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.actions .action-btn {
+  padding: 4px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+}
+
