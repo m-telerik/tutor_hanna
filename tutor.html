@@ -18,74 +18,96 @@
           Загрузка...
         </div>
       </div>
-
       <!-- Статистика тьютора -->
-      <div class="stats-grid" id="statsGrid">
-        <div class="stat-card">
-          <div class="stat-number" id="myStudents">0</div>
-          <div class="stat-label">Мои студенты</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="todayLessons">0</div>
-          <div class="stat-label">Сегодня уроков</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="weekLessons">0</div>
-          <div class="stat-label">На этой неделе</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-number" id="monthEarnings">0₽</div>
-          <div class="stat-label">Доход за месяц</div>
-        </div>
-      </div>
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-number" id="myStudents">0</div>
+      <div class="stat-label">Мои студенты</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="todayLessons">0</div>
+      <div class="stat-label">Сегодня уроков</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="weekLessons">0</div>
+      <div class="stat-label">На этой неделе</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" id="recurringSchedules">0</div>
+      <div class="stat-label">Регулярных расписаний</div>
+    </div>
+  </div>
 
-      <!-- Ближайшие уроки -->
-      <div class="lessons-section">
-        <div class="section-header">
-          <h2 class="section-title">
-            <span class="emoji">📚</span>Ближайшие уроки
-          </h2>
-          <div class="lessons-filter">
-            <select id="lessonsFilter" onchange="filterLessons()">
-              <option value="today">Сегодня</option>
-              <option value="tomorrow">Завтра</option>
-              <option value="week">Эта неделя</option>
-              <option value="all">Все</option>
-            </select>
-          </div>
-        </div>
-        
-        <div id="lessonsContent">
-          <div class="loading">
-            <span class="loading-spinner"></span>
-            Загрузка уроков...
-          </div>
-        </div>
+  <!-- НОВЫЙ РАЗДЕЛ: Регулярные расписания -->
+  <div class="recurring-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <span class="emoji">🔄</span>Регулярные расписания
+      </h2>
+      <div class="recurring-actions">
+        <button class="create-btn" onclick="createRecurringSchedule()">
+          <span class="emoji">➕</span>Создать
+        </button>
+        <button class="refresh-btn" onclick="loadRecurringSchedules()">
+          <span class="emoji">🔄</span>Обновить
+        </button>
       </div>
-
-      <!-- Мои студенты -->
-      <div class="students-section">
-        <div class="section-header">
-          <h2 class="section-title">
-            <span class="emoji">🧑‍🎓</span>Мои студенты
-          </h2>
-          <button class="refresh-btn" onclick="loadMyStudents()">
-            <span class="emoji">🔄</span>Обновить
-          </button>
-        </div>
-        
-        <div class="table-container">
-          <div id="studentsContent">
-            <div class="loading">
-              <span class="loading-spinner"></span>
-              Загрузка списка студентов...
-            </div>
-          </div>
-        </div>
+    </div>
+    
+    <div id="recurringContent">
+      <div class="loading">
+        <span class="loading-spinner"></span>
+        Загрузка регулярных расписаний...
       </div>
     </div>
   </div>
 
+  <!-- Ближайшие уроки -->
+  <div class="lessons-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <span class="emoji">📚</span>Ближайшие уроки
+      </h2>
+      <div class="lessons-filter">
+        <select id="lessonsFilter" onchange="filterLessons()">
+          <option value="today">Сегодня</option>
+          <option value="tomorrow">Завтра</option>
+          <option value="week">Эта неделя</option>
+          <option value="all">Все</option>
+        </select>
+      </div>
+    </div>
+    
+    <div id="lessonsContent">
+      <div class="loading">
+        <span class="loading-spinner"></span>
+        Загрузка уроков...
+      </div>
+    </div>
+  </div>
+
+  <!-- Мои студенты -->
+  <div class="students-section">
+    <div class="section-header">
+      <h2 class="section-title">
+        <span class="emoji">🧑‍🎓</span>Мои студенты
+      </h2>
+      <button class="refresh-btn" onclick="loadMyStudents()">
+        <span class="emoji">🔄</span>Обновить
+      </button>
+    </div>
+    
+    <div class="table-container">
+      <div id="studentsContent">
+        <div class="loading">
+          <span class="loading-spinner"></span>
+          Загрузка списка студентов...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
   <script>
     // Конфигурация для тьютора
     const TUTOR_CONFIG = {
@@ -99,6 +121,7 @@
     let currentTutor = null;
     let studentsData = [];
     let lessonsData = [];
+    let recurringData = [];
     let isAuthenticated = false;
 
     // Инициализация при загрузке страницы
@@ -154,8 +177,254 @@
       
       setTimeout(async () => {
         await loadMyStudents();
+        await loadRecurringSchedules();
         await loadUpcomingLessons();
       }, 100);
+    }
+
+    // НОВАЯ ФУНКЦИЯ: Загрузка регулярных расписаний
+    async function loadRecurringSchedules() {
+      console.log('📅 Загрузка регулярных расписаний...');
+      const recurringContent = document.getElementById('recurringContent');
+      
+      if (!recurringContent) {
+        console.error('❌ Элемент recurringContent не найден');
+        return;
+      }
+
+      // Показываем индикатор загрузки
+      recurringContent.innerHTML = `
+        <div class="loading">
+          <span class="loading-spinner"></span>
+          Загрузка регулярных расписаний...
+        </div>
+      `;
+
+      try {
+        // Для демонстрации используем простой fetch без авторизации
+        // В реальном приложении здесь будет проверка авторизации
+        const response = await fetch('/api/recurring-schedules', {
+          headers: { 'x-telegram-id': '618647337' } // ID Ханны для тестирования
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Регулярные расписания загружены:', data.schedules?.length || 0);
+        
+        if (!data.schedules) {
+          throw new Error('Некорректный ответ API: отсутствует поле schedules');
+        }
+        
+        recurringData = data.schedules;
+        renderRecurringSchedules(recurringData);
+        updateTutorStats();
+        
+      } catch (error) {
+        console.error('❌ Ошибка загрузки регулярных расписаний:', error);
+        recurringContent.innerHTML = `
+          <div class="error">
+            <h3>Ошибка загрузки</h3>
+            <p>Не удалось загрузить регулярные расписания: ${error.message}</p>
+            <button onclick="loadRecurringSchedules()" class="btn-primary">
+              Попробовать снова
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // НОВАЯ ФУНКЦИЯ: Отрисовка регулярных расписаний
+    function renderRecurringSchedules(schedules) {
+      const recurringContent = document.getElementById('recurringContent');
+      
+      if (schedules.length === 0) {
+        recurringContent.innerHTML = `
+          <div class="empty-state">
+            <span class="emoji" style="font-size: 3em;">📅</span>
+            <p>Нет настроенных регулярных расписаний</p>
+            <button onclick="createRecurringSchedule()" class="btn-primary">
+              <span class="emoji">➕</span>Создать первое расписание
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // Группируем по дням недели для удобства
+      const schedulesByDay = groupSchedulesByDay(schedules);
+      
+      recurringContent.innerHTML = `
+        <div class="recurring-grid">
+          ${Object.entries(schedulesByDay).map(([day, daySchedules]) => `
+            <div class="day-column">
+              <h3 class="day-header">${getDayName(day)}</h3>
+              <div class="day-schedules">
+                ${daySchedules.map(schedule => renderScheduleCard(schedule)).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        
+        <div class="recurring-stats">
+          <div class="stat-item">
+            <span class="stat-number">${schedules.length}</span>
+            <span class="stat-label">Всего расписаний</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${schedules.filter(s => s.type === 'individual').length}</span>
+            <span class="stat-label">Индивидуальных</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${schedules.filter(s => s.type === 'pair').length}</span>
+            <span class="stat-label">Парных</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">${schedules.filter(s => !s.is_active).length}</span>
+            <span class="stat-label">Неактивных</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // НОВАЯ ФУНКЦИЯ: Отрисовка карточки расписания
+    function renderScheduleCard(schedule) {
+      const participants = schedule.participant_names || [];
+      const nextSession = schedule.next_session_datetime ? 
+        new Date(schedule.next_session_datetime).toLocaleDateString('ru-RU') : 'Не запланировано';
+      
+      return `
+        <div class="schedule-card ${schedule.is_active ? 'active' : 'inactive'}" data-id="${schedule.id}">
+          <div class="schedule-header">
+            <div class="schedule-time">
+              <span class="time">${schedule.time_start}</span>
+              <span class="duration">${schedule.duration_minutes} мин</span>
+            </div>
+            <div class="schedule-status">
+              <span class="status-badge ${schedule.is_active ? 'active' : 'inactive'}">
+                ${schedule.is_active ? '✅' : '⏸️'}
+              </span>
+            </div>
+          </div>
+          
+          <div class="schedule-body">
+            <h4 class="schedule-name">${schedule.name}</h4>
+            
+            <div class="schedule-details">
+              <div class="detail-row">
+                <span class="detail-label">Тип:</span>
+                <span class="type-badge ${schedule.type}">${getTypeLabel(schedule.type)}</span>
+              </div>
+              
+              ${schedule.language ? `
+                <div class="detail-row">
+                  <span class="detail-label">Язык:</span>
+                  <span class="language-badge">${schedule.language}</span>
+                </div>
+              ` : ''}
+              
+              <div class="detail-row">
+                <span class="detail-label">Студенты:</span>
+                <span class="participants">${participants.join(', ')}</span>
+              </div>
+              
+              <div class="detail-row">
+                <span class="detail-label">Следующий:</span>
+                <span class="next-session">${nextSession}</span>
+              </div>
+              
+              ${schedule.zoom_link ? `
+                <div class="detail-row">
+                  <span class="detail-label">Zoom:</span>
+                  <a href="${schedule.zoom_link}" target="_blank" class="zoom-link">
+                    🔗 Ссылка
+                  </a>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+          
+          <div class="schedule-actions">
+            <button class="action-btn primary" onclick="editRecurringSchedule('${schedule.id}')" title="Редактировать">
+              ✏️
+            </button>
+            <button class="action-btn secondary" onclick="toggleScheduleStatus('${schedule.id}', ${!schedule.is_active})" 
+                    title="${schedule.is_active ? 'Приостановить' : 'Активировать'}">
+              ${schedule.is_active ? '⏸️' : '▶️'}
+            </button>
+            <button class="action-btn secondary" onclick="viewScheduleSessions('${schedule.id}')" title="Просмотреть созданные уроки">
+              📅
+            </button>
+            <button class="action-btn danger" onclick="deleteRecurringSchedule('${schedule.id}')" title="Удалить">
+              🗑️
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Вспомогательные функции
+    function groupSchedulesByDay(schedules) {
+      const grouped = {};
+      schedules.forEach(schedule => {
+        const day = schedule.day_of_week;
+        if (!grouped[day]) grouped[day] = [];
+        grouped[day].push(schedule);
+      });
+      
+      // Сортируем по времени внутри каждого дня
+      Object.keys(grouped).forEach(day => {
+        grouped[day].sort((a, b) => a.time_start.localeCompare(b.time_start));
+      });
+      
+      return grouped;
+    }
+
+    function getDayName(dayNumber) {
+      const days = {
+        1: 'Понедельник',
+        2: 'Вторник', 
+        3: 'Среда',
+        4: 'Четверг',
+        5: 'Пятница',
+        6: 'Суббота',
+        7: 'Воскресенье'
+      };
+      return days[dayNumber] || 'Неизвестно';
+    }
+
+    function getTypeLabel(type) {
+      const types = {
+        'individual': 'Индивидуальный',
+        'pair': 'Парный', 
+        'group': 'Групповой'
+      };
+      return types[type] || type;
+    }
+
+    // Действия с расписаниями
+    function createRecurringSchedule() {
+      showNotification('🔧 Функция создания регулярного расписания в разработке', 'info');
+    }
+
+    function editRecurringSchedule(scheduleId) {
+      showNotification(`🔧 Редактирование расписания в разработке`, 'info');
+    }
+
+    function toggleScheduleStatus(scheduleId, newStatus) {
+      showNotification(`🔧 Изменение статуса расписания в разработке`, 'info');
+    }
+
+    function viewScheduleSessions(scheduleId) {
+      showNotification(`🔧 Просмотр созданных уроков в разработке`, 'info');
+    }
+
+    function deleteRecurringSchedule(scheduleId) {
+      if (confirm('Вы уверены, что хотите удалить это регулярное расписание?')) {
+        showNotification(`🔧 Удаление расписания в разработке`, 'info');
+      }
     }
 
     // Загрузка студентов тьютора
@@ -200,7 +469,7 @@
         });
         
         renderStudentsTable(studentsData);
-        updateTutorStats(studentsData);
+        updateTutorStats();
         
       } catch (error) {
         console.error('❌ Ошибка загрузки студентов:', error);
@@ -246,34 +515,6 @@
           </div>
         `;
       }
-    }
-
-    // Генерация тестовых данных уроков
-    function generateMockLessons() {
-      const lessons = [];
-      const today = new Date();
-      
-      for (let i = 0; i < 10; i++) {
-        const lessonDate = new Date(today);
-        lessonDate.setDate(today.getDate() + i);
-        lessonDate.setHours(9 + (i % 8), (i % 2) * 30, 0, 0);
-        
-        const students = ['Анна Иванова', 'Петр Сидоров', 'Мария Петрова', 'Иван Козлов'];
-        const languages = ['English', 'French'];
-        const types = ['Разговорная практика', 'Грамматика', 'Словарь', 'Чтение'];
-        
-        lessons.push({
-          id: `lesson_${i + 1}`,
-          student: students[i % students.length],
-          date: lessonDate,
-          language: languages[i % languages.length],
-          type: types[i % types.length],
-          duration: 60,
-          status: i === 0 ? 'upcoming' : 'scheduled'
-        });
-      }
-      
-      return lessons;
     }
 
     // Отрисовка таблицы студентов
@@ -441,13 +682,13 @@
     }
 
     // Обновление статистики тьютора
-    function updateTutorStats(students) {
+    function updateTutorStats() {
       console.log('📊 Обновление статистики тьютора');
       
-      const myStudents = students.length;
+      const myStudents = studentsData.length;
       const todayLessons = lessonsData.filter(l => {
         const today = new Date();
-        return l.date.toDateString() === today.toDateString();
+        return l.date && l.date.toDateString() === today.toDateString();
       }).length;
       
       const weekLessons = lessonsData.filter(l => {
@@ -455,30 +696,30 @@
         const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 6);
-        return l.date >= weekStart && l.date <= weekEnd;
+        return l.date && l.date >= weekStart && l.date <= weekEnd;
       }).length;
       
-      const monthEarnings = weekLessons * 4 * currentTutor.rate; // Примерный расчет
+      const recurringSchedulesCount = recurringData.filter(r => r.is_active).length;
       
       // Безопасное обновление элементов
       const myStudentsEl = document.getElementById('myStudents');
       const todayLessonsEl = document.getElementById('todayLessons');
       const weekLessonsEl = document.getElementById('weekLessons');
-      const monthEarningsEl = document.getElementById('monthEarnings');
+      const recurringSchedulesEl = document.getElementById('recurringSchedules');
       
       if (myStudentsEl) myStudentsEl.textContent = myStudents;
       if (todayLessonsEl) todayLessonsEl.textContent = todayLessons;
       if (weekLessonsEl) weekLessonsEl.textContent = weekLessons;
-      if (monthEarningsEl) monthEarningsEl.textContent = `${monthEarnings.toLocaleString()}₽`;
+      if (recurringSchedulesEl) recurringSchedulesEl.textContent = recurringSchedulesCount;
     }
 
     // Функции действий
     function createNewStudent() {
-      alert('🔧 Функция добавления студента в разработке');
+      showNotification('🔧 Функция добавления студента в разработке', 'info');
     }
 
     function scheduleLesson(studentName) {
-      alert(`🔧 Планирование урока для ${studentName} в разработке`);
+      showNotification(`🔧 Планирование урока для ${studentName} в разработке`, 'info');
     }
 
     function viewProgress(studentName) {
@@ -488,22 +729,71 @@
     function filterLessons() {
       const filter = document.getElementById('lessonsFilter').value;
       console.log('Фильтр уроков:', filter);
-      // Здесь будет логика фильтрации
+      showNotification('🔧 Фильтрация уроков в разработке', 'info');
     }
 
     function startLesson(lessonId) {
-      alert(`🔧 Начало урока ${lessonId} в разработке`);
+      showNotification(`🔧 Начало урока ${lessonId} в разработке`, 'info');
     }
 
     function editLesson(lessonId) {
-      alert(`🔧 Редактирование урока ${lessonId} в разработке`);
+      showNotification(`🔧 Редактирование урока ${lessonId} в разработке`, 'info');
     }
 
     function showAllLessons() {
-      alert('🔧 Показ всех уроков в разработке');
+      showNotification('🔧 Показ всех уроков в разработке', 'info');
     }
 
-    console.log('✅ Панель тьютора инициализирована');
-  </script>
+    // Показ уведомлений
+    function showNotification(message, type = 'info') {
+const notification = document.createElement('div');
+notification.style.cssText =         position: fixed;          top: 20px;          right: 20px;          background: ${type === 'success' ? 'var(--success-color)' : type === 'error' ? 'var(--error-color)' : type === 'warning' ? '#ff9800' : 'var(--accent-color)'};          color: white;          padding: 12px 20px;          border-radius: 8px;          z-index: 1000;         box-shadow: 0 4px 12px rgba(0,0,0,0.2);         max-width: 300px;         font-size: 13px;         animation: slideInRight 0.3s ease-out;         line-height: 1.4;      ;
+      // Добавляем CSS анимацию если её ещё нет
+  if (!document.getElementById('notificationStyles')) {
+    const style = document.createElement('style');
+    style.id = 'notificationStyles';
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      @keyframes slideOutRight {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  // Автоматически убираем через 3 секунды
+  setTimeout(() => {
+    if (document.body.contains(notification)) {
+      notification.style.animation = 'slideOutRight 0.3s ease-out';
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }
+  }, 3000);
+}
+
+console.log('✅ Панель тьютора инициализирована');
+    </script>
 </body>
 </html>
