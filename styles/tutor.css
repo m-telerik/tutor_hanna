@@ -320,33 +320,42 @@
   margin-top: 2px;
 }
 
-/* ===== ПРОГРЕСС СТУДЕНТОВ ===== */
-.progress-info {
+/* ===== ИНФОРМАЦИЯ О РЕЖИМЕ БРОНИРОВАНИЯ ===== */
+.booking-mode-info {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
 }
 
-.progress-bar {
-  width: 60px;
-  height: 8px;
-  background: var(--border-color);
-  border-radius: 4px;
-  overflow: hidden;
+.booking-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-block;
+  text-align: center;
+  min-width: 90px;
+  white-space: nowrap;
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--tutor-primary), var(--tutor-secondary));
-  border-radius: 4px;
-  transition: width 0.3s ease;
+.booking-badge.student {
+  background: var(--tutor-primary);
+  color: white;
 }
 
-.progress-info small {
+.booking-badge.teacher {
+  background: var(--tutor-accent);
+  color: white;
+}
+
+.booking-details {
   font-size: 10px;
   color: var(--text-color);
   opacity: 0.7;
+  text-align: center;
+  line-height: 1.2;
+  margin-top: 2px;
 }
 
 /* ===== ИНФОРМАЦИЯ О СЛЕДУЮЩЕМ УРОКЕ ===== */
