@@ -38,10 +38,10 @@
     <table>
       <thead>
         <tr>
+          <th>ID</th>
           <th>Session ID</th>
           <th>Type</th>
           <th>Content</th>
-          <th>Время</th>
         </tr>
       </thead>
       <tbody id="dataTableBody">
@@ -234,10 +234,14 @@
       tbody.innerHTML = allMessages.map(msg => {
         try {
           const parsed = JSON.parse(msg.message);
-          const timestamp = msg.created_at ? new Date(msg.created_at).toLocaleString('ru-RU') : 'Неизвестно';
           
           return `
             <tr>
+              <td>
+                <span style="font-size: 11px; color: var(--text-color); opacity: 0.7;">
+                  #${msg.id}
+                </span>
+              </td>
               <td>
                 <code style="font-size: 11px; background: var(--card-bg); padding: 2px 4px; border-radius: 3px;">
                   ${msg.session_id}
@@ -247,14 +251,16 @@
                 <span class="type-badge ${parsed.type}">${getTypeEmoji(parsed.type)} ${parsed.type}</span>
               </td>
               <td class="content-cell">${escapeHtml(parsed.content || 'Нет содержимого')}</td>
-              <td>
-                <small>${timestamp}</small>
-              </td>
             </tr>
           `;
         } catch (error) {
           return `
             <tr>
+              <td>
+                <span style="font-size: 11px; color: var(--text-color); opacity: 0.7;">
+                  #${msg.id}
+                </span>
+              </td>
               <td>
                 <code style="font-size: 11px; background: var(--card-bg); padding: 2px 4px; border-radius: 3px;">
                   ${msg.session_id}
@@ -262,7 +268,6 @@
               </td>
               <td><span class="type-badge system">⚠️ error</span></td>
               <td class="content-cell">Ошибка парсинга: ${escapeHtml(msg.message)}</td>
-              <td><small>Неизвестно</small></td>
             </tr>
           `;
         }
