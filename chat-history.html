@@ -15,11 +15,12 @@
     <h1><span class="emoji">💬</span>История чатов</h1>
     
     <div class="navigation-panel">
+      <!-- Выбор пользователя по telegram_id -->
       <div class="step">
-        <div class="step-label">Выберите Telegram ID:</div>
+        <div class="step-label">Выберите пользователя:</div>
         <div class="step-controls">
           <select id="telegramIdSelect" onchange="onTelegramIdChange()">
-            <option value="">Выберите Telegram ID...</option>
+            <option value="">Выберите пользователя...</option>
           </select>
           <button class="load-btn" onclick="loadChatData()" disabled id="loadDataBtn">Загрузить чаты</button>
         </div>
@@ -30,7 +31,7 @@
   <!-- Статистика -->
   <div class="stats" id="stats" style="display: none;"></div>
 
-  <!-- Информация о выбранном пользователе -->
+  <!-- Информация о пользователе -->
   <div id="userInfo" style="display: none;"></div>
 
   <!-- Таблица с данными -->
@@ -38,10 +39,11 @@
     <table>
       <thead>
         <tr>
-          <th>ID</th>
           <th>Session ID</th>
-          <th>Type</th>
-          <th>Content</th>
+          <th>Тип агента</th>
+          <th>Тип сообщения</th>
+          <th>Содержимое</th>
+          <th>Время</th>
         </tr>
       </thead>
       <tbody id="dataTableBody">
@@ -52,21 +54,21 @@
   <!-- Контейнер с сообщениями об ошибке или загрузке -->
   <div id="statusContainer">
     <div class="loading">
-      <p>Выберите Telegram ID для просмотра истории чатов</p>
+      <p>Выберите пользователя для просмотра истории чатов</p>
       <div style="font-size: 12px; opacity: 0.7; margin-top: 1rem;">
-        <strong>Доступные функции:</strong><br>
-        • 📊 Просмотр всех сообщений пользователя<br>
-        • 🔍 Анализ взаимодействий с агентами<br>
-        • 📈 Статистика по типам сообщений
+        <strong>Что можно посмотреть:</strong><br>
+        • 💬 Все диалоги пользователя с агентами<br>
+        • 🤖 Сообщения от AI и пользователя<br>
+        • 📊 Статистику по общению
       </div>
     </div>
   </div>
 
   <script>
     const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 618647337;
+    let currentTelegramId = '';
     let allMessages = [];
     let availableUsers = [];
-    let selectedTelegramId = '';
 
     // Инициализация
     document.addEventListener('DOMContentLoaded', function() {
@@ -80,82 +82,58 @@
 
     async function loadAvailableUsers() {
       try {
-        // Загружаем список студентов для получения telegram_id
+        // Загружаем список студентов и админов
         const response = await fetch('/api/students', {
           headers: { "x-telegram-id": userId }
         });
         
         if (response.ok) {
           const { students } = await response.json();
-          availableUsers = students.filter(s => s.username); // Только те, у кого есть username
-          populateTelegramIdSelect();
+          availableUsers = students;
+          
+          // Добавляем админов
+          const adminUsers = [
+            { name: 'Анна (админ)', telegram_id: 618647337, username: 'admin1' },
+            { name: 'Админ 2', telegram_id: 2341205, username: 'admin2' }
+          ];
+          
+          availableUsers = [...adminUsers, ...students];
+          populateUserSelect();
         }
       } catch (error) {
         console.error('Error loading users:', error);
-        populateTelegramIdSelect(); // Показываем пустой select с возможностью ручного ввода
+        // Заполняем базовыми данными для тестирования
+        availableUsers = [
+          { name: 'Анна (админ)', telegram_id: 618647337, username: 'admin1' },
+          { name: 'Марина', telegram_id: 2341205, username: 'naumenko' },
+          { name: 'Михаил', telegram_id: 96911488, username: 'YoroolGui' },
+          { name: 'Юлия', telegram_id: 396796964, username: 'juliia_go' }
+        ];
+        populateUserSelect();
       }
     }
 
-    function populateTelegramIdSelect() {
+    function populateUserSelect() {
       const select = document.getElementById('telegramIdSelect');
       
-      // Очищаем select
-      select.innerHTML = '<option value="">Выберите Telegram ID...</option>';
+      select.innerHTML = '<option value="">Выберите пользователя...</option>';
       
-      // Добавляем найденных пользователей
       availableUsers.forEach(user => {
-        if (user.username) {
-          const option = document.createElement('option');
-          // Используем username как значение, так как у нас нет telegram_id в API
-          option.value = user.username;
-          option.textContent = `${user.name} (@${user.username})`;
-          select.appendChild(option);
-        }
+        const option = document.createElement('option');
+        option.value = user.telegram_id;
+        option.textContent = `${user.name} (@${user.username || 'no_username'}) - ID: ${user.telegram_id}`;
+        select.appendChild(option);
       });
-      
-      // Добавляем возможность ручного ввода
-      const manualOption = document.createElement('option');
-      manualOption.value = 'manual';
-      manualOption.textContent = '➕ Ввести ID вручную';
-      select.appendChild(manualOption);
     }
 
     function onTelegramIdChange() {
       const select = document.getElementById('telegramIdSelect');
       const loadBtn = document.getElementById('loadDataBtn');
       
-      if (select.value === 'manual') {
-        // Создаем поле для ручного ввода
-        const manualInput = document.createElement('input');
-        manualInput.type = 'text';
-        manualInput.id = 'manualTelegramId';
-        manualInput.placeholder = 'Введите Telegram ID...';
-        manualInput.style.marginLeft = '10px';
-        manualInput.style.padding = '6px 10px';
-        manualInput.style.border = '1px solid var(--border-color)';
-        manualInput.style.borderRadius = '4px';
-        
-        manualInput.addEventListener('input', function() {
-          selectedTelegramId = this.value.trim();
-          loadBtn.disabled = !selectedTelegramId;
-        });
-        
-        // Вставляем после select
-        select.parentNode.insertBefore(manualInput, loadBtn);
-        loadBtn.disabled = true;
-        
-      } else {
-        // Удаляем поле ручного ввода если оно есть
-        const existingInput = document.getElementById('manualTelegramId');
-        if (existingInput) {
-          existingInput.remove();
-        }
-        
-        selectedTelegramId = select.value;
-        loadBtn.disabled = !selectedTelegramId;
-      }
+      currentTelegramId = select.value;
+      loadBtn.disabled = !currentTelegramId;
       
-      // Сбрасываем интерфейс
+      // Сброс интерфейса
       resetInterface();
     }
 
@@ -165,8 +143,8 @@
       const stats = document.getElementById('stats');
       const userInfo = document.getElementById('userInfo');
       
-      if (!selectedTelegramId) {
-        alert('Выберите или введите Telegram ID');
+      if (!currentTelegramId) {
+        alert('Выберите пользователя');
         return;
       }
       
@@ -177,8 +155,8 @@
       userInfo.style.display = 'none';
 
       try {
-        // Загружаем данные из API chat-history с фильтром по telegram_id
-        const response = await fetch(`/api/chat-history?telegram_id=${encodeURIComponent(selectedTelegramId)}`, {
+        // Загружаем данные через новый API endpoint
+        const response = await fetch(`/api/chat-history?telegram_id=${currentTelegramId}`, {
           headers: { "x-telegram-id": userId }
         });
         
@@ -186,27 +164,17 @@
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        const { messages, total } = await response.json();
+        const { messages, user_info } = await response.json();
         
         if (!messages || messages.length === 0) {
-          statusContainer.innerHTML = `
-            <div class="loading">
-              <p>Нет данных для Telegram ID: ${selectedTelegramId}</p>
-              <div style="font-size: 12px; opacity: 0.7; margin-top: 1rem;">
-                Возможные причины:<br>
-                • Пользователь еще не взаимодействовал с ботом<br>
-                • Неверный Telegram ID<br>
-                • Данные еще не синхронизированы
-              </div>
-            </div>
-          `;
+          statusContainer.innerHTML = '<div class="loading">Нет сообщений для выбранного пользователя</div>';
           return;
         }
         
         allMessages = messages;
         renderDataTable();
         updateStats();
-        showUserInfo();
+        showUserInfo(user_info || getSelectedUserInfo());
         
         // Скрываем статус и показываем таблицу
         statusContainer.style.display = 'none';
@@ -228,46 +196,68 @@
       }
     }
 
+    function getSelectedUserInfo() {
+      return availableUsers.find(u => u.telegram_id == currentTelegramId) || 
+             { name: 'Неизвестный пользователь', telegram_id: currentTelegramId };
+    }
+
     function renderDataTable() {
       const tbody = document.getElementById('dataTableBody');
       
       tbody.innerHTML = allMessages.map(msg => {
         try {
           const parsed = JSON.parse(msg.message);
+          const timestamp = msg.created_at ? new Date(msg.created_at).toLocaleString('ru-RU') : 'Неизвестно';
+          
+          // Определяем тип агента из session_id
+          let agentType = 'unknown';
+          let agentLabel = 'Неизвестно';
+          
+          if (msg.session_id.startsWith('hanna_user_')) {
+            agentType = 'tutor';
+            agentLabel = '🤖 TutorBot';
+          } else if (msg.session_id.startsWith('student_')) {
+            agentType = 'student';
+            agentLabel = '👤 Student Agent';
+          } else if (msg.session_id.startsWith('lead_')) {
+            agentType = 'lead';
+            agentLabel = '🌟 Lead Agent';
+          } else if (msg.session_id.startsWith('calendar_')) {
+            agentType = 'calendar';
+            agentLabel = '📅 Calendar Agent';
+          }
+          
+          // Обрезаем контент для превью
+          const content = parsed.content || 'Нет содержимого';
+          const contentPreview = content.length > 100 ? content.substring(0, 100) + '...' : content;
           
           return `
             <tr>
               <td>
-                <span style="font-size: 11px; color: var(--text-color); opacity: 0.7;">
-                  #${msg.id}
-                </span>
-              </td>
-              <td>
-                <code style="font-size: 11px; background: var(--card-bg); padding: 2px 4px; border-radius: 3px;">
+                <code style="font-size: 10px; background: var(--card-bg); padding: 2px 4px; border-radius: 3px;">
                   ${msg.session_id}
                 </code>
               </td>
               <td>
+                <span class="agent-badge ${agentType}">${agentLabel}</span>
+              </td>
+              <td>
                 <span class="type-badge ${parsed.type}">${getTypeEmoji(parsed.type)} ${parsed.type}</span>
               </td>
-              <td class="content-cell">${escapeHtml(parsed.content || 'Нет содержимого')}</td>
+              <td class="content-cell" title="${escapeHtml(content)}">
+                ${escapeHtml(contentPreview)}
+              </td>
+              <td>
+                <small>${timestamp}</small>
+              </td>
             </tr>
           `;
         } catch (error) {
           return `
             <tr>
-              <td>
-                <span style="font-size: 11px; color: var(--text-color); opacity: 0.7;">
-                  #${msg.id}
-                </span>
+              <td colspan="5" class="error">
+                Ошибка парсинга сообщения ID: ${msg.id}
               </td>
-              <td>
-                <code style="font-size: 11px; background: var(--card-bg); padding: 2px 4px; border-radius: 3px;">
-                  ${msg.session_id}
-                </code>
-              </td>
-              <td><span class="type-badge system">⚠️ error</span></td>
-              <td class="content-cell">Ошибка парсинга: ${escapeHtml(msg.message)}</td>
             </tr>
           `;
         }
@@ -277,51 +267,48 @@
     function updateStats() {
       const stats = document.getElementById('stats');
       const typeCounts = { ai: 0, human: 0, system: 0, error: 0 };
-      const sessionIds = new Set();
+      const agentCounts = { tutor: 0, student: 0, lead: 0, calendar: 0, unknown: 0 };
       
       allMessages.forEach(msg => {
-        sessionIds.add(msg.session_id);
         try {
           const parsed = JSON.parse(msg.message);
           typeCounts[parsed.type] = (typeCounts[parsed.type] || 0) + 1;
+          
+          // Подсчет по агентам
+          if (msg.session_id.startsWith('hanna_user_')) agentCounts.tutor++;
+          else if (msg.session_id.startsWith('student_')) agentCounts.student++;
+          else if (msg.session_id.startsWith('lead_')) agentCounts.lead++;
+          else if (msg.session_id.startsWith('calendar_')) agentCounts.calendar++;
+          else agentCounts.unknown++;
         } catch {
           typeCounts.error++;
         }
       });
       
       stats.innerHTML = `
-        <span>Всего сообщений: ${allMessages.length}</span>
-        <span>Сессий: ${sessionIds.size}</span>
-        <span>AI: ${typeCounts.ai}</span>
-        <span>Human: ${typeCounts.human}</span>
-        <span>System: ${typeCounts.system}</span>
-        ${typeCounts.error > 0 ? `<span>Ошибки: ${typeCounts.error}</span>` : ''}
+        <span><strong>Всего:</strong> ${allMessages.length}</span>
+        <span><strong>AI:</strong> ${typeCounts.ai}</span>
+        <span><strong>Human:</strong> ${typeCounts.human}</span>
+        <span><strong>System:</strong> ${typeCounts.system}</span>
+        <span><strong>TutorBot:</strong> ${agentCounts.tutor}</span>
+        <span><strong>Student:</strong> ${agentCounts.student}</span>
+        <span><strong>Lead:</strong> ${agentCounts.lead}</span>
+        <span><strong>Calendar:</strong> ${agentCounts.calendar}</span>
+        ${typeCounts.error > 0 ? `<span style="color: var(--error-color);"><strong>Ошибки:</strong> ${typeCounts.error}</span>` : ''}
       `;
     }
 
-    function showUserInfo() {
-      const userInfo = document.getElementById('userInfo');
-      const user = availableUsers.find(u => u.username === selectedTelegramId);
+    function showUserInfo(userInfo) {
+      const userInfoDiv = document.getElementById('userInfo');
       
-      if (user) {
-        userInfo.innerHTML = `
-          <div class="memory-key-info">
-            <span><strong>Пользователь:</strong> ${user.name} (@${user.username})</span>
-            <span><strong>Язык:</strong> ${user.language || '—'}</span>
-            <span><strong>Сообщений:</strong> ${allMessages.length}</span>
-            <a href="student.html?name=${encodeURIComponent(user.name)}" style="color: var(--accent-color); text-decoration: none;">
-              👤 Открыть профиль
-            </a>
-          </div>
-        `;
-      } else {
-        userInfo.innerHTML = `
-          <div class="memory-key-info">
-            <span><strong>Telegram ID:</strong> ${selectedTelegramId}</span>
-            <span><strong>Сообщений:</strong> ${allMessages.length}</span>
-          </div>
-        `;
-      }
+      userInfoDiv.innerHTML = `
+        <div class="memory-key-info">
+          <span><strong>Пользователь:</strong> ${userInfo.name}</span>
+          <span><strong>Telegram ID:</strong> ${userInfo.telegram_id}</span>
+          <span><strong>Username:</strong> @${userInfo.username || 'не указан'}</span>
+          <span><strong>Всего сообщений:</strong> ${allMessages.length}</span>
+        </div>
+      `;
     }
 
     function resetInterface() {
@@ -333,12 +320,12 @@
       
       document.getElementById('statusContainer').innerHTML = `
         <div class="loading">
-          <p>Выберите Telegram ID для просмотра истории чатов</p>
+          <p>Выберите пользователя для просмотра истории чатов</p>
           <div style="font-size: 12px; opacity: 0.7; margin-top: 1rem;">
-            <strong>Доступные функции:</strong><br>
-            • 📊 Просмотр всех сообщений пользователя<br>
-            • 🔍 Анализ взаимодействий с агентами<br>
-            • 📈 Статистика по типам сообщений
+            <strong>Что можно посмотреть:</strong><br>
+            • 💬 Все диалоги пользователя с агентами<br>
+            • 🤖 Сообщения от AI и пользователя<br>
+            • 📊 Статистику по общению
           </div>
         </div>
       `;
@@ -362,5 +349,97 @@
       return div.innerHTML;
     }
   </script>
+  
+  <style>
+    .step {
+      margin-bottom: 1rem;
+    }
+    
+    .step-label {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-color);
+    }
+    
+    .step-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    
+    #telegramIdSelect {
+      flex: 1;
+      min-width: 250px;
+      padding: 8px 12px;
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      font-size: 14px;
+      background: var(--input-bg);
+      color: var(--text-color);
+    }
+    
+    .load-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    
+    .load-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .load-btn:hover:not(:disabled) {
+      opacity: 0.9;
+    }
+    
+    .agent-badge {
+      background: var(--accent-color);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    
+    .agent-badge.tutor {
+      background: var(--tutor-accent);
+    }
+    
+    .agent-badge.student {
+      background: var(--accent-color);
+    }
+    
+    .agent-badge.lead {
+      background: var(--admin-accent);
+    }
+    
+    .agent-badge.calendar {
+      background: #17a2b8;
+    }
+    
+    .agent-badge.unknown {
+      background: var(--border-color);
+      color: var(--text-color);
+    }
+
+    @media (max-width: 600px) {
+      .step-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      #telegramIdSelect {
+        min-width: auto;
+        width: 100%;
+      }
+    }
+  </style>
 </body>
 </html>
