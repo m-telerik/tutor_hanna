@@ -82,6 +82,8 @@
 
     async function loadAvailableUsers() {
       try {
+        console.log('🔍 Загружаем список доступных пользователей...');
+        
         // Загружаем список студентов и админов
         const response = await fetch('/api/students', {
           headers: { "x-telegram-id": userId }
@@ -89,27 +91,48 @@
         
         if (response.ok) {
           const { students } = await response.json();
-          availableUsers = students;
+          console.log('✅ Загружено студентов:', students.length);
           
-          // Добавляем админов
+          // Добавляем админов в начало списка
           const adminUsers = [
-            { name: 'Анна (админ)', telegram_id: 618647337, username: 'admin1' },
-            { name: 'Админ 2', telegram_id: 2341205, username: 'admin2' }
+            { 
+              name: 'Анна (админ)', 
+              telegram_id: 618647337, 
+              username: 'admin1',
+              email: 'admin@hanna.com',
+              role: 'admin'
+            },
+            { 
+              name: 'Марина (админ)', 
+              telegram_id: 2341205, 
+              username: 'admin2',
+              email: 'admin2@hanna.com',
+              role: 'admin'
+            }
           ];
           
-          availableUsers = [...adminUsers, ...students];
+          // Сортируем студентов по имени для удобства
+          const sortedStudents = students.sort((a, b) => a.name.localeCompare(b.name));
+          
+          availableUsers = [...adminUsers, ...sortedStudents];
           populateUserSelect();
+          
+          console.log('📋 Всего пользователей для выбора:', availableUsers.length);
         }
       } catch (error) {
-        console.error('Error loading users:', error);
+        console.error('❌ Ошибка загрузки пользователей:', error);
+        
         // Заполняем базовыми данными для тестирования
         availableUsers = [
-          { name: 'Анна (админ)', telegram_id: 618647337, username: 'admin1' },
-          { name: 'Марина', telegram_id: 2341205, username: 'naumenko' },
-          { name: 'Михаил', telegram_id: 96911488, username: 'YoroolGui' },
-          { name: 'Юлия', telegram_id: 396796964, username: 'juliia_go' }
+          { name: 'Анна (админ)', telegram_id: 618647337, username: 'admin1', role: 'admin' },
+          { name: 'Марина (админ)', telegram_id: 2341205, username: 'admin2', role: 'admin' },
+          { name: 'Михаил', telegram_id: 96911488, username: 'YoroolGui', role: 'student' },
+          { name: 'Юлия', telegram_id: 396796964, username: 'juliia_go', role: 'student' }
         ];
         populateUserSelect();
+        
+        // Показываем уведомление об ошибке
+        showNotification('⚠️ Не удалось загрузить полный список пользователей. Показаны тестовые данные.', 'warning');
       }
     }
 
@@ -118,12 +141,37 @@
       
       select.innerHTML = '<option value="">Выберите пользователя...</option>';
       
-      availableUsers.forEach(user => {
-        const option = document.createElement('option');
-        option.value = user.telegram_id;
-        option.textContent = `${user.name} (@${user.username || 'no_username'}) - ID: ${user.telegram_id}`;
-        select.appendChild(option);
-      });
+      // Группируем пользователей по роли
+      const admins = availableUsers.filter(u => u.role === 'admin');
+      const students = availableUsers.filter(u => u.role !== 'admin');
+      
+      // Добавляем админов
+      if (admins.length > 0) {
+        const adminGroup = document.createElement('optgroup');
+        adminGroup.label = '👑 Администраторы';
+        admins.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.telegram_id;
+          option.textContent = `${user.name} (@${user.username || 'no_username'}) - ID: ${user.telegram_id}`;
+          adminGroup.appendChild(option);
+        });
+        select.appendChild(adminGroup);
+      }
+      
+      // Добавляем студентов
+      if (students.length > 0) {
+        const studentGroup = document.createElement('optgroup');
+        studentGroup.label = '🧑‍🎓 Студенты';
+        students.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.telegram_id;
+          option.textContent = `${user.name} (@${user.username || 'no_username'}) - ID: ${user.telegram_id}`;
+          studentGroup.appendChild(option);
+        });
+        select.appendChild(studentGroup);
+      }
+      
+      console.log('📝 Заполнен select с', availableUsers.length, 'пользователями');
     }
 
     function onTelegramIdChange() {
@@ -204,10 +252,23 @@
     function renderDataTable() {
       const tbody = document.getElementById('dataTableBody');
       
-      tbody.innerHTML = allMessages.map(msg => {
+      if (allMessages.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 2rem; opacity: 0.6;">
+              <div style="font-size: 3em;">💬</div>
+              <p style="margin: 1rem 0;">Нет сообщений для отображения</p>
+              <small>Попробуйте выбрать другого пользователя</small>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+      
+      tbody.innerHTML = allMessages.map((msg, index) => {
         try {
           const parsed = JSON.parse(msg.message);
-          const timestamp = msg.created_at ? new Date(msg.created_at).toLocaleString('ru-RU') : 'Неизвестно';
+          const timestamp = formatTimeAgo(msg.created_at);
           
           // Определяем тип агента из session_id
           let agentType = 'unknown';
@@ -229,39 +290,49 @@
           
           // Обрезаем контент для превью
           const content = parsed.content || 'Нет содержимого';
-          const contentPreview = content.length > 100 ? content.substring(0, 100) + '...' : content;
+          const contentPreview = content.length > 120 ? content.substring(0, 120) + '...' : content;
+          
+          // Добавляем класс для четных/нечетных строк
+          const rowClass = index % 2 === 0 ? 'even-row' : 'odd-row';
           
           return `
-            <tr>
-              <td>
-                <code style="font-size: 10px; background: var(--card-bg); padding: 2px 4px; border-radius: 3px;">
+            <tr class="${rowClass}" data-message-id="${msg.id}">
+              <td style="font-family: monospace; font-size: 11px; max-width: 200px; word-break: break-all;">
+                <div style="background: var(--card-bg); padding: 4px 6px; border-radius: 4px; border: 1px solid var(--border-color);">
                   ${msg.session_id}
-                </code>
+                </div>
+                <small style="opacity: 0.6; margin-top: 2px; display: block;">ID: ${msg.id}</small>
               </td>
-              <td>
+              <td style="text-align: center;">
                 <span class="agent-badge ${agentType}">${agentLabel}</span>
               </td>
-              <td>
+              <td style="text-align: center;">
                 <span class="type-badge ${parsed.type}">${getTypeEmoji(parsed.type)} ${parsed.type}</span>
               </td>
               <td class="content-cell" title="${escapeHtml(content)}">
                 ${escapeHtml(contentPreview)}
+                ${content.length > 120 ? '<br><small style="opacity: 0.6; font-style: italic;">Наведите для полного текста</small>' : ''}
               </td>
-              <td>
-                <small>${timestamp}</small>
+              <td style="white-space: nowrap; font-size: 12px;">
+                <div title="${msg.created_at ? new Date(msg.created_at).toLocaleString('ru-RU') : 'Неизвестно'}">
+                  ${timestamp}
+                </div>
               </td>
             </tr>
           `;
         } catch (error) {
           return `
-            <tr>
-              <td colspan="5" class="error">
-                Ошибка парсинга сообщения ID: ${msg.id}
+            <tr class="error-row">
+              <td colspan="5" style="background: rgba(220, 53, 69, 0.1); color: var(--error-color); text-align: center; padding: 1rem;">
+                ⚠️ Ошибка парсинга сообщения ID: ${msg.id}
+                <br><small>Данные: ${escapeHtml(msg.message.substring(0, 100))}...</small>
               </td>
             </tr>
           `;
         }
       }).join('');
+      
+      console.log('✅ Отрендерена таблица с', allMessages.length, 'сообщениями');
     }
 
     function updateStats() {
@@ -348,9 +419,99 @@
       div.textContent = text;
       return div.innerHTML;
     }
+    
+    // Функция для показа уведомлений
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        background: ${type === 'success' ? 'var(--success-color)' : type === 'error' ? 'var(--error-color)' : type === 'warning' ? '#ff9800' : 'var(--accent-color)'}; 
+        color: white; 
+        padding: 12px 20px; 
+        border-radius: 8px; 
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        max-width: 300px;
+        font-size: 13px;
+        animation: slideInRight 0.3s ease-out;
+        line-height: 1.4;
+      `;
+      
+      // Добавляем CSS анимацию если её ещё нет
+      if (!document.getElementById('notificationStyles')) {
+        const style = document.createElement('style');
+        style.id = 'notificationStyles';
+        style.textContent = `
+          @keyframes slideInRight {
+            from {
+              transform: translateX(100%);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+          @keyframes slideOutRight {
+            from {
+              transform: translateX(0);
+              opacity: 1;
+            }
+            to {
+              transform: translateX(100%);
+              opacity: 0;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      // Автоматически убираем через 4 секунды
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          notification.style.animation = 'slideOutRight 0.3s ease-out';
+          setTimeout(() => {
+            if (document.body.contains(notification)) {
+              document.body.removeChild(notification);
+            }
+          }, 300);
+        }
+      }, 4000);
+    }
+    
+    // Функция для форматирования времени
+    function formatTimeAgo(dateString) {
+      if (!dateString) return 'Неизвестно';
+      
+      const now = new Date();
+      const date = new Date(dateString);
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      if (diffMins < 1) return 'Только что';
+      if (diffMins < 60) return `${diffMins} мин назад`;
+      if (diffHours < 24) return `${diffHours} ч назад`;
+      if (diffDays < 7) return `${diffDays} дн назад`;
+      
+      return date.toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
   </script>
   
   <style>
+    /* Дополнительные стили для новой версии */
     .step {
       margin-bottom: 1rem;
     }
@@ -359,6 +520,7 @@
       font-weight: 600;
       margin-bottom: 0.5rem;
       color: var(--text-color);
+      font-size: 14px;
     }
     
     .step-controls {
@@ -370,76 +532,19 @@
     
     #telegramIdSelect {
       flex: 1;
-      min-width: 250px;
-      padding: 8px 12px;
-      border: 1px solid var(--input-border);
-      border-radius: 6px;
+      min-width: 300px;
+      padding: 10px 14px;
+      border: 2px solid var(--input-border);
+      border-radius: 8px;
       font-size: 14px;
       background: var(--input-bg);
       color: var(--text-color);
+      transition: border-color 0.2s;
     }
     
-    .load-btn {
-      background: var(--accent-color);
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    
-    .load-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    
-    .load-btn:hover:not(:disabled) {
-      opacity: 0.9;
-    }
-    
-    .agent-badge {
-      background: var(--accent-color);
-      color: white;
-      padding: 2px 6px;
-      border-radius: 10px;
-      font-size: 10px;
-      font-weight: 500;
-    }
-    
-    .agent-badge.tutor {
-      background: var(--tutor-accent);
-    }
-    
-    .agent-badge.student {
-      background: var(--accent-color);
-    }
-    
-    .agent-badge.lead {
-      background: var(--admin-accent);
-    }
-    
-    .agent-badge.calendar {
-      background: #17a2b8;
-    }
-    
-    .agent-badge.unknown {
-      background: var(--border-color);
-      color: var(--text-color);
-    }
-
-    @media (max-width: 600px) {
-      .step-controls {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      #telegramIdSelect {
-        min-width: auto;
-        width: 100%;
-      }
-    }
-  </style>
+    #telegramIdSelect:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 </body>
 </html>
