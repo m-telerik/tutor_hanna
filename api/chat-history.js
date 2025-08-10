@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
     let query = supabase
       .from('n8n_chat_histories')
-      .select('id, session_id, message, created_at')
+      .select('id, session_id, message')
       .order('id', { ascending: true });
 
     // Если передан конкретный memory_key, ищем по нему
@@ -38,18 +38,7 @@ export default async function handler(req, res) {
     } else {
       // Иначе строим фильтр по типу агента
       if (agent_type === 'hanna_user') {
-        if (date) {
-          query = query.like('session_id', `hanna_user_%`);
-          const startOfDay = new Date(date);
-          const endOfDay = new Date(date);
-          endOfDay.setDate(endOfDay.getDate() + 1);
-          
-          query = query
-            .gte('created_at', startOfDay.toISOString())
-            .lt('created_at', endOfDay.toISOString());
-        } else {
-          query = query.like('session_id', `hanna_user_%`);
-        }
+        query = query.like('session_id', `hanna_user_%`);
       } else if (agent_type === 'student') {
         if (user_filter) {
           query = query.eq('session_id', `student_${user_filter}`);
@@ -72,19 +61,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: error.message });
     }
 
-    // Дополнительная фильтрация и обогащение данных
-    let messages = data || [];
-
-    if (agent_type === 'hanna_user' && date) {
-      messages = messages.filter(msg => {
-        if (!msg.created_at) return false;
-        const msgDate = new Date(msg.created_at).toISOString().split('T')[0];
-        return msgDate === date;
-      });
-    }
-
     // Добавляем метаданные для каждого сообщения
-    const enrichedMessages = messages.map(msg => {
+    const enrichedMessages = (data || []).map(msg => {
       try {
         const parsed = JSON.parse(msg.message);
         const sessionParts = msg.session_id.split('_');
@@ -141,22 +119,23 @@ async function handleTelegramIdFilter(req, res, target_telegram_id) {
       // Если не студент, возможно админ
       const adminNames = {
         618647337: 'Анна (админ)',
-        2341205: 'Админ 2'
+        2341205: 'Марина (админ)'
       };
       
       userInfo = {
         name: adminNames[target_telegram_id] || 'Неизвестный пользователь',
         telegram_id: target_telegram_id,
-        username: target_telegram_id == 618647337 ? 'admin1' : 'unknown'
+        username: target_telegram_id == 618647337 ? 'admin1' : target_telegram_id == 2341205 ? 'admin2' : 'unknown'
       };
     }
 
     // Загружаем все сообщения, связанные с этим telegram_id
+    // Используем только колонки, которые точно существуют в таблице
     const { data: messages, error } = await supabase
       .from('n8n_chat_histories')
-      .select('id, session_id, message, created_at')
+      .select('id, session_id, message')
       .or(`session_id.like.hanna_user_${target_telegram_id}%,session_id.like.student_${target_telegram_id}%,session_id.like.lead_${target_telegram_id}%,session_id.like.calendar_${target_telegram_id}%`)
-      .order('created_at', { ascending: false });
+      .order('id', { ascending: false });
 
     if (error) {
       console.error('Database error:', error);
@@ -166,12 +145,12 @@ async function handleTelegramIdFilter(req, res, target_telegram_id) {
     // Если нет прямых совпадений, попробуем найти по session_id с содержимым telegram_id
     let additionalMessages = [];
     if (!messages || messages.length === 0) {
-      console.log('Ищем дополнительные сообщения...');
+      console.log('Ищем дополнительные сообщения в метаданных...');
       
       const { data: allMessages } = await supabase
         .from('n8n_chat_histories')
-        .select('id, session_id, message, created_at')
-        .order('created_at', { ascending: false })
+        .select('id, session_id, message')
+        .order('id', { ascending: false })
         .limit(1000); // Ограничиваем поиск последними 1000 сообщениями
       
       if (allMessages) {
@@ -197,12 +176,18 @@ async function handleTelegramIdFilter(req, res, target_telegram_id) {
       index === self.findIndex(m => m.id === msg.id)
     );
 
-    console.log(`Найдено ${uniqueMessages.length} сообщений для telegram_id ${target_telegram_id}`);
+    // Добавляем искусственное время создания на основе ID (чем больше ID, тем новее)
+    const messagesWithTime = uniqueMessages.map(msg => ({
+      ...msg,
+      created_at: new Date(Date.now() - (Math.max(...uniqueMessages.map(m => m.id)) - msg.id) * 1000).toISOString()
+    }));
+
+    console.log(`Найдено ${messagesWithTime.length} сообщений для telegram_id ${target_telegram_id}`);
 
     return res.status(200).json({ 
-      messages: uniqueMessages,
+      messages: messagesWithTime,
       user_info: userInfo,
-      total: uniqueMessages.length,
+      total: messagesWithTime.length,
       telegram_id: target_telegram_id
     });
 
