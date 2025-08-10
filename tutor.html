@@ -744,11 +744,28 @@
       showNotification('🔧 Показ всех уроков в разработке', 'info');
     }
 
-    // Показ уведомлений
-    function showNotification(message, type = 'info') {
-const notification = document.createElement('div');
-notification.style.cssText =         position: fixed;          top: 20px;          right: 20px;          background: ${type === 'success' ? 'var(--success-color)' : type === 'error' ? 'var(--error-color)' : type === 'warning' ? '#ff9800' : 'var(--accent-color)'};          color: white;          padding: 12px 20px;          border-radius: 8px;          z-index: 1000;         box-shadow: 0 4px 12px rgba(0,0,0,0.2);         max-width: 300px;         font-size: 13px;         animation: slideInRight 0.3s ease-out;         line-height: 1.4;      ;
-      // Добавляем CSS анимацию если её ещё нет
+// Показ уведомлений
+function showNotification(message, type = 'info') {
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${type === 'success' ? 'var(--success-color)' :
+                 type === 'error' ? 'var(--error-color)' :
+                 type === 'warning' ? '#ff9800' : 'var(--accent-color)'};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    max-width: 300px;
+    font-size: 13px;
+    animation: slideInRight 0.3s ease-out;
+    line-height: 1.4;
+  `;
+
+  // Добавляем CSS анимацию если её ещё нет
   if (!document.getElementById('notificationStyles')) {
     const style = document.createElement('style');
     style.id = 'notificationStyles';
@@ -776,10 +793,10 @@ notification.style.cssText =         position: fixed;          top: 20px;       
     `;
     document.head.appendChild(style);
   }
-  
+
   notification.textContent = message;
   document.body.appendChild(notification);
-  
+
   // Автоматически убираем через 3 секунды
   setTimeout(() => {
     if (document.body.contains(notification)) {
@@ -792,6 +809,7 @@ notification.style.cssText =         position: fixed;          top: 20px;       
     }
   }, 3000);
 }
+
 
 console.log('✅ Панель тьютора инициализирована');
     </script>
