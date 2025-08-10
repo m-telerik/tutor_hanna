@@ -10,58 +10,30 @@ const ADMIN_IDS = [618647337, 2341205];
 
 export default async function handler(req, res) {
   const telegram_id = parseInt(req.headers["x-telegram-id"]);
-  const { memory_key, date, agent_type, user_filter } = req.query;
+  const { telegram_id: target_telegram_id } = req.query;
   
   if (!ADMIN_IDS.includes(telegram_id)) {
     return res.status(403).json({ error: 'Access denied' });
   }
 
-  if (!memory_key && !agent_type) {
-    return res.status(400).json({ error: 'memory_key or agent_type required' });
+  if (!target_telegram_id) {
+    return res.status(400).json({ error: 'telegram_id parameter required' });
   }
 
   try {
+    // Ищем все session_id, которые содержат указанный telegram_id
+    // Паттерны session_id: hanna_user_{telegram_id}, student_{username}, lead_{telegram_id}
     let query = supabase
-      .from('n8n_chat_histories_rows')
+      .from('n8n_chat_histories')
       .select('id, session_id, message, created_at')
-      .order('id', { ascending: true });
+      .order('created_at', { ascending: false }); // Сортируем по дате, новые сначала
 
-    // Если передан конкретный memory_key, ищем по нему
-    if (memory_key) {
-      query = query.eq('session_id', memory_key);
+    // Если target_telegram_id выглядит как username (содержит буквы), ищем по паттерну student_{username}
+    if (isNaN(target_telegram_id)) {
+      query = query.like('session_id', `student_${target_telegram_id}%`);
     } else {
-      // Иначе строим фильтр по типу агента
-      if (agent_type === 'hanna_user') {
-        // Для TutorBot ищем все session_id, начинающиеся с 'hanna_user_'
-        if (date) {
-          // Если указана дата, фильтруем по ней
-          query = query.like('session_id', `hanna_user_%`);
-          // Дополнительно можем фильтровать по created_at, если нужно
-          const startOfDay = new Date(date);
-          const endOfDay = new Date(date);
-          endOfDay.setDate(endOfDay.getDate() + 1);
-          
-          query = query
-            .gte('created_at', startOfDay.toISOString())
-            .lt('created_at', endOfDay.toISOString());
-        } else {
-          query = query.like('session_id', `hanna_user_%`);
-        }
-      } else if (agent_type === 'student') {
-        // Для Student Agent ищем session_id, начинающиеся с 'student_'
-        if (user_filter) {
-          query = query.eq('session_id', `student_${user_filter}`);
-        } else {
-          query = query.like('session_id', `student_%`);
-        }
-      } else if (agent_type === 'lead') {
-        // Для Lead Agent ищем session_id, начинающиеся с 'lead_'
-        if (user_filter) {
-          query = query.eq('session_id', `lead_${user_filter}`);
-        } else {
-          query = query.like('session_id', `lead_%`);
-        }
-      }
+      // Если это числовой ID, ищем по всем возможным паттернам
+      query = query.or(`session_id.like.hanna_user_${target_telegram_id}%,session_id.like.lead_${target_telegram_id}%`);
     }
 
     const { data, error } = await query;
@@ -74,31 +46,23 @@ export default async function handler(req, res) {
     // Дополнительная фильтрация и обогащение данных
     let messages = data || [];
 
-    // Если это TutorBot и указана дата, дополнительно фильтруем в памяти
-    if (agent_type === 'hanna_user' && date) {
-      messages = messages.filter(msg => {
-        if (!msg.created_at) return false;
-        const msgDate = new Date(msg.created_at).toISOString().split('T')[0];
-        return msgDate === date;
-      });
-    }
-
     // Добавляем метаданные для каждого сообщения
     const enrichedMessages = messages.map(msg => {
       try {
         const parsed = JSON.parse(msg.message);
         
-        // Извлекаем дополнительную информацию из session_id
+        // Извлекаем информацию из session_id
         const sessionParts = msg.session_id.split('_');
-        const agentType = sessionParts[0];
-        const userId = sessionParts[1];
+        const agentType = sessionParts[0]; // hanna, student, lead
+        const userId = sessionParts.slice(1).join('_'); // все после первого underscore
         
         return {
           ...msg,
           agent_type: agentType,
           user_id: userId,
-          message_type: parsed.type,
-          content_preview: parsed.content ? parsed.content.substring(0, 100) + '...' : 'Нет содержимого'
+          message_type: parsed.type || 'unknown',
+          content_preview: parsed.content ? parsed.content.substring(0, 100) + '...' : 'Нет содержимого',
+          parsed_message: parsed
         };
       } catch (error) {
         return {
@@ -106,20 +70,38 @@ export default async function handler(req, res) {
           agent_type: 'unknown',
           user_id: 'unknown',
           message_type: 'error',
-          content_preview: 'Ошибка парсинга сообщения'
+          content_preview: 'Ошибка парсинга сообщения',
+          parsed_message: null
         };
       }
+    });
+
+    // Группируем статистику
+    const stats = {
+      total_messages: enrichedMessages.length,
+      unique_sessions: [...new Set(enrichedMessages.map(m => m.session_id))].length,
+      agent_types: {},
+      message_types: {},
+      date_range: {
+        earliest: enrichedMessages.length > 0 ? enrichedMessages[enrichedMessages.length - 1].created_at : null,
+        latest: enrichedMessages.length > 0 ? enrichedMessages[0].created_at : null
+      }
+    };
+
+    // Подсчитываем статистику
+    enrichedMessages.forEach(msg => {
+      stats.agent_types[msg.agent_type] = (stats.agent_types[msg.agent_type] || 0) + 1;
+      stats.message_types[msg.message_type] = (stats.message_types[msg.message_type] || 0) + 1;
     });
 
     return res.status(200).json({ 
       messages: enrichedMessages,
       total: enrichedMessages.length,
-      filters: {
-        memory_key,
-        agent_type,
-        date,
-        user_filter
-      }
+      stats: stats,
+      target_telegram_id: target_telegram_id,
+      search_patterns: isNaN(target_telegram_id) 
+        ? [`student_${target_telegram_id}`]
+        : [`hanna_user_${target_telegram_id}`, `lead_${target_telegram_id}`]
     });
 
   } catch (error) {
