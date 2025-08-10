@@ -326,7 +326,7 @@
               <th>Студент</th>
               <th>Telegram</th>
               <th>Язык</th>
-              <th>Прогресс</th>
+              <th>Занятия бронируются</th>
               <th>Следующий урок</th>
               <th>Действия</th>
             </tr>
@@ -362,11 +362,16 @@
                   ${student.frequency ? `<br><small class="frequency-info">${student.frequency}x в неделю</small>` : ''}
                 </td>
                 <td>
-                  <div class="progress-info">
-                    <div class="progress-bar">
-                      <div class="progress-fill" style="width: ${Math.random() * 80 + 20}%"></div>
-                    </div>
-                    <small>${Math.floor(Math.random() * 50 + 10)} уроков</small>
+                  <div class="booking-mode-info">
+                    <span class="booking-badge ${student.booking_mode === 'by_student' ? 'student' : 'teacher'}">
+                      ${student.booking_mode === 'by_student' ? '👤 Студентом' : '👩‍🏫 Тьютором'}
+                    </span>
+                    ${student.booking_mode !== 'by_student' && (student.preferred_time || (student.preferred_days && student.preferred_days.length > 0)) ? `
+                      <small class="booking-details">
+                        ${student.preferred_days && student.preferred_days.length > 0 ? student.preferred_days.join(', ') : ''}
+                        ${student.preferred_time ? ` в ${student.preferred_time}` : ''}
+                      </small>
+                    ` : ''}
                   </div>
                 </td>
                 <td>
@@ -384,9 +389,6 @@
                   <div class="action-buttons">
                     <button class="action-btn" onclick="scheduleLesson('${student.name}')" title="Запланировать урок">
                       📅
-                    </button>
-                    <button class="action-btn" onclick="contactStudent('${student.username}')" title="Написать">
-                      💬
                     </button>
                     <button class="action-btn" onclick="viewProgress('${student.name}')" title="Прогресс">
                       📊
@@ -514,14 +516,6 @@
 
     function scheduleLesson(studentName) {
       alert(`🔧 Планирование урока для ${studentName} в разработке`);
-    }
-
-    function contactStudent(username) {
-      if (username) {
-        window.open(`https://t.me/${username}`, '_blank');
-      } else {
-        alert('У студента нет Telegram');
-      }
     }
 
     function viewProgress(studentName) {
