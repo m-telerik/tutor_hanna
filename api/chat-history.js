@@ -6,20 +6,40 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-const ADMIN_IDS = [618647337, 2341205];
-
 export default async function handler(req, res) {
   const telegram_id = parseInt(req.headers["x-telegram-id"]);
   const { telegram_id: target_telegram_id, memory_key, date, agent_type, user_filter } = req.query;
   
-  if (!ADMIN_IDS.includes(telegram_id)) {
-    return res.status(403).json({ error: 'Access denied' });
+  if (!telegram_id) {
+    return res.status(400).json({ error: 'Missing telegram_id' });
   }
 
   try {
+    // Проверяем роль пользователя
+    const { data: requestingUser, error: userError } = await supabase
+      .from('hanna_users')
+      .select('role, is_active')
+      .eq('telegram_id', telegram_id)
+      .single();
+
+    if (userError && userError.code !== 'PGRST116') {
+      return res.status(500).json({ error: userError.message });
+    }
+
+    const userRole = requestingUser?.role;
+    const allowedRoles = ['admin', 'tutor'];
+    
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      return res.status(403).json({ 
+        error: 'Access denied',
+        message: 'Требуется роль admin или tutor для просмотра истории чатов',
+        your_role: userRole || 'unknown'
+      });
+    }
+
     // Новая логика: фильтрация по telegram_id
     if (target_telegram_id) {
-      return await handleTelegramIdFilter(req, res, target_telegram_id);
+      return await handleTelegramIdFilter(req, res, target_telegram_id, userRole);
     }
     
     // Старая логика для обратной совместимости
@@ -90,7 +110,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ 
       messages: enrichedMessages,
       total: enrichedMessages.length,
-      filters: { memory_key, agent_type, date, user_filter }
+      filters: { memory_key, agent_type, date, user_filter },
+      requester_role: userRole
     });
 
   } catch (error) {
@@ -99,38 +120,45 @@ export default async function handler(req, res) {
   }
 }
 
-async function handleTelegramIdFilter(req, res, target_telegram_id) {
+async function handleTelegramIdFilter(req, res, target_telegram_id, requesterRole) {
   try {
     console.log('Загружаем чаты для telegram_id:', target_telegram_id);
     
     // Получаем информацию о пользователе
     let userInfo = null;
     
-    // Сначала проверяем в студентах
-    const { data: studentData } = await supabase
+    // Сначала проверяем в пользователях системы
+    const { data: userData } = await supabase
       .from('hanna_users')
-      .select('name, username, email, telegram_id')
+      .select('name, username, email, telegram_id, role')
       .eq('telegram_id', target_telegram_id)
       .single();
     
-    if (studentData) {
-      userInfo = studentData;
+    if (userData) {
+      userInfo = userData;
     } else {
-      // Если не студент, возможно админ
-      const adminNames = {
-        618647337: 'Анна (админ)',
-        2341205: 'Марина (админ)'
-      };
-      
+      // Если не найден в системе
       userInfo = {
-        name: adminNames[target_telegram_id] || 'Неизвестный пользователь',
+        name: 'Неизвестный пользователь',
         telegram_id: parseInt(target_telegram_id),
-        username: target_telegram_id == 618647337 ? 'admin1' : target_telegram_id == 2341205 ? 'admin2' : null
+        username: null,
+        role: 'unknown'
       };
     }
 
+    // Ограничения доступа для тьюторов
+    if (requesterRole === 'tutor') {
+      // Тьюторы могут просматривать только чаты своих студентов
+      // В будущем здесь можно добавить проверку через таблицу связей
+      if (userData && userData.role === 'admin') {
+        return res.status(403).json({ 
+          error: 'Access denied',
+          message: 'Тьюторы не могут просматривать чаты администраторов'
+        });
+      }
+    }
+
     // Загружаем все сообщения, связанные с этим telegram_id
-    // Используем только колонки, которые точно существуют в таблице
     const { data: messages, error } = await supabase
       .from('n8n_chat_histories')
       .select('id, session_id, message')
@@ -189,7 +217,8 @@ async function handleTelegramIdFilter(req, res, target_telegram_id) {
       messages: messagesWithTime,
       user_info: userInfo,
       total: messagesWithTime.length,
-      telegram_id: target_telegram_id
+      telegram_id: target_telegram_id,
+      requester_role: requesterRole
     });
 
   } catch (error) {
