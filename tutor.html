@@ -39,54 +39,6 @@
         </div>
       </div>
 
-      <!-- Быстрые действия -->
-      <div class="quick-actions">
-        <div class="action-card" onclick="createNewLesson()">
-          <span class="emoji">➕</span>
-          <div class="title">Новый урок</div>
-          <div class="subtitle">Запланировать занятие</div>
-        </div>
-        
-        <a href="chat-history.html" class="action-card">
-          <span class="emoji">💬</span>
-          <div class="title">Мои чаты</div>
-          <div class="subtitle">История общения</div>
-        </a>
-        
-        <div class="action-card" onclick="viewSchedule()">
-          <span class="emoji">📅</span>
-          <div class="title">Расписание</div>
-          <div class="subtitle">Календарь занятий</div>
-        </div>
-        
-        <div class="action-card" onclick="exportStudentData()">
-          <span class="emoji">📊</span>
-          <div class="title">Отчеты</div>
-          <div class="subtitle">Прогресс студентов</div>
-        </div>
-      </div>
-
-      <!-- Мои студенты -->
-      <div class="students-section">
-        <div class="section-header">
-          <h2 class="section-title">
-            <span class="emoji">🧑‍🎓</span>Мои студенты
-          </h2>
-          <button class="refresh-btn" onclick="loadMyStudents()">
-            <span class="emoji">🔄</span>Обновить
-          </button>
-        </div>
-        
-        <div class="table-container">
-          <div id="studentsContent">
-            <div class="loading">
-              <span class="loading-spinner"></span>
-              Загрузка списка студентов...
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Ближайшие уроки -->
       <div class="lessons-section">
         <div class="section-header">
@@ -107,6 +59,27 @@
           <div class="loading">
             <span class="loading-spinner"></span>
             Загрузка уроков...
+          </div>
+        </div>
+      </div>
+
+      <!-- Мои студенты -->
+      <div class="students-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="emoji">🧑‍🎓</span>Мои студенты
+          </h2>
+          <button class="refresh-btn" onclick="loadMyStudents()">
+            <span class="emoji">🔄</span>Обновить
+          </button>
+        </div>
+        
+        <div class="table-container">
+          <div id="studentsContent">
+            <div class="loading">
+              <span class="loading-spinner"></span>
+              Загрузка списка студентов...
+            </div>
           </div>
         </div>
       </div>
