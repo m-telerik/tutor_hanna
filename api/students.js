@@ -1,5 +1,6 @@
 // 📁 /api/students.js
 import { createClient } from '@supabase/supabase-js';
+import { authenticate } from './_auth-middleware.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -9,35 +10,18 @@ const supabase = createClient(
 export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const tgid = url.searchParams.get("tgid");
-  const telegram_id = parseInt(req.headers["x-telegram-id"] || tgid);
-
-  if (!telegram_id) {
-    return res.status(400).json({ error: 'Missing telegram_id' });
+  
+  // Если есть tgid в параметрах, добавляем его в заголовки для совместимости
+  if (tgid && !req.headers["x-telegram-id"]) {
+    req.headers["x-telegram-id"] = tgid;
   }
 
   try {
-    // Проверяем роль пользователя
-    const { data: requestingUser, error: userError } = await supabase
-      .from('hanna_users')
-      .select('role, is_active')
-      .eq('telegram_id', telegram_id)
-      .single();
+    // Универсальная проверка авторизации (Telegram или браузер)
+    const user = await authenticate(req, res, ['admin', 'tutor']);
+    if (!user) return; // Ошибка уже отправлена в authenticate()
 
-    if (userError && userError.code !== 'PGRST116') {
-      return res.status(500).json({ error: userError.message });
-    }
-
-    // Проверяем права доступа
-    const userRole = requestingUser?.role;
-    const allowedRoles = ['admin', 'tutor'];
-    
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      return res.status(403).json({ 
-        error: 'Access denied',
-        message: 'Требуется роль admin или tutor',
-        your_role: userRole || 'unknown'
-      });
-    }
+    console.log('✅ Авторизован пользователь:', user.name, '- роль:', user.role, '- метод:', user.auth_method);
 
     // Загружаем список студентов
     let studentsQuery = supabase
@@ -47,9 +31,9 @@ export default async function handler(req, res) {
       .eq('role', 'student');
 
     // Если это тьютор, показываем только его студентов
-    if (userRole === 'tutor') {
+    if (user.role === 'tutor') {
       // В будущем здесь можно добавить фильтрацию по tutor_id
-      // studentsQuery = studentsQuery.eq('tutor_id', requestingUser.id);
+      // studentsQuery = studentsQuery.eq('tutor_id', user.id);
     }
 
     const { data: users, error: studentsError } = await studentsQuery;
@@ -113,7 +97,11 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ 
       students,
-      requester_role: userRole,
+      requester: {
+        name: user.name,
+        role: user.role,
+        auth_method: user.auth_method
+      },
       total: students.length
     });
 
