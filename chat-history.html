@@ -15,28 +15,13 @@
     <h1><span class="emoji">💬</span>История чатов</h1>
     
     <div class="navigation-panel">
-      <!-- Шаг 1: Выбор агента -->
       <div class="step">
-        <div class="step-label">1. Выберите агента:</div>
+        <div class="step-label">Выберите Telegram ID:</div>
         <div class="step-controls">
-          <select id="agentSelect" onchange="onAgentChange()">
-            <option value="">Выберите агента...</option>
-            <option value="hanna_user">🤖 TutorBot (основной агент)</option>
-            <option value="student">👤 Student Agent (для студентов)</option>
-            <option value="lead">🌟 Lead Agent (для лидов)</option>
+          <select id="telegramIdSelect" onchange="onTelegramIdChange()">
+            <option value="">Выберите Telegram ID...</option>
           </select>
-        </div>
-      </div>
-
-      <!-- Шаг 2: Выбор даты (для TutorBot) или другие фильтры -->
-      <div class="step" id="step2" style="display: none;">
-        <div class="step-label" id="step2Label"></div>
-        <div class="step-controls">
-          <input type="date" id="dateSelect" disabled onchange="onDateChange()" />
-          <select id="filterSelect" onchange="onFilterChange()" disabled style="display: none;">
-            <option value="">Выберите...</option>
-          </select>
-          <button class="load-btn" onclick="loadChatData()" disabled id="loadDataBtn">Загрузить данные</button>
+          <button class="load-btn" onclick="loadChatData()" disabled id="loadDataBtn">Загрузить чаты</button>
         </div>
       </div>
     </div>
@@ -45,16 +30,15 @@
   <!-- Статистика -->
   <div class="stats" id="stats" style="display: none;"></div>
 
-  <!-- Информация о ключе памяти -->
-  <div id="memoryKeyInfo" style="display: none;"></div>
+  <!-- Информация о выбранном пользователе -->
+  <div id="userInfo" style="display: none;"></div>
 
   <!-- Таблица с данными -->
   <div class="data-table" id="dataTable" style="display: none;">
     <table>
       <thead>
         <tr>
-          <th>Имя пользователя</th>
-          <th>Agent</th>
+          <th>Session ID</th>
           <th>Type</th>
           <th>Content</th>
           <th>Время</th>
@@ -68,21 +52,21 @@
   <!-- Контейнер с сообщениями об ошибке или загрузке -->
   <div id="statusContainer">
     <div class="loading">
-      <p>Выберите агента для начала работы</p>
+      <p>Выберите Telegram ID для просмотра истории чатов</p>
       <div style="font-size: 12px; opacity: 0.7; margin-top: 1rem;">
-        <strong>Доступные агенты:</strong><br>
-        • 🤖 TutorBot - основной агент для всех пользователей<br>
-        • 👤 Student Agent - специализированный агент для студентов<br>
-        • 🌟 Lead Agent - агент для работы с потенциальными клиентами
+        <strong>Доступные функции:</strong><br>
+        • 📊 Просмотр всех сообщений пользователя<br>
+        • 🔍 Анализ взаимодействий с агентами<br>
+        • 📈 Статистика по типам сообщений
       </div>
     </div>
   </div>
 
   <script>
     const userId = Telegram.WebApp.initDataUnsafe?.user?.id || 618647337;
-    let currentAgent = '';
     let allMessages = [];
-    let availableStudents = [];
+    let availableUsers = [];
+    let selectedTelegramId = '';
 
     // Инициализация
     document.addEventListener('DOMContentLoaded', function() {
@@ -91,160 +75,110 @@
         window.Telegram.WebApp.expand();
       }
       
-      // Устанавливаем сегодняшнюю дату по умолчанию
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('dateSelect').value = today;
-      
-      loadAvailableStudents();
+      loadAvailableUsers();
     });
 
-    async function loadAvailableStudents() {
+    async function loadAvailableUsers() {
       try {
+        // Загружаем список студентов для получения telegram_id
         const response = await fetch('/api/students', {
           headers: { "x-telegram-id": userId }
         });
         
         if (response.ok) {
           const { students } = await response.json();
-          availableStudents = students;
+          availableUsers = students.filter(s => s.username); // Только те, у кого есть username
+          populateTelegramIdSelect();
         }
       } catch (error) {
-        console.error('Error loading students:', error);
+        console.error('Error loading users:', error);
+        populateTelegramIdSelect(); // Показываем пустой select с возможностью ручного ввода
       }
     }
 
-    function onAgentChange() {
-      const agentSelect = document.getElementById('agentSelect');
-      const step2 = document.getElementById('step2');
-      const step2Label = document.getElementById('step2Label');
-      const dateSelect = document.getElementById('dateSelect');
-      const filterSelect = document.getElementById('filterSelect');
-      const loadDataBtn = document.getElementById('loadDataBtn');
+    function populateTelegramIdSelect() {
+      const select = document.getElementById('telegramIdSelect');
       
-      // Сброс состояния
-      resetInterface();
+      // Очищаем select
+      select.innerHTML = '<option value="">Выберите Telegram ID...</option>';
       
-      currentAgent = agentSelect.value;
-      
-      if (!currentAgent) {
-        step2.style.display = 'none';
-        return;
-      }
-
-      step2.style.display = 'block';
-
-      if (currentAgent === 'hanna_user') {
-        // Для TutorBot показываем выбор даты
-        step2Label.textContent = '2. Выберите дату:';
-        dateSelect.style.display = 'block';
-        filterSelect.style.display = 'none';
-        dateSelect.disabled = false;
-        loadDataBtn.disabled = false;
-        
-      } else if (currentAgent === 'student') {
-        // Для Student Agent показываем список студентов
-        step2Label.textContent = '2. Выберите студента:';
-        dateSelect.style.display = 'none';
-        filterSelect.style.display = 'block';
-        populateStudentFilter();
-        
-      } else if (currentAgent === 'lead') {
-        // Для Lead Agent показываем статусы лидов
-        step2Label.textContent = '2. Выберите статус лида:';
-        dateSelect.style.display = 'none';
-        filterSelect.style.display = 'block';
-        populateLeadStatusFilter();
-      }
-    }
-
-    function populateStudentFilter() {
-      const filterSelect = document.getElementById('filterSelect');
-      const loadDataBtn = document.getElementById('loadDataBtn');
-      
-      filterSelect.innerHTML = '<option value="">Выберите студента...</option>';
-      
-      // Добавляем студентов из базы
-      availableStudents.forEach(student => {
-        const option = document.createElement('option');
-        option.value = student.name.toLowerCase().replace(/\s+/g, '');
-        option.textContent = student.name;
-        option.dataset.telegramId = student.telegram_id || '';
-        filterSelect.appendChild(option);
+      // Добавляем найденных пользователей
+      availableUsers.forEach(user => {
+        if (user.username) {
+          const option = document.createElement('option');
+          // Используем username как значение, так как у нас нет telegram_id в API
+          option.value = user.username;
+          option.textContent = `${user.name} (@${user.username})`;
+          select.appendChild(option);
+        }
       });
       
-      filterSelect.disabled = false;
-      loadDataBtn.disabled = true;
+      // Добавляем возможность ручного ввода
+      const manualOption = document.createElement('option');
+      manualOption.value = 'manual';
+      manualOption.textContent = '➕ Ввести ID вручную';
+      select.appendChild(manualOption);
     }
 
-    function populateLeadStatusFilter() {
-      const filterSelect = document.getElementById('filterSelect');
-      const loadDataBtn = document.getElementById('loadDataBtn');
+    function onTelegramIdChange() {
+      const select = document.getElementById('telegramIdSelect');
+      const loadBtn = document.getElementById('loadDataBtn');
       
-      filterSelect.innerHTML = `
-        <option value="">Выберите статус...</option>
-        <option value="new">🆕 Новые лиды</option>
-        <option value="contacted">📞 Связались</option>
-        <option value="interested">💫 Заинтересованы</option>
-        <option value="trial">🎯 Пробный урок</option>
-        <option value="converted">✅ Стали студентами</option>
-        <option value="lost">❌ Потеряны</option>
-        <option value="all">📋 Все лиды</option>
-      `;
+      if (select.value === 'manual') {
+        // Создаем поле для ручного ввода
+        const manualInput = document.createElement('input');
+        manualInput.type = 'text';
+        manualInput.id = 'manualTelegramId';
+        manualInput.placeholder = 'Введите Telegram ID...';
+        manualInput.style.marginLeft = '10px';
+        manualInput.style.padding = '6px 10px';
+        manualInput.style.border = '1px solid var(--border-color)';
+        manualInput.style.borderRadius = '4px';
+        
+        manualInput.addEventListener('input', function() {
+          selectedTelegramId = this.value.trim();
+          loadBtn.disabled = !selectedTelegramId;
+        });
+        
+        // Вставляем после select
+        select.parentNode.insertBefore(manualInput, loadBtn);
+        loadBtn.disabled = true;
+        
+      } else {
+        // Удаляем поле ручного ввода если оно есть
+        const existingInput = document.getElementById('manualTelegramId');
+        if (existingInput) {
+          existingInput.remove();
+        }
+        
+        selectedTelegramId = select.value;
+        loadBtn.disabled = !selectedTelegramId;
+      }
       
-      filterSelect.disabled = false;
-      loadDataBtn.disabled = true;
-    }
-
-    function onDateChange() {
-      // Дата выбрана, можем загружать
-      const loadDataBtn = document.getElementById('loadDataBtn');
-      loadDataBtn.disabled = false;
-    }
-
-    function onFilterChange() {
-      const filterSelect = document.getElementById('filterSelect');
-      const loadDataBtn = document.getElementById('loadDataBtn');
-      
-      loadDataBtn.disabled = !filterSelect.value;
+      // Сбрасываем интерфейс
+      resetInterface();
     }
 
     async function loadChatData() {
       const statusContainer = document.getElementById('statusContainer');
       const dataTable = document.getElementById('dataTable');
       const stats = document.getElementById('stats');
-      const memoryKeyInfo = document.getElementById('memoryKeyInfo');
+      const userInfo = document.getElementById('userInfo');
+      
+      if (!selectedTelegramId) {
+        alert('Выберите или введите Telegram ID');
+        return;
+      }
       
       // Показываем загрузку
-      statusContainer.innerHTML = '<div class="loading">Загрузка данных чата...</div>';
+      statusContainer.innerHTML = '<div class="loading">Загрузка истории чатов...</div>';
       dataTable.style.display = 'none';
       stats.style.display = 'none';
-      memoryKeyInfo.style.display = 'none';
+      userInfo.style.display = 'none';
 
       try {
-        let memoryKey = '';
-        let userData = {};
-
-        if (currentAgent === 'hanna_user') {
-          // Для TutorBot формируем ключ с датой
-          const selectedDate = document.getElementById('dateSelect').value;
-          memoryKey = `hanna_user_${userId}_${selectedDate}`;
-          userData = { name: 'Пользователь', agent: 'TutorBot' };
-          
-        } else if (currentAgent === 'student') {
-          const selectedStudent = document.getElementById('filterSelect').value;
-          memoryKey = `student_${selectedStudent}`;
-          const student = availableStudents.find(s => s.name.toLowerCase().replace(/\s+/g, '') === selectedStudent);
-          userData = { name: student?.name || 'Неизвестный студент', agent: 'Student Agent' };
-          
-        } else if (currentAgent === 'lead') {
-          const selectedStatus = document.getElementById('filterSelect').value;
-          // Для демонстрации используем известный лид
-          memoryKey = `lead_937619983`;
-          userData = { name: 'Ксения', agent: 'Lead Agent' };
-        }
-
-        // Загружаем данные
-        const response = await fetch(`/api/chat-history?memory_key=${encodeURIComponent(memoryKey)}`, {
+        // Загружаем данные из API chat-history с фильтром по telegram_id
+        const response = await fetch(`/api/chat-history?telegram_id=${encodeURIComponent(selectedTelegramId)}`, {
           headers: { "x-telegram-id": userId }
         });
         
@@ -252,30 +186,40 @@
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
         
-        const { messages } = await response.json();
+        const { messages, total } = await response.json();
         
         if (!messages || messages.length === 0) {
-          statusContainer.innerHTML = '<div class="loading">Нет данных для выбранных параметров</div>';
+          statusContainer.innerHTML = `
+            <div class="loading">
+              <p>Нет данных для Telegram ID: ${selectedTelegramId}</p>
+              <div style="font-size: 12px; opacity: 0.7; margin-top: 1rem;">
+                Возможные причины:<br>
+                • Пользователь еще не взаимодействовал с ботом<br>
+                • Неверный Telegram ID<br>
+                • Данные еще не синхронизированы
+              </div>
+            </div>
+          `;
           return;
         }
         
         allMessages = messages;
-        renderDataTable(userData);
+        renderDataTable();
         updateStats();
-        showMemoryKeyInfo(memoryKey, userData);
+        showUserInfo();
         
         // Скрываем статус и показываем таблицу
         statusContainer.style.display = 'none';
         dataTable.style.display = 'block';
         stats.style.display = 'flex';
-        memoryKeyInfo.style.display = 'block';
+        userInfo.style.display = 'block';
         
       } catch (error) {
         console.error('Error loading chat data:', error);
         statusContainer.innerHTML = `
           <div class="error">
             <h3>Ошибка загрузки</h3>
-            <p>Не удалось загрузить данные чата: ${error.message}</p>
+            <p>Не удалось загрузить историю чатов: ${error.message}</p>
             <button onclick="loadChatData()" style="margin-top: 1rem; background: var(--accent-color); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
               Попробовать снова
             </button>
@@ -284,7 +228,7 @@
       }
     }
 
-    function renderDataTable(userData) {
+    function renderDataTable() {
       const tbody = document.getElementById('dataTableBody');
       
       tbody.innerHTML = allMessages.map(msg => {
@@ -295,11 +239,9 @@
           return `
             <tr>
               <td>
-                <div class="user-name">${userData.name}</div>
-                <small style="opacity: 0.6;">ID: ${msg.id}</small>
-              </td>
-              <td>
-                <span class="agent-badge">${userData.agent}</span>
+                <code style="font-size: 11px; background: var(--card-bg); padding: 2px 4px; border-radius: 3px;">
+                  ${msg.session_id}
+                </code>
               </td>
               <td>
                 <span class="type-badge ${parsed.type}">${getTypeEmoji(parsed.type)} ${parsed.type}</span>
@@ -313,8 +255,11 @@
         } catch (error) {
           return `
             <tr>
-              <td>${userData.name}</td>
-              <td><span class="agent-badge error">ERROR</span></td>
+              <td>
+                <code style="font-size: 11px; background: var(--card-bg); padding: 2px 4px; border-radius: 3px;">
+                  ${msg.session_id}
+                </code>
+              </td>
               <td><span class="type-badge system">⚠️ error</span></td>
               <td class="content-cell">Ошибка парсинга: ${escapeHtml(msg.message)}</td>
               <td><small>Неизвестно</small></td>
@@ -327,8 +272,10 @@
     function updateStats() {
       const stats = document.getElementById('stats');
       const typeCounts = { ai: 0, human: 0, system: 0, error: 0 };
+      const sessionIds = new Set();
       
       allMessages.forEach(msg => {
+        sessionIds.add(msg.session_id);
         try {
           const parsed = JSON.parse(msg.message);
           typeCounts[parsed.type] = (typeCounts[parsed.type] || 0) + 1;
@@ -339,6 +286,7 @@
       
       stats.innerHTML = `
         <span>Всего сообщений: ${allMessages.length}</span>
+        <span>Сессий: ${sessionIds.size}</span>
         <span>AI: ${typeCounts.ai}</span>
         <span>Human: ${typeCounts.human}</span>
         <span>System: ${typeCounts.system}</span>
@@ -346,16 +294,29 @@
       `;
     }
 
-    function showMemoryKeyInfo(memoryKey, userData) {
-      const memoryKeyInfo = document.getElementById('memoryKeyInfo');
+    function showUserInfo() {
+      const userInfo = document.getElementById('userInfo');
+      const user = availableUsers.find(u => u.username === selectedTelegramId);
       
-      memoryKeyInfo.innerHTML = `
-        <div class="memory-key-info">
-          <span><strong>Ключ памяти:</strong> <code style="background: var(--bg-color); padding: 2px 6px; border-radius: 4px; font-family: monospace;">${memoryKey}</code></span>
-          <span><strong>Агент:</strong> ${userData.agent}</span>
-          <span><strong>Пользователь:</strong> ${userData.name}</span>
-        </div>
-      `;
+      if (user) {
+        userInfo.innerHTML = `
+          <div class="memory-key-info">
+            <span><strong>Пользователь:</strong> ${user.name} (@${user.username})</span>
+            <span><strong>Язык:</strong> ${user.language || '—'}</span>
+            <span><strong>Сообщений:</strong> ${allMessages.length}</span>
+            <a href="student.html?name=${encodeURIComponent(user.name)}" style="color: var(--accent-color); text-decoration: none;">
+              👤 Открыть профиль
+            </a>
+          </div>
+        `;
+      } else {
+        userInfo.innerHTML = `
+          <div class="memory-key-info">
+            <span><strong>Telegram ID:</strong> ${selectedTelegramId}</span>
+            <span><strong>Сообщений:</strong> ${allMessages.length}</span>
+          </div>
+        `;
+      }
     }
 
     function resetInterface() {
@@ -363,17 +324,16 @@
       
       document.getElementById('dataTable').style.display = 'none';
       document.getElementById('stats').style.display = 'none';
-      document.getElementById('memoryKeyInfo').style.display = 'none';
-      document.getElementById('loadDataBtn').disabled = true;
+      document.getElementById('userInfo').style.display = 'none';
       
       document.getElementById('statusContainer').innerHTML = `
         <div class="loading">
-          <p>Выберите агента для начала работы</p>
+          <p>Выберите Telegram ID для просмотра истории чатов</p>
           <div style="font-size: 12px; opacity: 0.7; margin-top: 1rem;">
-            <strong>Доступные агенты:</strong><br>
-            • 🤖 TutorBot - основной агент для всех пользователей<br>
-            • 👤 Student Agent - специализированный агент для студентов<br>
-            • 🌟 Lead Agent - агент для работы с потенциальными клиентами
+            <strong>Доступные функции:</strong><br>
+            • 📊 Просмотр всех сообщений пользователя<br>
+            • 🔍 Анализ взаимодействий с агентами<br>
+            • 📈 Статистика по типам сообщений
           </div>
         </div>
       `;
