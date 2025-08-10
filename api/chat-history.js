@@ -25,8 +25,8 @@ export default async function handler(req, res) {
     // Паттерны session_id: hanna_user_{telegram_id}, student_{username}, lead_{telegram_id}
     let query = supabase
       .from('n8n_chat_histories')
-      .select('id, session_id, message, created_at')
-      .order('created_at', { ascending: false }); // Сортируем по дате, новые сначала
+      .select('id, session_id, message')
+      .order('id', { ascending: false }); // Сортируем по ID, новые сначала
 
     // Если target_telegram_id выглядит как username (содержит буквы), ищем по паттерну student_{username}
     if (isNaN(target_telegram_id)) {
@@ -83,8 +83,8 @@ export default async function handler(req, res) {
       agent_types: {},
       message_types: {},
       date_range: {
-        earliest: enrichedMessages.length > 0 ? enrichedMessages[enrichedMessages.length - 1].created_at : null,
-        latest: enrichedMessages.length > 0 ? enrichedMessages[0].created_at : null
+        earliest_id: enrichedMessages.length > 0 ? enrichedMessages[enrichedMessages.length - 1].id : null,
+        latest_id: enrichedMessages.length > 0 ? enrichedMessages[0].id : null
       }
     };
 
