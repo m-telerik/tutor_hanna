@@ -4,167 +4,192 @@
   <meta charset="UTF-8" />
   <title>Урок</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="js/auth.js"></script>
   <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-  <button onclick="history.back()">← Назад</button>
+  <div id="lessonContent" style="display: none;">
+    <button onclick="history.back()">← Назад</button>
 
-  <h1>Урок</h1>
-  <div class="info" id="lesson-info">Загрузка...</div>
+    <h1>Урок</h1>
+    <div class="info" id="lesson-info">Загрузка...</div>
 
-  <div class="stats" id="vocab-stats" style="display: none;">
-    <div class="stat-card">
-      <div class="stat-number" id="total-words">0</div>
-      <div class="stat-label">Всего слов</div>
+    <div class="stats" id="vocab-stats" style="display: none;">
+      <div class="stat-card">
+        <div class="stat-number" id="total-words">0</div>
+        <div class="stat-label">Всего слов</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="lesson-words">0</div>
+        <div class="stat-label">Слов в уроке</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="studied-words">0</div>
+        <div class="stat-label">Изучено</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-number" id="lesson-words">0</div>
-      <div class="stat-label">Слов в уроке</div>
+
+    <div class="vocab">
+      <div class="vocab-section">
+        <h2><span class="emoji">📝</span>Слова этого урока</h2>
+        <table id="lesson-vocab-table">
+          <thead>
+            <tr>
+              <th>Слово</th>
+              <th>Перевод</th>
+              <th>Пример</th>
+              <th>Язык</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="vocab-section">
+        <h3><span class="emoji">🧠</span>Весь словарь студента</h3>
+        <a href="#" class="vocabulary-link" id="full-vocab-link">
+          <span class="emoji">📚</span>Открыть полный словарь
+        </a>
+        <table id="all-vocab-table">
+          <thead>
+            <tr>
+              <th>Дата урока</th>
+              <th>Слово</th>
+              <th>Перевод</th>
+              <th>Пример</th>
+              <th>Язык</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-number" id="studied-words">0</div>
-      <div class="stat-label">Изучено</div>
+
+    <div id="vocab-form-container">
+      <!-- Форма будет показана только для админов и тьюторов -->
     </div>
   </div>
-
-  <div class="vocab">
-    <div class="vocab-section">
-      <h2><span class="emoji">📝</span>Слова этого урока</h2>
-      <table id="lesson-vocab-table">
-        <thead>
-          <tr>
-            <th>Слово</th>
-            <th>Перевод</th>
-            <th>Пример</th>
-            <th>Язык</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
-    <div class="vocab-section">
-      <h3><span class="emoji">🧠</span>Весь словарь студента</h3>
-      <a href="#" class="vocabulary-link" id="full-vocab-link">
-        <span class="emoji">📚</span>Открыть полный словарь
-      </a>
-      <table id="all-vocab-table">
-        <thead>
-          <tr>
-            <th>Дата урока</th>
-            <th>Слово</th>
-            <th>Перевод</th>
-            <th>Пример</th>
-            <th>Язык</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
-
-  <form id="vocab-form">
-    <h3><span class="emoji">➕</span>Добавить слово</h3>
-    <label>Слово: <input type="text" name="word" required /></label>
-    <label>Перевод: <input type="text" name="translation" /></label>
-    <label>Пример: <textarea name="example" rows="2"></textarea></label>
-    <label>Язык: 
-      <select name="language">
-        <option value="">Не указан</option>
-        <option value="english">English</option>
-        <option value="french">French</option>
-      </select>
-    </label>
-    <button type="submit">Добавить</button>
-  </form>
 
   <script>
     const sessionId = new URLSearchParams(window.location.search).get("session_id");
-    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
-    const lessonInfo = document.getElementById("lesson-info");
-    const lessonVocabTable = document.querySelector("#lesson-vocab-table tbody");
-    const allVocabTable = document.querySelector("#all-vocab-table tbody");
-    const form = document.getElementById("vocab-form");
-    const vocabStats = document.getElementById("vocab-stats");
-
+    let auth = null;
     let currentStudentName = "";
     let currentStudentId = null;
 
-    if (!sessionId || !userId) {
-      lessonInfo.innerHTML = "Недостаточно данных.";
-    } else {
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', async function() {
+      console.log('🚀 Инициализация страницы урока...');
+      
+      if (!sessionId) {
+        showError('Не указан ID занятия');
+        return;
+      }
+
+      try {
+        // Инициализируем авторизацию - доступ для админов, студентов и тьюторов
+        auth = new AuthSystem();
+        const user = await auth.init(['admin', 'student', 'tutor'], onAuthSuccess, onAuthFail);
+        
+      } catch (error) {
+        console.error('❌ Ошибка авторизации:', error);
+      }
+    });
+
+    // Успешная авторизация
+    function onAuthSuccess(user) {
+      console.log('✅ Пользователь авторизован для просмотра урока:', user);
+      
+      // Показываем контент
+      document.getElementById('lessonContent').style.display = 'block';
+      
+      // Показываем форму добавления слов только для админов и тьюторов
+      if (user.role === 'admin' || user.role === 'tutor') {
+        showVocabForm();
+      }
+      
+      // Загружаем данные
       loadLesson();
       loadVocab();
     }
 
+    // Неудачная авторизация
+    function onAuthFail(error) {
+      console.error('❌ Ошибка авторизации:', error);
+      // AuthSystem сам покажет экран ошибки
+    }
+
     async function loadLesson() {
-      const res = await fetch('/api/students', {
-        headers: { "x-telegram-id": userId }
-      });
-      const { students } = await res.json();
-      const student = students.find(s => s.next_session_id == sessionId);
+      try {
+        const response = await auth.apiRequest('/api/students');
+        const { students } = await response.json();
+        const student = students.find(s => s.next_session_id == sessionId);
 
-      if (!student) {
-        lessonInfo.innerHTML = "Урок не найден.";
-        return;
+        if (!student) {
+          document.getElementById("lesson-info").innerHTML = "Урок не найден.";
+          return;
+        }
+
+        currentStudentName = student.name;
+
+        document.getElementById("lesson-info").innerHTML = `
+          <p><strong>Дата:</strong> ${student.next_session}</p>
+          <p><strong>Ученик:</strong> <a href="student.html?name=${encodeURIComponent(student.name)}">${student.name}</a></p>
+          <p><strong>Язык:</strong> ${student.language || '—'}</p>
+          <p><strong>Тип:</strong> ${student.type || '—'}</p>
+          <p><strong>Статус:</strong> ${student.status || '—'}</p>
+        `;
+
+        // Обновляем ссылку на полный словарь
+        document.getElementById('full-vocab-link').href = `vocabulary.html?student_name=${encodeURIComponent(student.name)}`;
+        
+      } catch (error) {
+        console.error('Ошибка загрузки урока:', error);
+        document.getElementById("lesson-info").innerHTML = `Ошибка загрузки урока: ${error.message}`;
       }
-
-      currentStudentName = student.name;
-
-      lessonInfo.innerHTML = `
-        <p><strong>Дата:</strong> ${student.next_session}</p>
-        <p><strong>Ученик:</strong> <a href="student.html?name=${encodeURIComponent(student.name)}">${student.name}</a></p>
-        <p><strong>Язык:</strong> ${student.language || '—'}</p>
-        <p><strong>Тип:</strong> ${student.type || '—'}</p>
-        <p><strong>Статус:</strong> ${student.status || '—'}</p>
-      `;
-
-      // Обновляем ссылку на полный словарь
-      document.getElementById('full-vocab-link').href = `vocabulary.html?student_name=${encodeURIComponent(student.name)}`;
     }
 
     async function loadVocab() {
       try {
         // Загружаем слова конкретного урока
-        const lessonRes = await fetch(`/api/vocab?session_id=${sessionId}`, {
-          headers: { "x-telegram-id": userId }
-        });
+        const lessonRes = await auth.apiRequest(`/api/vocab?session_id=${sessionId}`);
         const { words: lessonWords = [] } = await lessonRes.json();
         
         // Загружаем все слова студента
-        const allRes = await fetch(`/api/vocab?user_name=${encodeURIComponent(currentStudentName)}`, {
-          headers: { "x-telegram-id": userId }
-        });
-        const { words: allWords = [] } = await allRes.json();
+        if (currentStudentName) {
+          const allRes = await auth.apiRequest(`/api/vocab?user_name=${encodeURIComponent(currentStudentName)}`);
+          const { words: allWords = [] } = await allRes.json();
 
-        // Отображаем слова урока
-        lessonVocabTable.innerHTML = lessonWords.map(w => `
-          <tr>
-            <td><strong>${w.word}</strong></td>
-            <td>${w.translation || ''}</td>
-            <td>${w.example || ''}</td>
-            <td>${w.language ? `<span style="color: var(--accent-color);">${w.language}</span>` : '—'}</td>
-          </tr>
-        `).join('');
+          // Отображаем слова урока
+          const lessonVocabTable = document.querySelector("#lesson-vocab-table tbody");
+          lessonVocabTable.innerHTML = lessonWords.map(w => `
+            <tr>
+              <td><strong>${w.word}</strong></td>
+              <td>${w.translation || ''}</td>
+              <td>${w.example || ''}</td>
+              <td>${w.language ? `<span style="color: var(--accent-color);">${w.language}</span>` : '—'}</td>
+            </tr>
+          `).join('');
 
-        // Отображаем все слова студента
-        allVocabTable.innerHTML = allWords.map(w => `
-          <tr class="${w.session_id === sessionId ? 'current-lesson' : ''}">
-            <td>${w.session_date ? new Date(w.session_date).toLocaleDateString('ru-RU') : '—'}</td>
-            <td><strong>${w.word}</strong></td>
-            <td>${w.translation || ''}</td>
-            <td>${w.example || ''}</td>
-            <td>${w.language ? `<span style="color: var(--accent-color);">${w.language}</span>` : '—'}</td>
-          </tr>
-        `).join('');
+          // Отображаем все слова студента
+          const allVocabTable = document.querySelector("#all-vocab-table tbody");
+          allVocabTable.innerHTML = allWords.map(w => `
+            <tr class="${w.session_id === sessionId ? 'current-lesson' : ''}">
+              <td>${w.session_date ? new Date(w.session_date).toLocaleDateString('ru-RU') : '—'}</td>
+              <td><strong>${w.word}</strong></td>
+              <td>${w.translation || ''}</td>
+              <td>${w.example || ''}</td>
+              <td>${w.language ? `<span style="color: var(--accent-color);">${w.language}</span>` : '—'}</td>
+            </tr>
+          `).join('');
 
-        // Обновляем статистику
-        updateStats(lessonWords, allWords);
-        vocabStats.style.display = 'grid';
+          // Обновляем статистику
+          updateStats(lessonWords, allWords);
+          document.getElementById('vocab-stats').style.display = 'grid';
+        }
 
       } catch (error) {
         console.error('Error loading vocabulary:', error);
-        lessonVocabTable.innerHTML = '<tr><td colspan="4">Ошибка загрузки словаря</td></tr>';
+        document.querySelector("#lesson-vocab-table tbody").innerHTML = '<tr><td colspan="4">Ошибка загрузки словаря</td></tr>';
       }
     }
 
@@ -174,38 +199,128 @@
       document.getElementById('studied-words').textContent = allWords.filter(w => w.studied_count > 0).length;
     }
 
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(form);
-      const word = formData.get('word')?.trim();
-      if (!word) return;
+    function showVocabForm() {
+      const container = document.getElementById('vocab-form-container');
+      container.innerHTML = `
+        <form id="vocab-form">
+          <h3><span class="emoji">➕</span>Добавить слово</h3>
+          <label>Слово: <input type="text" name="word" required /></label>
+          <label>Перевод: <input type="text" name="translation" /></label>
+          <label>Пример: <textarea name="example" rows="2"></textarea></label>
+          <label>Язык: 
+            <select name="language">
+              <option value="">Не указан</option>
+              <option value="english">English</option>
+              <option value="french">French</option>
+            </select>
+          </label>
+          <button type="submit">Добавить</button>
+        </form>
+      `;
 
-      const payload = {
-        word,
-        translation: formData.get('translation')?.trim(),
-        example: formData.get('example')?.trim(),
-        language: formData.get('language') || null,
-        session_id: sessionId,
-      };
+      // Добавляем обработчик формы
+      document.getElementById('vocab-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const word = formData.get('word')?.trim();
+        if (!word) return;
 
-      const res = await fetch('/api/vocab', {
-        method: 'POST',
-        headers: {
-          "Content-Type": "application/json",
-          "x-telegram-id": userId
-        },
-        body: JSON.stringify(payload)
+        const payload = {
+          word,
+          translation: formData.get('translation')?.trim(),
+          example: formData.get('example')?.trim(),
+          language: formData.get('language') || null,
+          session_id: sessionId,
+        };
+
+        try {
+          const res = await auth.apiRequest('/api/vocab', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+          if (data.success) {
+            e.target.reset();
+            await loadVocab();
+            showNotification('✅ Слово добавлено успешно', 'success');
+          } else {
+            throw new Error(data.error || 'Ошибка при добавлении слова');
+          }
+        } catch (error) {
+          console.error('Error adding word:', error);
+          showNotification('❌ Ошибка при добавлении слова', 'error');
+        }
       });
+    }
 
-      const data = await res.json();
-      if (data.success) {
-        form.reset();
-        await loadVocab();
-      } else {
-        alert('Ошибка при добавлении слова');
-        console.error(data);
+    function showError(message) {
+      document.body.innerHTML = `
+        <div class="error-state" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem;">
+          <div>
+            <h3>Ошибка</h3>
+            <p>${message}</p>
+            <button onclick="history.back()" class="btn-primary" style="margin-top: 1rem;">
+              ← Назад
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    // Показ уведомлений
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        background: ${type === 'success' ? 'var(--success-color)' : type === 'error' ? 'var(--error-color)' : 'var(--accent-color)'}; 
+        color: white; 
+        padding: 12px 20px; 
+        border-radius: 8px; 
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        max-width: 300px;
+        font-size: 14px;
+        animation: slideIn 0.3s ease-out;
+      `;
+      
+      // Добавляем CSS анимацию
+      if (!document.getElementById('notificationStyles')) {
+        const style = document.createElement('style');
+        style.id = 'notificationStyles';
+        style.textContent = `
+          @keyframes slideIn {
+            from {
+              transform: translateX(100%);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+        `;
+        document.head.appendChild(style);
       }
-    });
+      
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          notification.style.animation = 'slideIn 0.3s ease-out reverse';
+          setTimeout(() => {
+            if (document.body.contains(notification)) {
+              document.body.removeChild(notification);
+            }
+          }, 300);
+        }
+      }, 3000);
+    }
+
+    console.log('✅ Страница урока инициализирована');
   </script>
 </body>
 </html>
