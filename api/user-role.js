@@ -1,5 +1,6 @@
 // 📁 /api/user-role.js
 import { createClient } from '@supabase/supabase-js';
+import { getCurrentUser } from './_auth-middleware.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -8,11 +9,52 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   const telegram_id = parseInt(req.headers["x-telegram-id"]);
+  const admin_token = req.headers["x-admin-token"];
+  const admin_id = req.headers["x-admin-id"];
   
-  if (!telegram_id) {
-    return res.status(400).json({ error: 'Missing telegram_id' });
+  // Если это браузерная авторизация
+  if (admin_token && admin_id) {
+    return await handleBrowserAuth(req, res, admin_token, admin_id);
+  }
+  
+  // Если это Telegram авторизация
+  if (telegram_id) {
+    return await handleTelegramAuth(req, res, telegram_id);
   }
 
+  return res.status(400).json({ error: 'Missing authorization data' });
+}
+
+async function handleBrowserAuth(req, res, admin_token, admin_id) {
+  try {
+    // Используем универсальную систему авторизации
+    const user = await getCurrentUser(req);
+    
+    if (!user) {
+      return res.status(403).json({ 
+        error: 'Invalid browser session',
+        message: 'Недействительная браузерная сессия'
+      });
+    }
+
+    // Возвращаем данные браузерного пользователя
+    const response = {
+      role: user.role,
+      name: user.name,
+      admin_id: user.admin_id,
+      auth_method: user.auth_method,
+      is_active: true
+    };
+
+    return res.status(200).json(response);
+
+  } catch (error) {
+    console.error('Browser auth error:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+async function handleTelegramAuth(req, res, telegram_id) {
   try {
     // Ищем пользователя в базе данных
     const { data: user, error: userError } = await supabase
@@ -46,7 +88,8 @@ export default async function handler(req, res) {
         username: user.username,
         email: user.email,
         languages: user.languages,
-        is_active: user.is_active
+        is_active: user.is_active,
+        auth_method: 'telegram'
       };
 
       // Для студентов добавляем информацию о предпочтениях и следующем занятии
@@ -94,7 +137,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Telegram auth error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
