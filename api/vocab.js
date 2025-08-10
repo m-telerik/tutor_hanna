@@ -1,5 +1,6 @@
 // 📁 /api/vocab.js
 import { createClient } from '@supabase/supabase-js';
+import { authenticate } from './_auth-middleware.js';
 import getRawBody from 'raw-body';
 
 const supabase = createClient(
@@ -8,51 +9,29 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  const telegram_id = parseInt(req.headers["x-telegram-id"]);
-  
-  if (!telegram_id) {
-    return res.status(400).json({ error: 'Missing telegram_id' });
-  }
-
   try {
-    // Проверяем роль пользователя
-    const { data: requestingUser, error: userError } = await supabase
-      .from('hanna_users')
-      .select('id, role, is_active, name')
-      .eq('telegram_id', telegram_id)
-      .single();
+    // Универсальная проверка авторизации (Telegram или браузер)
+    const user = await authenticate(req, res, ['admin', 'tutor', 'student']);
+    if (!user) return; // Ошибка уже отправлена в authenticate()
 
-    if (userError && userError.code !== 'PGRST116') {
-      return res.status(500).json({ error: userError.message });
-    }
-
-    const userRole = requestingUser?.role;
-    const allowedRoles = ['admin', 'tutor', 'student'];
-    
-    if (!userRole || !allowedRoles.includes(userRole)) {
-      return res.status(403).json({ 
-        error: 'Access denied',
-        message: 'Требуется роль admin, tutor или student',
-        your_role: userRole || 'unknown'
-      });
-    }
+    console.log('✅ Vocab API - авторизован:', user.name, '- роль:', user.role, '- метод:', user.auth_method);
 
     if (req.method === 'GET') {
-      return await handleGetRequest(req, res, requestingUser);
+      return await handleGetRequest(req, res, user);
     }
 
     if (req.method === 'POST') {
-      return await handlePostRequest(req, res, requestingUser);
+      return await handlePostRequest(req, res, user);
     }
 
     if (req.method === 'PUT') {
-      return await handlePutRequest(req, res, requestingUser);
+      return await handlePutRequest(req, res, user);
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('Unexpected error in vocab API:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
@@ -83,7 +62,19 @@ async function handleGetRequest(req, res, requestingUser) {
   // Ограничения доступа по ролям
   if (requestingUser.role === 'student') {
     // Студенты видят только свой словарь
-    query = query.eq('user_id', requestingUser.id);
+    if (requestingUser.auth_method === 'telegram') {
+      query = query.eq('user_id', requestingUser.id);
+    } else {
+      // Для браузерной авторизации студентов нужно найти по имени
+      if (user_name) {
+        query = query.eq('hanna_users.name', user_name);
+      } else {
+        return res.status(400).json({ 
+          error: 'Missing user identification',
+          message: 'Для браузерной авторизации требуется параметр user_name'
+        });
+      }
+    }
   } else if (requestingUser.role === 'tutor') {
     // Тьюторы видят словари своих студентов
     // В будущем можно добавить связь tutor_id
@@ -96,7 +87,7 @@ async function handleGetRequest(req, res, requestingUser) {
     query = query.eq('session_id', session_id);
   }
   
-  if (user_name) {
+  if (user_name && requestingUser.role !== 'student') {
     query = query.eq('hanna_users.name', user_name);
   }
   
@@ -127,7 +118,14 @@ async function handleGetRequest(req, res, requestingUser) {
     session_date: w.created_at // Добавляем для совместимости
   }));
 
-  return res.status(200).json({ words });
+  return res.status(200).json({ 
+    words,
+    requester: {
+      name: requestingUser.name,
+      role: requestingUser.role,
+      auth_method: requestingUser.auth_method
+    }
+  });
 }
 
 async function handlePostRequest(req, res, requestingUser) {
@@ -143,8 +141,16 @@ async function handlePostRequest(req, res, requestingUser) {
   // Проверяем права на добавление слов
   if (requestingUser.role === 'student') {
     // Студенты могут добавлять слова только себе
-    if (user_id && user_id !== requestingUser.id) {
-      return res.status(403).json({ error: 'Students can only add words to their own vocabulary' });
+    if (requestingUser.auth_method === 'telegram') {
+      if (user_id && user_id !== requestingUser.id) {
+        return res.status(403).json({ error: 'Students can only add words to their own vocabulary' });
+      }
+    } else {
+      // Для браузерной авторизации ограничиваем доступ
+      return res.status(403).json({ 
+        error: 'Browser students cannot add words',
+        message: 'Добавление слов доступно только через Telegram бот'
+      });
     }
   }
 
@@ -163,7 +169,7 @@ async function handlePostRequest(req, res, requestingUser) {
   }
 
   // Если студент и не указан user_id, используем его собственный ID
-  if (!finalUserId && requestingUser.role === 'student') {
+  if (!finalUserId && requestingUser.role === 'student' && requestingUser.auth_method === 'telegram') {
     finalUserId = requestingUser.id;
   }
 
@@ -185,7 +191,13 @@ async function handlePostRequest(req, res, requestingUser) {
     return res.status(500).json({ error: error.message });
   }
 
-  return res.status(200).json({ success: true });
+  return res.status(200).json({ 
+    success: true,
+    added_by: {
+      name: requestingUser.name,
+      role: requestingUser.role
+    }
+  });
 }
 
 async function handlePutRequest(req, res, requestingUser) {
@@ -201,14 +213,22 @@ async function handlePutRequest(req, res, requestingUser) {
   // Проверяем права на обновление
   if (requestingUser.role === 'student') {
     // Студенты могут обновлять только свои слова
-    const { data: wordData } = await supabase
-      .from('hanna_vocab')
-      .select('user_id')
-      .eq('id', id)
-      .single();
-    
-    if (!wordData || wordData.user_id !== requestingUser.id) {
-      return res.status(403).json({ error: 'Students can only update their own words' });
+    if (requestingUser.auth_method === 'telegram') {
+      const { data: wordData } = await supabase
+        .from('hanna_vocab')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+      
+      if (!wordData || wordData.user_id !== requestingUser.id) {
+        return res.status(403).json({ error: 'Students can only update their own words' });
+      }
+    } else {
+      // Для браузерной авторизации ограничиваем доступ
+      return res.status(403).json({ 
+        error: 'Browser students cannot update words',
+        message: 'Обновление слов доступно только через Telegram бот'
+      });
     }
   }
 
@@ -235,5 +255,11 @@ async function handlePutRequest(req, res, requestingUser) {
     return res.status(500).json({ error: error.message });
   }
 
-  return res.status(200).json({ success: true });
+  return res.status(200).json({ 
+    success: true,
+    updated_by: {
+      name: requestingUser.name,
+      role: requestingUser.role
+    }
+  });
 }
