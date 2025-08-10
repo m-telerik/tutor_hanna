@@ -1,1 +1,552 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Панель тьютора - Hanna English & French</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/tutor.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Панель тьютора -->
+    <div id="tutorPanel">
+      <div class="tutor-header">
+        <h1><span class="emoji">👩‍🏫</span>Панель тьютора</h1>
+        <div class="tutor-info" id="tutorInfo">
+          Загрузка...
+        </div>
+      </div>
 
+      <!-- Статистика тьютора -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-number" id="myStudents">0</div>
+          <div class="stat-label">Мои студенты</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="todayLessons">0</div>
+          <div class="stat-label">Сегодня уроков</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="weekLessons">0</div>
+          <div class="stat-label">На этой неделе</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="monthEarnings">0₽</div>
+          <div class="stat-label">Доход за месяц</div>
+        </div>
+      </div>
+
+      <!-- Быстрые действия -->
+      <div class="quick-actions">
+        <div class="action-card" onclick="createNewLesson()">
+          <span class="emoji">➕</span>
+          <div class="title">Новый урок</div>
+          <div class="subtitle">Запланировать занятие</div>
+        </div>
+        
+        <a href="chat-history.html" class="action-card">
+          <span class="emoji">💬</span>
+          <div class="title">Мои чаты</div>
+          <div class="subtitle">История общения</div>
+        </a>
+        
+        <div class="action-card" onclick="viewSchedule()">
+          <span class="emoji">📅</span>
+          <div class="title">Расписание</div>
+          <div class="subtitle">Календарь занятий</div>
+        </div>
+        
+        <div class="action-card" onclick="exportStudentData()">
+          <span class="emoji">📊</span>
+          <div class="title">Отчеты</div>
+          <div class="subtitle">Прогресс студентов</div>
+        </div>
+      </div>
+
+      <!-- Мои студенты -->
+      <div class="students-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="emoji">🧑‍🎓</span>Мои студенты
+          </h2>
+          <button class="refresh-btn" onclick="loadMyStudents()">
+            <span class="emoji">🔄</span>Обновить
+          </button>
+        </div>
+        
+        <div class="table-container">
+          <div id="studentsContent">
+            <div class="loading">
+              <span class="loading-spinner"></span>
+              Загрузка списка студентов...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ближайшие уроки -->
+      <div class="lessons-section">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="emoji">📚</span>Ближайшие уроки
+          </h2>
+          <div class="lessons-filter">
+            <select id="lessonsFilter" onchange="filterLessons()">
+              <option value="today">Сегодня</option>
+              <option value="tomorrow">Завтра</option>
+              <option value="week">Эта неделя</option>
+              <option value="all">Все</option>
+            </select>
+          </div>
+        </div>
+        
+        <div id="lessonsContent">
+          <div class="loading">
+            <span class="loading-spinner"></span>
+            Загрузка уроков...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Конфигурация для тьютора
+    const TUTOR_CONFIG = {
+      tutorId: 'hanna_teaches', // ID тьютора
+      tutorName: 'Анна',
+      tutorLanguages: ['English', 'French'],
+      hourlyRate: 2000 // руб/час
+    };
+    
+    // Глобальные переменные
+    let currentTutor = null;
+    let studentsData = [];
+    let lessonsData = [];
+    let isAuthenticated = false;
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🚀 Инициализация панели тьютора...');
+      
+      // Настройка Telegram WebApp (если доступен)
+      if (window.Telegram?.WebApp) {
+        console.log('📱 Telegram WebApp обнаружен');
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      }
+      
+      // Инициализируем тьютора
+      currentTutor = {
+        id: TUTOR_CONFIG.tutorId,
+        name: TUTOR_CONFIG.tutorName,
+        languages: TUTOR_CONFIG.tutorLanguages,
+        rate: TUTOR_CONFIG.hourlyRate,
+        sessionTime: Date.now()
+      };
+      
+      showTutorPanel();
+      loadInitialData();
+    });
+
+    // Отображение панели тьютора
+    function showTutorPanel() {
+      console.log('✅ Показываем панель тьютора');
+      
+      const tutorPanel = document.getElementById('tutorPanel');
+      if (tutorPanel) {
+        tutorPanel.style.display = 'block';
+      }
+      
+      isAuthenticated = true;
+      
+      // Обновляем информацию о тьюторе
+      const tutorInfo = document.getElementById('tutorInfo');
+      if (tutorInfo) {
+        tutorInfo.innerHTML = `
+          ${currentTutor.name} • ${currentTutor.languages.join(' & ')}
+          <small style="display: block; opacity: 0.9;">
+            Ставка: ${currentTutor.rate}₽/час
+          </small>
+        `;
+      }
+    }
+
+    // Загрузка начальных данных
+    async function loadInitialData() {
+      console.log('📊 Загрузка данных тьютора...');
+      
+      setTimeout(async () => {
+        await loadMyStudents();
+        await loadUpcomingLessons();
+      }, 100);
+    }
+
+    // Загрузка студентов тьютора
+    async function loadMyStudents() {
+      console.log('👥 Загрузка студентов тьютора...');
+      const studentsContent = document.getElementById('studentsContent');
+      
+      if (!studentsContent) {
+        console.error('❌ Элемент studentsContent не найден');
+        return;
+      }
+
+      // Показываем индикатор загрузки
+      studentsContent.innerHTML = `
+        <div class="loading">
+          <span class="loading-spinner"></span>
+          Загрузка ваших студентов...
+        </div>
+      `;
+
+      try {
+        // Используем тот же API, но с фильтрацией по тьютору
+        const response = await fetch('/api/students', {
+          headers: { 'x-telegram-id': '618647337' } // Пока используем админский доступ
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Студенты загружены:', data.students?.length || 0);
+        
+        if (!data.students) {
+          throw new Error('Некорректный ответ API: отсутствует поле students');
+        }
+        
+        // Фильтруем студентов для конкретного тьютора (пока показываем всех)
+        studentsData = data.students.filter(student => {
+          // В будущем здесь будет фильтрация по tutor_id
+          return true;
+        });
+        
+        renderStudentsTable(studentsData);
+        updateTutorStats(studentsData);
+        
+      } catch (error) {
+        console.error('❌ Ошибка загрузки студентов:', error);
+        studentsContent.innerHTML = `
+          <div class="error">
+            <h3>Ошибка загрузки</h3>
+            <p>Не удалось загрузить список студентов: ${error.message}</p>
+            <button onclick="loadMyStudents()" class="btn-primary">
+              Попробовать снова
+            </button>
+          </div>
+        `;
+      }
+    }
+
+    // Загрузка предстоящих уроков
+    async function loadUpcomingLessons() {
+      console.log('📚 Загрузка предстоящих уроков...');
+      const lessonsContent = document.getElementById('lessonsContent');
+      
+      if (!lessonsContent) return;
+
+      lessonsContent.innerHTML = `
+        <div class="loading">
+          <span class="loading-spinner"></span>
+          Загрузка уроков...
+        </div>
+      `;
+
+      try {
+        // Генерируем тестовые данные уроков
+        const mockLessons = generateMockLessons();
+        lessonsData = mockLessons;
+        renderLessonsList(mockLessons);
+        
+      } catch (error) {
+        console.error('❌ Ошибка загрузки уроков:', error);
+        lessonsContent.innerHTML = `
+          <div class="error">
+            <h3>Ошибка загрузки</h3>
+            <p>Не удалось загрузить уроки: ${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // Генерация тестовых данных уроков
+    function generateMockLessons() {
+      const lessons = [];
+      const today = new Date();
+      
+      for (let i = 0; i < 10; i++) {
+        const lessonDate = new Date(today);
+        lessonDate.setDate(today.getDate() + i);
+        lessonDate.setHours(9 + (i % 8), (i % 2) * 30, 0, 0);
+        
+        const students = ['Анна Иванова', 'Петр Сидоров', 'Мария Петрова', 'Иван Козлов'];
+        const languages = ['English', 'French'];
+        const types = ['Разговорная практика', 'Грамматика', 'Словарь', 'Чтение'];
+        
+        lessons.push({
+          id: `lesson_${i + 1}`,
+          student: students[i % students.length],
+          date: lessonDate,
+          language: languages[i % languages.length],
+          type: types[i % types.length],
+          duration: 60,
+          status: i === 0 ? 'upcoming' : 'scheduled'
+        });
+      }
+      
+      return lessons;
+    }
+
+    // Отрисовка таблицы студентов
+    function renderStudentsTable(students) {
+      const studentsContent = document.getElementById('studentsContent');
+      
+      if (students.length === 0) {
+        studentsContent.innerHTML = `
+          <div class="empty-state">
+            <span class="emoji" style="font-size: 3em;">👥</span>
+            <p>У вас пока нет студентов</p>
+            <button onclick="createNewStudent()" class="btn-primary">
+              <span class="emoji">➕</span>Добавить студента
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      studentsContent.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Студент</th>
+              <th>Telegram</th>
+              <th>Язык</th>
+              <th>Прогресс</th>
+              <th>Следующий урок</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${students.map(student => `
+              <tr>
+                <td>
+                  <div class="student-info">
+                    <div class="student-name">
+                      <a href="student.html?name=${encodeURIComponent(student.name)}">
+                        ${student.name}
+                      </a>
+                    </div>
+                    ${student.email ? `
+                      <div class="student-email">
+                        ${student.email}
+                      </div>
+                    ` : ''}
+                  </div>
+                </td>
+                <td class="telegram-column">
+                  ${student.username ? `
+                    <a href="https://t.me/${student.username}" target="_blank" class="telegram-link">
+                      @${student.username}
+                    </a>
+                  ` : '<span class="no-telegram">—</span>'}
+                </td>
+                <td>
+                  <span class="language-badge">
+                    ${student.language || '—'}
+                  </span>
+                  ${student.frequency ? `<br><small class="frequency-info">${student.frequency}x в неделю</small>` : ''}
+                </td>
+                <td>
+                  <div class="progress-info">
+                    <div class="progress-bar">
+                      <div class="progress-fill" style="width: ${Math.random() * 80 + 20}%"></div>
+                    </div>
+                    <small>${Math.floor(Math.random() * 50 + 10)} уроков</small>
+                  </div>
+                </td>
+                <td>
+                  ${student.next_session 
+                    ? `<div class="next-lesson">
+                         <a href="lesson.html?session_id=${student.next_session_id}" class="lesson-link">
+                           ${student.next_session}
+                         </a>
+                         <small class="lesson-status">${student.status || 'Запланирован'}</small>
+                       </div>`
+                    : '<span class="no-lesson">Не запланировано</span>'
+                  }
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="action-btn" onclick="scheduleLesson('${student.name}')" title="Запланировать урок">
+                      📅
+                    </button>
+                    <button class="action-btn" onclick="contactStudent('${student.username}')" title="Написать">
+                      💬
+                    </button>
+                    <button class="action-btn" onclick="viewProgress('${student.name}')" title="Прогресс">
+                      📊
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    // Отрисовка списка уроков
+    function renderLessonsList(lessons) {
+      const lessonsContent = document.getElementById('lessonsContent');
+      
+      if (lessons.length === 0) {
+        lessonsContent.innerHTML = `
+          <div class="empty-state">
+            <span class="emoji" style="font-size: 3em;">📚</span>
+            <p>Нет запланированных уроков</p>
+          </div>
+        `;
+        return;
+      }
+
+      lessonsContent.innerHTML = `
+        <div class="lessons-grid">
+          ${lessons.slice(0, 6).map(lesson => `
+            <div class="lesson-card ${lesson.status}">
+              <div class="lesson-header">
+                <span class="lesson-time">
+                  ${lesson.date.toLocaleDateString('ru-RU', { 
+                    day: '2-digit', 
+                    month: '2-digit',
+                    weekday: 'short'
+                  })}
+                  ${lesson.date.toLocaleTimeString('ru-RU', { 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                  })}
+                </span>
+                <span class="lesson-duration">${lesson.duration} мин</span>
+              </div>
+              
+              <div class="lesson-body">
+                <h4 class="lesson-student">${lesson.student}</h4>
+                <div class="lesson-details">
+                  <span class="lesson-language">${lesson.language}</span>
+                  <span class="lesson-type">${lesson.type}</span>
+                </div>
+              </div>
+              
+              <div class="lesson-actions">
+                <button class="lesson-btn primary" onclick="startLesson('${lesson.id}')">
+                  ${lesson.status === 'upcoming' ? '▶️ Начать' : '📝 Подготовить'}
+                </button>
+                <button class="lesson-btn secondary" onclick="editLesson('${lesson.id}')">
+                  ✏️
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        
+        ${lessons.length > 6 ? `
+          <div class="show-more">
+            <button onclick="showAllLessons()" class="btn-secondary">
+              Показать все уроки (${lessons.length})
+            </button>
+          </div>
+        ` : ''}
+      `;
+    }
+
+    // Обновление статистики тьютора
+    function updateTutorStats(students) {
+      console.log('📊 Обновление статистики тьютора');
+      
+      const myStudents = students.length;
+      const todayLessons = lessonsData.filter(l => {
+        const today = new Date();
+        return l.date.toDateString() === today.toDateString();
+      }).length;
+      
+      const weekLessons = lessonsData.filter(l => {
+        const today = new Date();
+        const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        return l.date >= weekStart && l.date <= weekEnd;
+      }).length;
+      
+      const monthEarnings = weekLessons * 4 * currentTutor.rate; // Примерный расчет
+      
+      // Безопасное обновление элементов
+      const myStudentsEl = document.getElementById('myStudents');
+      const todayLessonsEl = document.getElementById('todayLessons');
+      const weekLessonsEl = document.getElementById('weekLessons');
+      const monthEarningsEl = document.getElementById('monthEarnings');
+      
+      if (myStudentsEl) myStudentsEl.textContent = myStudents;
+      if (todayLessonsEl) todayLessonsEl.textContent = todayLessons;
+      if (weekLessonsEl) weekLessonsEl.textContent = weekLessons;
+      if (monthEarningsEl) monthEarningsEl.textContent = `${monthEarnings.toLocaleString()}₽`;
+    }
+
+    // Функции действий
+    function createNewLesson() {
+      alert('🔧 Функция создания урока в разработке');
+    }
+
+    function viewSchedule() {
+      alert('🔧 Функция просмотра расписания в разработке');
+    }
+
+    function exportStudentData() {
+      alert('🔧 Функция экспорта данных в разработке');
+    }
+
+    function createNewStudent() {
+      alert('🔧 Функция добавления студента в разработке');
+    }
+
+    function scheduleLesson(studentName) {
+      alert(`🔧 Планирование урока для ${studentName} в разработке`);
+    }
+
+    function contactStudent(username) {
+      if (username) {
+        window.open(`https://t.me/${username}`, '_blank');
+      } else {
+        alert('У студента нет Telegram');
+      }
+    }
+
+    function viewProgress(studentName) {
+      window.location.href = `student.html?name=${encodeURIComponent(studentName)}`;
+    }
+
+    function filterLessons() {
+      const filter = document.getElementById('lessonsFilter').value;
+      console.log('Фильтр уроков:', filter);
+      // Здесь будет логика фильтрации
+    }
+
+    function startLesson(lessonId) {
+      alert(`🔧 Начало урока ${lessonId} в разработке`);
+    }
+
+    function editLesson(lessonId) {
+      alert(`🔧 Редактирование урока ${lessonId} в разработке`);
+    }
+
+    function showAllLessons() {
+      alert('🔧 Показ всех уроков в разработке');
+    }
+
+    console.log('✅ Панель тьютора инициализирована');
+  </script>
+</body>
+</html>
