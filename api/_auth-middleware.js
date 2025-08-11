@@ -13,7 +13,10 @@ const supabase = createClient(
  * Поддерживает как Telegram WebApp, так и браузерную авторизацию
  */
 export async function checkAuth(req, allowedRoles = []) {
-  const telegramId = req.headers["x-telegram-id"];
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const tgidFromQuery = url.searchParams.get('tgid');
+
+  const telegramId = req.headers["x-telegram-id"] || tgidFromQuery;
   const adminToken = req.headers["x-admin-token"];
   const adminId = req.headers["x-admin-id"];
 
