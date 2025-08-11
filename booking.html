@@ -3,123 +3,121 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Hanna English & French</title>
+  <title>Забронировать занятие</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="js/auth.js"></script>
   <link rel="stylesheet" href="styles/main.css">
-  <style>
-    :root{
-      --accent-color:#3b82f6;
-      --text-color:#e5e7eb;
-      --bg-color:#0f1115;
-    }
-    html,body{margin:0;background:var(--bg-color);color:var(--text-color);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial}
-    .wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
-    .spinner{width:50px;height:50px;border:3px solid var(--accent-color);border-top:3px solid transparent;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
-    h1{margin:0 0 8px;font-size:18px;color:var(--accent-color)}
-    p{margin:0;opacity:.8}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .btn{
-      margin-top:18px;display:inline-block;padding:10px 14px;border-radius:10px;
-      background:var(--accent-color);color:#fff;text-decoration:none;font-weight:600
-    }
-  </style>
+  <link rel="stylesheet" href="styles/booking.css">
 </head>
 <body>
-  <div class="wrap" id="loadingScreen">
-    <div>
-      <div class="spinner"></div>
-      <h1>Hanna English & French</h1>
-      <p id="loadingText">Определяем вашу роль…</p>
+  <div id="bookingContent" style="display:none;">
+    <div class="header">
+      <button onclick="history.back()">← Назад</button>
+      <h1><span class="emoji">📅</span>Бронирование</h1>
+      <div></div>
+    </div>
+
+    <div class="welcome-info" id="welcomeInfo" style="display:none;"></div>
+
+    <div class="quick-actions">
+      <a href="https://t.me/hanna_teaches" class="action-btn">
+        <span class="emoji">💬</span>
+        <strong>Написать Ханне</strong>
+        <small>Обсудить расписание</small>
+      </a>
+      <div class="action-btn" onclick="openCalendarBooking()">
+        <span class="emoji">📅</span>
+        <strong>Забронировать время</strong>
+        <small>Выбрать слот в календаре</small>
+      </div>
+    </div>
+
+    <div class="calendar-container">
+      <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:400px;background:var(--card-bg);border-radius:8px;padding:2rem;text-align:center;">
+        <div style="width:50px;height:50px;border:3px solid var(--accent-color);border-top:3px solid transparent;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:2rem;"></div>
+        <h2 style="margin-bottom:1rem;color:var(--accent-color);">Открываем календарь...</h2>
+        <p style="opacity:.8;margin-bottom:2rem;line-height:1.6;max-width:320px;">
+          Сейчас вы будете перенаправлены на страницу бронирования Ханны
+        </p>
+        <button onclick="openCalendarBooking()" class="external-link-btn" style="font-size:16px;padding:12px 24px;">
+          <span class="emoji">📅</span>Открыть вручную
+        </button>
+        <p style="font-size:12px;opacity:.6;margin-top:1rem;">Если автоматический переход не сработал</p>
+      </div>
     </div>
   </div>
 
   <script>
-    const tg = window.Telegram?.WebApp;
+    const CALENDAR_BOOKING_URL = 'https://calendar.app.google/SQGJj626MUyQ6DYL6';
+    const REDIRECT_KEY = 'booking_redirect_ts';
+    const REDIRECT_TTL_MS = 15 * 60 * 1000; // 15 минут
 
-    // Безопасный редирект в бронирование
-    function goBooking() {
-      window.location.replace('booking.html');
+    function openCalendarBooking() {
+      if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(CALENDAR_BOOKING_URL);
+      } else {
+        window.location.href = CALENDAR_BOOKING_URL;
+      }
+      // фиксируем факт открытия, чтобы не автоперенаправлять повторно
+      sessionStorage.setItem(REDIRECT_KEY, Date.now().toString());
     }
 
-    // Показ понятного экрана, если открыто вне Telegram
-    function showOpenInTelegram() {
-      const box = document.getElementById('loadingScreen');
-      box.innerHTML = `
-        <div>
-          <h1>Откройте мини‑приложение в Telegram</h1>
-          <p>Эта страница работает только внутри Telegram WebApp.</p>
-          <a class="btn" href="https://t.me/tutor_hanna_bot">Открыть бота</a>
-        </div>
-      `;
+    function shouldAutoRedirect(){
+      const ts = parseInt(sessionStorage.getItem(REDIRECT_KEY) || '0', 10);
+      if (!ts) return true;
+      return (Date.now() - ts) > REDIRECT_TTL_MS;
     }
 
-    // Основной сценарий
-    document.addEventListener('DOMContentLoaded', async () => {
+    function personalizeWelcome(user){
+      const el = document.getElementById('welcomeInfo');
+      const next = user?.next_session?.date ? `
+        <div style="margin-top:1rem;padding:.8rem;background:var(--success-color);color:#fff;border-radius:8px;">
+          📅 Ваше следующее занятие: ${user.next_session.date}
+        </div>` : '';
+      el.innerHTML = `
+        <div style="background:var(--card-bg);border-radius:12px;padding:1.5rem;margin:1rem 0;border:1px solid var(--border-color);text-align:center;">
+          <h2 style="margin:0 0 .5rem 0;color:var(--accent-color);">
+            👋 Привет, ${user?.first_name || user?.name || 'студент'}!
+          </h2>
+          <p style="margin:0;opacity:.8;">${user?.role === 'admin' ? 'Вы можете забронировать занятие для любого студента' : 'Выберите удобное время для занятия'}</p>
+          ${next}
+        </div>`;
+      el.style.display = 'block';
+    }
+
+    async function fetchUserRole(telegramId){
       try {
-        if (!tg || !tg.initDataUnsafe?.user) {
-          // Нет Telegram — показываем кнопку
-          showOpenInTelegram();
-          return;
+        const res = await fetch('/api/user-role', { headers: { 'x-telegram-id': telegramId.toString() } });
+        if (!res.ok) return null;
+        return await res.json(); // может быть admin/student/tutor/prospect
+      } catch { return null; }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Telegram UI
+      if (window.Telegram?.WebApp) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
+
+      document.getElementById('bookingContent').style.display = 'block';
+
+      // Персонализация (без строгой авторизации)
+      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+      if (tgUser?.id) {
+        const user = await fetchUserRole(tgUser.id);
+        if (user && (user.role === 'admin' || user.role === 'student' || user.role === 'tutor')) {
+          personalizeWelcome({ ...user, first_name: tgUser.first_name });
+        } else {
+          // prospect/unknown — нейтральное приветствие (ничего не делаем: блок с карточкой ниже общий)
         }
+      }
 
-        tg.ready();
-        tg.expand();
-
-        // Инициализируем авторизацию: допускаем admin, tutor, student, prospect
-        const auth = new AuthSystem();
-
-        // Встроенная обработка успеха/ошибки
-        await auth.init(['admin', 'tutor', 'student', 'prospect'], onAuthSuccess, onAuthFail);
-
-        // На всякий случай таймаут‑фолбэк от вечной загрузки
-        setTimeout(() => {
-          const txt = document.getElementById('loadingText')?.textContent || '';
-          if (txt.includes('Определяем вашу роль')) {
-            goBooking();
-          }
-        }, 7000);
-
-      } catch (e) {
-        // Любая ошибка — уводим на бронирование
-        goBooking();
+      // Автопереход только если не делали недавно
+      if (shouldAutoRedirect()) {
+        setTimeout(openCalendarBooking, 900);
       }
     });
-
-    // Если авторизация успешна — роутим по роли
-    function onAuthSuccess(user) {
-      try {
-        switch (user.role) {
-          case 'admin':
-            window.location.replace('admin.html');
-            break;
-          case 'tutor':
-            window.location.replace('tutor.html');
-            break;
-          case 'student':
-            // Если знаем конкретного пользователя — можно вести в профиль; иначе на бронирование
-            if (user.user_id || user.id) {
-              const id = encodeURIComponent(user.user_id || user.id);
-              window.location.replace(`student.html?user_id=${id}`);
-            } else {
-              goBooking();
-            }
-            break;
-          case 'prospect':
-          default:
-            // Все неизвестные роли — в бронирование
-            goBooking();
-        }
-      } catch {
-        goBooking();
-      }
-    }
-
-    // Если авторизация провалилась (нет в базе/нет роли) — сразу бронирование
-    function onAuthFail(error) {
-      // Можно сузить по текстам, но бизнес‑логика простая: любой фейл тут = бронирование
-      goBooking();
-    }
   </script>
+
+  <style>
+    @keyframes spin { to { transform: rotate(360deg) } }
+  </style>
 </body>
 </html>
