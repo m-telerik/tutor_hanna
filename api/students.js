@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
   try {
     // Универсальная проверка авторизации (Telegram или браузер)
-    const user = await authenticate(req, res, ['admin', 'tutor']);
+    const user = await authenticate(req, res, ['admin', 'tutor', 'student']);
     if (!user) return; // Ошибка уже отправлена в authenticate()
 
     console.log('✅ Авторизован пользователь:', user.name, '- роль:', user.role, '- метод:', user.auth_method);
@@ -30,8 +30,10 @@ export default async function handler(req, res) {
       .eq('is_active', true)
       .eq('role', 'student');
 
-    // Если это тьютор, показываем только его студентов
-    if (user.role === 'tutor') {
+    // Если это студент — показываем только его карточку
+    if (user.role === 'student') {
+      studentsQuery = studentsQuery.eq('id', user.id);
+    } else if (user.role === 'tutor') {
       // В будущем здесь можно добавить фильтрацию по tutor_id
       // studentsQuery = studentsQuery.eq('tutor_id', user.id);
     }
