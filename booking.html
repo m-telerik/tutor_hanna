@@ -75,15 +75,15 @@
     .booking-cards {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      margin: 20px 0;
+      gap: 12px;
+      margin: 16px 0;
     }
 
     .booking-card {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: var(--radius);
-      padding: 20px;
+      padding: 16px;
       transition: all 0.3s ease;
       cursor: pointer;
       text-decoration: none;
@@ -146,31 +146,33 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .card-icon {
-      font-size: 28px;
+      font-size: 24px;
       flex-shrink: 0;
     }
 
     .card-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       margin: 0;
       line-height: 1.3;
     }
 
     .card-content {
-      margin: 12px 0 16px 0;
-      line-height: 1.5;
+      margin: 10px 0 12px 0;
+      line-height: 1.4;
       opacity: 0.9;
+      font-size: 13px;
     }
 
     .card-actions {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
+      margin-bottom: 8px;
     }
 
     .card-action {
@@ -215,9 +217,9 @@
     }
 
     .subtitle {
-      font-size: var(--font-size-sm);
+      font-size: 11px;
       opacity: 0.7;
-      margin-top: 8px;
+      margin-top: 6px;
     }
 
     /* Персонализация для пользователей */
@@ -257,16 +259,20 @@
         padding: 4px 8px 16px;
       }
 
+      .booking-cards {
+        gap: 10px;
+      }
+
       .booking-card {
-        padding: 16px;
+        padding: 14px;
       }
 
       .card-title {
-        font-size: 15px;
+        font-size: 14px;
       }
 
       .card-content {
-        font-size: var(--font-size-sm);
+        font-size: 12px;
       }
 
       .card-actions {
@@ -281,27 +287,43 @@
 
     @media (max-width: 480px) {
       .header {
-        margin-bottom: 16px;
+        margin-bottom: 12px;
       }
 
       .header h1 {
         font-size: 15px;
       }
 
+      .booking-cards {
+        gap: 8px;
+        margin: 12px 0;
+      }
+
       .booking-card {
-        padding: 14px;
+        padding: 12px;
       }
 
       .card-header {
         gap: 10px;
+        margin-bottom: 8px;
       }
 
       .card-icon {
-        font-size: 24px;
+        font-size: 22px;
       }
 
       .card-title {
-        font-size: 14px;
+        font-size: 13px;
+      }
+
+      .card-content {
+        margin: 8px 0 10px 0;
+        font-size: 11px;
+      }
+
+      .subtitle {
+        font-size: 10px;
+        margin-top: 4px;
       }
     }
   </style>
@@ -321,19 +343,15 @@
       <div class="booking-card student" onclick="openStudentBooking()">
         <div class="card-header">
           <div class="card-icon">🎓</div>
-          <h3 class="card-title">Хочешь свободно говорить на английском или французском?</h3>
+          <h3 class="card-title">Изучать английский или французский с Ханной</h3>
         </div>
         <div class="card-content">
-          Забронируй индивидуальное занятие с Ханной или напиши ей в личные сообщения для консультации.
+          Хочешь свободно говорить на английском или французском? Забронируй индивидуальное занятие с Ханной или напиши ей в личные сообщения для консультации.
         </div>
         <div class="card-actions">
           <a href="#" class="card-action primary" onclick="event.stopPropagation(); openCalendarBooking()">
             <span class="emoji">📅</span>
             Забронировать занятие
-          </a>
-          <a href="https://t.me/croissanechkaa" target="_blank" class="card-action" onclick="event.stopPropagation()">
-            <span class="emoji">💬</span>
-            Написать Ханне
           </a>
         </div>
         <div class="subtitle">
@@ -345,19 +363,15 @@
       <div class="booking-card teacher" onclick="openTeacherBooking()">
         <div class="card-header">
           <div class="card-icon">👩‍🏫</div>
-          <h3 class="card-title">Ты репетитор и хочешь улучшить методику обучения?</h3>
+          <h3 class="card-title">Методические занятия для репетиторов</h3>
         </div>
         <div class="card-content">
-          Запишись на методические занятия к Ханне. У неё сертификат CELTA Grade A и опыт подготовки преподавателей.
+          Ты репетитор и хочешь улучшить методику обучения? Запишись на методические занятия к Ханне. У неё сертификат CELTA Grade A и опыт подготовки преподавателей.
         </div>
         <div class="card-actions">
           <a href="#" class="card-action success" onclick="event.stopPropagation(); openTeacherCalendar()">
             <span class="emoji">🎯</span>
             Записаться на консультацию
-          </a>
-          <a href="https://t.me/croissanechkaa" target="_blank" class="card-action" onclick="event.stopPropagation()">
-            <span class="emoji">📝</span>
-            Обсудить программу
           </a>
         </div>
         <div class="subtitle">
@@ -369,19 +383,15 @@
       <div class="booking-card developer" onclick="openDeveloperContact()">
         <div class="card-header">
           <div class="card-icon">💻</div>
-          <h3 class="card-title">Ты тьютор, которому хочется минимизировать рутину и уделять больше внимания языку?</h3>
+          <h3 class="card-title">Автоматизация для тьюторов</h3>
         </div>
         <div class="card-content">
-          Свяжись с разработчиками для создания твоего персонального помощника.
+          Ты тьютор, которому хочется минимизировать рутину и уделять больше внимания языку? Свяжись с разработчиками для создания твоего персонального помощника.
         </div>
         <div class="card-actions">
           <a href="https://t.me/naumenko" target="_blank" class="card-action warning" onclick="event.stopPropagation()">
             <span class="emoji">🚀</span>
             Связаться с разработчиками
-          </a>
-          <a href="https://t.me/croissanechkaa" target="_blank" class="card-action" onclick="event.stopPropagation()">
-            <span class="emoji">💡</span>
-            Узнать больше
           </a>
         </div>
         <div class="subtitle">
@@ -428,7 +438,7 @@
           const welcomeInfo = document.getElementById('welcomeInfo');
           
           let welcomeContent = `
-            <h2>👋 Привет, ${tgUser.first_name || user.name}!</h2>
+            <h2>👋 Привет, ${tgUser.first_name || user.name || 'дорогой пользователь'}!</h2>
           `;
           
           if (user.role === 'admin') {
@@ -446,7 +456,7 @@
           } else if (user.role === 'tutor') {
             welcomeContent += `<p>Добро пожаловать! Здесь вы можете забронировать методические консультации или обсудить автоматизацию.</p>`;
           } else {
-            welcomeContent += `<p>Добро пожаловать. Чем помочь?</p>`;
+            welcomeContent += `<p>Выберите подходящий вариант сотрудничества с Ханной.</p>`;
           }
           
           welcomeInfo.innerHTML = welcomeContent;
