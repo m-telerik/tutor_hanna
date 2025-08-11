@@ -30,7 +30,12 @@
   <script>
     const tg = window.Telegram?.WebApp;
 
-    function goBooking(){ window.location.replace('booking.html'); }
+    function goBookingOnce(){
+      // предохранитель от повторного мгновенного возврата с booking
+      if (sessionStorage.getItem('index_routed_to_booking') === '1') return;
+      sessionStorage.setItem('index_routed_to_booking','1');
+      window.location.replace('booking.html');
+    }
 
     function showOpenInTelegram(){
       const box = document.getElementById('loadingScreen');
@@ -45,25 +50,15 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        if (!tg || !tg.initDataUnsafe?.user) {
-          showOpenInTelegram();
-          return;
-        }
+        if (!tg || !tg.initDataUnsafe?.user) { showOpenInTelegram(); return; }
 
         tg.ready(); tg.expand();
-
-        // Вариант №1: разрешаем 'prospect', чтобы попасть в onAuthSuccess и там решить редирект
         const auth = new AuthSystem();
+
+        // Разрешаем prospect, но роутим его сразу на booking
         await auth.init(['admin','tutor','student','prospect'], onAuthSuccess, onAuthFail);
-
-        // Фолбэк от вечной загрузки (если вдруг колбэки не сработали)
-        setTimeout(() => {
-          const txt = document.getElementById('loadingText')?.textContent || '';
-          if (txt.includes('Определяем вашу роль')) goBooking();
-        }, 7000);
-
-      } catch (e) {
-        goBooking();
+      } catch {
+        goBookingOnce();
       }
     });
 
@@ -74,19 +69,15 @@
           case 'tutor':   return window.location.replace('tutor.html');
           case 'student': {
             const id = encodeURIComponent(user.user_id || user.id || '');
-            return id ? window.location.replace(`student.html?user_id=${id}`) : goBooking();
+            return id ? window.location.replace(`student.html?user_id=${id}`) : goBookingOnce();
           }
-          // Все «новые»/неизвестные роли — на бронирование
-          case 'prospect':
-          default:        return goBooking();
+          // prospect и прочие — бронирование
+          default: return goBookingOnce();
         }
-      } catch { goBooking(); }
+      } catch { goBookingOnce(); }
     }
 
-    function onAuthFail(_error){
-      // Любая ошибка авторизации — бронирование
-      goBooking();
-    }
+    function onAuthFail(){ goBookingOnce(); }
   </script>
 </body>
 </html>
