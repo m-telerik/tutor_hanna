@@ -114,6 +114,22 @@
       showBookingForProspects();
     }
 
+    <script>
+  // Неудачная авторизация
+  function onAuthFail(error) {
+    console.error('❌ Ошибка авторизации:', error);
+
+    // Если это новый или неопознанный пользователь — на бронирование
+    if (error?.message?.includes('не найден') || error?.message?.includes('Пользователь не найден')) {
+      window.location.href = 'booking.html';
+      return;
+    }
+
+    // На всякий случай: всех остальных без роли — тоже туда
+    window.location.href = 'booking.html';
+  }
+</script>
+
     // Показ страницы для потенциальных клиентов
     function showBookingForProspects() {
       document.getElementById('bookingContent').style.display = 'block';
