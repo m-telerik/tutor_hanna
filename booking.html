@@ -1,528 +1,616 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Забронировать занятие</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="styles/main.css">
-  <link rel="stylesheet" href="styles/booking.css">
-  
-  <style>
-    :root {
-      --bg-color: #0f0f10;
-      --text-color: #fff;
-      --card-bg: rgba(255,255,255,.04);
-      --border-color: rgba(255,255,255,.08);
-      --accent-color: #3b82f6;
-      --success-color: #22c55e;
-      --warning-color: #f59e0b;
-      --font-size-sm: 13px;
-      --font-size-md: 14px;
-      --radius: 12px;
-      --gap: 10px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Learning with Hannah - Бронирование</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    html, body {
-      background: var(--bg-color);
-      color: var(--text-color);
-      margin: 0;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
-      font-size: var(--font-size-md);
-    }
+        :root {
+            --tg-bg-color: var(--tg-theme-bg-color, #1a1a1a);
+            --tg-text-color: var(--tg-theme-text-color, #ffffff);
+            --tg-hint-color: var(--tg-theme-hint-color, #707579);
+            --tg-button-color: var(--tg-theme-button-color, #3390ec);
+            --tg-button-text-color: var(--tg-theme-button-text-color, #ffffff);
+            --tg-secondary-bg-color: var(--tg-theme-secondary-bg-color, #2b2b2b);
+            
+            /* Кастомные цвета */
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            
+            --border-radius: 16px;
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 32px;
+            --spacing-xl: 48px;
+        }
 
-    .container {
-      max-width: 880px;
-      margin: 0 auto;
-      padding: 8px 10px 20px;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-bg-color);
+            color: var(--tg-text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%);
+        }
 
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--gap);
-      margin: 4px 0 20px;
-    }
+        .container {
+            max-width: 390px;
+            margin: 0 auto;
+            padding: var(--spacing-sm);
+            position: relative;
+        }
 
-    .header h1 {
-      font-size: 16px;
-      margin: 0;
-      font-weight: 700;
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: var(--spacing-lg) 0;
+            margin-bottom: var(--spacing-lg);
+        }
 
-    .emoji {
-      font-size: 16px;
-    }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            background: var(--primary-gradient);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            animation: fadeInUp 0.6s ease;
+        }
 
-    .back-btn {
-      background: none;
-      border: none;
-      color: var(--accent-color);
-      cursor: pointer;
-      padding: 0.5rem 0;
-      font-size: 14px;
-    }
+        .hero-title {
+            font-size: clamp(24px, 6vw, 32px);
+            font-weight: 700;
+            background: var(--primary-gradient);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: var(--spacing-sm);
+            animation: fadeInUp 0.8s ease;
+        }
 
-    .back-btn:hover {
-      text-decoration: underline;
-    }
+        .hero-subtitle {
+            font-size: 18px;
+            color: var(--tg-hint-color);
+            margin-bottom: var(--spacing-md);
+            animation: fadeInUp 1s ease;
+        }
 
-    .booking-cards {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin: 16px 0;
-    }
+        .hero-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: var(--spacing-md);
+            animation: fadeInUp 1.2s ease;
+        }
 
-    .booking-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius);
-      padding: 16px;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      text-decoration: none;
-      color: var(--text-color);
-      display: block;
-      position: relative;
-      overflow: hidden;
-    }
+        .stat-item {
+            text-align: center;
+        }
 
-    .booking-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            background: var(--success-gradient);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
 
-    .booking-card.student::before {
-      background: var(--accent-color);
-    }
+        .stat-label {
+            font-size: 12px;
+            color: var(--tg-hint-color);
+            margin-top: 4px;
+        }
 
-    .booking-card.teacher::before {
-      background: var(--success-color);
-    }
+        /* Audience Cards */
+        .audiences {
+            display: grid;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
 
-    .booking-card.developer::before {
-      background: var(--warning-color);
-    }
+        .audience-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
 
-    .booking-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-      text-decoration: none;
-      color: var(--text-color);
-    }
+        .audience-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
 
-    .booking-card:hover::before {
-      opacity: 1;
-    }
+        .audience-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
 
-    .booking-card.student:hover {
-      border-color: var(--accent-color);
-      background: rgba(59, 130, 246, 0.05);
-    }
+        .audience-card:hover::before {
+            left: 100%;
+        }
 
-    .booking-card.teacher:hover {
-      border-color: var(--success-color);
-      background: rgba(34, 197, 94, 0.05);
-    }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+        }
 
-    .booking-card.developer:hover {
-      border-color: var(--warning-color);
-      background: rgba(245, 158, 11, 0.05);
-    }
+        .card-emoji {
+            font-size: 32px;
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+        }
 
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
 
-    .card-icon {
-      font-size: 24px;
-      flex-shrink: 0;
-    }
+        .card-subtitle {
+            font-size: 14px;
+            color: var(--tg-hint-color);
+        }
 
-    .card-title {
-      font-size: 15px;
-      font-weight: 600;
-      margin: 0;
-      line-height: 1.3;
-    }
+        .card-pain {
+            background: rgba(255, 87, 108, 0.1);
+            border-left: 3px solid #f5576c;
+            padding: var(--spacing-sm);
+            border-radius: 8px;
+            margin: var(--spacing-sm) 0;
+            font-size: 14px;
+        }
 
-    .card-content {
-      margin: 10px 0 12px 0;
-      line-height: 1.4;
-      opacity: 0.9;
-      font-size: 13px;
-    }
+        .card-goal {
+            background: rgba(67, 233, 123, 0.1);
+            border-left: 3px solid #43e97b;
+            padding: var(--spacing-sm);
+            border-radius: 8px;
+            margin: var(--spacing-sm) 0;
+            font-size: 14px;
+        }
 
-    .card-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 8px;
-    }
+        .cta-button {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            margin-top: var(--spacing-sm);
+            min-height: 48px;
+        }
 
-    .card-action {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--text-color);
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: var(--font-size-sm);
-      font-weight: 500;
-      text-decoration: none;
-      transition: all 0.2s ease;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
+        .cta-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
 
-    .card-action.primary {
-      background: var(--accent-color);
-      border-color: var(--accent-color);
-    }
+        .cta-secondary {
+            background: var(--secondary-gradient);
+            color: white;
+        }
 
-    .card-action.success {
-      background: var(--success-color);
-      border-color: var(--success-color);
-    }
+        .cta-success {
+            background: var(--success-gradient);
+            color: white;
+        }
 
-    .card-action.warning {
-      background: var(--warning-color);
-      border-color: var(--warning-color);
-    }
+        .cta-warning {
+            background: var(--warning-gradient);
+            color: white;
+        }
 
-    .card-action:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
-      text-decoration: none;
-      color: var(--text-color);
-    }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
 
-    .card-action .emoji {
-      font-size: 14px;
-    }
+        .cta-button:active {
+            transform: translateY(0);
+        }
 
-    .subtitle {
-      font-size: 11px;
-      opacity: 0.7;
-      margin-top: 6px;
-    }
+        /* Social Proof */
+        .social-proof {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: var(--border-radius);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            text-align: center;
+        }
 
-    /* Персонализация для пользователей */
-    .welcome-info {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border-color);
-      text-align: center;
-    }
+        .proof-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+        }
 
-    .welcome-info h2 {
-      margin: 0 0 8px 0;
-      color: var(--accent-color);
-      font-size: 16px;
-    }
+        .certificates {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+        }
 
-    .welcome-info p {
-      margin: 0;
-      opacity: 0.8;
-      font-size: var(--font-size-sm);
-    }
+        .certificate-badge {
+            background: var(--primary-gradient);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
 
-    .next-session {
-      margin-top: 12px;
-      padding: 8px;
-      background: var(--success-color);
-      color: white;
-      border-radius: 8px;
-      font-size: var(--font-size-sm);
-    }
+        .testimonial {
+            font-style: italic;
+            color: var(--tg-hint-color);
+            margin: var(--spacing-sm) 0;
+            font-size: 14px;
+        }
 
-    /* Адаптивность */
-    @media (max-width: 768px) {
-      .container {
-        padding: 4px 8px 16px;
-      }
+        .testimonial-author {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--tg-text-color);
+        }
 
-      .booking-cards {
-        gap: 10px;
-      }
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: var(--spacing-lg) 0;
+            color: var(--tg-hint-color);
+            font-size: 14px;
+        }
 
-      .booking-card {
-        padding: 14px;
-      }
+        .footer-logo {
+            font-size: 24px;
+            margin-bottom: var(--spacing-sm);
+        }
 
-      .card-title {
-        font-size: 14px;
-      }
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-      .card-content {
-        font-size: 12px;
-      }
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
 
-      .card-actions {
-        flex-direction: column;
-      }
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
 
-      .card-action {
-        justify-content: center;
-        padding: 10px 16px;
-      }
-    }
+        /* Responsive */
+        @media (max-width: 360px) {
+            .container {
+                padding: var(--spacing-xs);
+            }
+            
+            .hero-title {
+                font-size: 24px;
+            }
+            
+            .audience-card {
+                padding: var(--spacing-sm);
+            }
+        }
 
-    @media (max-width: 480px) {
-      .header {
-        margin-bottom: 12px;
-      }
+        /* Loading state */
+        .loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
 
-      .header h1 {
-        font-size: 15px;
-      }
-
-      .booking-cards {
-        gap: 8px;
-        margin: 12px 0;
-      }
-
-      .booking-card {
-        padding: 12px;
-      }
-
-      .card-header {
-        gap: 10px;
-        margin-bottom: 8px;
-      }
-
-      .card-icon {
-        font-size: 22px;
-      }
-
-      .card-title {
-        font-size: 13px;
-      }
-
-      .card-content {
-        margin: 8px 0 10px 0;
-        font-size: 11px;
-      }
-
-      .subtitle {
-        font-size: 10px;
-        margin-top: 4px;
-      }
-    }
-  </style>
+        /* Success states */
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--success-gradient);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            animation: fadeInUp 0.3s ease;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <button class="back-btn" onclick="goBack()">← Назад</button>
-      <h1><span class="emoji">📅</span>Бронирование</h1>
-      <div></div>
-    </div>
-
-    <div class="welcome-info" id="welcomeInfo" style="display:none;"></div>
-
-    <div class="booking-cards">
-      <!-- Карточка для студентов -->
-      <div class="booking-card student" onclick="openStudentBooking()">
-        <div class="card-header">
-          <div class="card-icon">🎓</div>
-          <h3 class="card-title">Изучать английский или французский с Ханной</h3>
-        </div>
-        <div class="card-content">
-          Хочешь свободно говорить на английском или французском? Забронируй индивидуальное занятие с Ханной или напиши ей в личные сообщения для консультации.
-        </div>
-        <div class="card-actions">
-          <a href="#" class="card-action primary" onclick="event.stopPropagation(); openCalendarBooking()">
-            <span class="emoji">📅</span>
-            Забронировать занятие
-          </a>
-        </div>
-        <div class="subtitle">
-          Индивидуальные занятия • Все уровни • Английский и французский
-        </div>
-      </div>
-
-      <!-- Карточка для репетиторов -->
-      <div class="booking-card teacher" onclick="openTeacherBooking()">
-        <div class="card-header">
-          <div class="card-icon">👩‍🏫</div>
-          <h3 class="card-title">Методические занятия для репетиторов</h3>
-        </div>
-        <div class="card-content">
-          Ты репетитор и хочешь улучшить методику обучения? Запишись на методические занятия к Ханне. У неё сертификат CELTA Grade A и опыт подготовки преподавателей.
-        </div>
-        <div class="card-actions">
-          <a href="#" class="card-action success" onclick="event.stopPropagation(); openTeacherCalendar()">
-            <span class="emoji">🎯</span>
-            Записаться на консультацию
-          </a>
-        </div>
-        <div class="subtitle">
-          CELTA Grade A • Методика преподавания • Профессиональный рост
-        </div>
-      </div>
-
-      <!-- Карточка для тьюторов/разработчиков -->
-      <div class="booking-card developer" onclick="openDeveloperContact()">
-        <div class="card-header">
-          <div class="card-icon">💻</div>
-          <h3 class="card-title">Автоматизация для тьюторов</h3>
-        </div>
-        <div class="card-content">
-          Ты тьютор, которому хочется минимизировать рутину и уделять больше внимания языку? Свяжись с разработчиками для создания твоего персонального помощника.
-        </div>
-        <div class="card-actions">
-          <a href="https://t.me/naumenko" target="_blank" class="card-action warning" onclick="event.stopPropagation()">
-            <span class="emoji">🚀</span>
-            Связаться с разработчиками
-          </a>
-        </div>
-        <div class="subtitle">
-          AI-помощники • Автоматизация • Telegram боты • Индивидуальные решения
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const CALENDAR_BOOKING_URL = 'https://calendar.app.google/SQGJj626MUyQ6DYL6';
-    const REDIRECT_KEY = 'booking_redirect_ts';
-    const REDIRECT_TTL_MS = 15 * 60 * 1000; // 15 минут
-
-    // Инициализация при загрузке страницы
-    document.addEventListener('DOMContentLoaded', async () => {
-      console.log('🚀 Инициализация страницы бронирования...');
-      
-      // Настройка Telegram WebApp
-      if (window.Telegram?.WebApp) {
-        console.log('📱 Telegram WebApp обнаружен');
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-        
-        // Персонализация для пользователей
-        const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
-        if (tgUser?.id) {
-          await personalizeWelcome(tgUser);
-        }
-      }
-      
-      console.log('✅ Страница бронирования загружена');
-    });
-
-    // Персонализация приветствия
-    async function personalizeWelcome(tgUser) {
-      try {
-        const userResponse = await fetch('/api/user-role', {
-          headers: { 'x-telegram-id': tgUser.id.toString() }
-        });
-        
-        if (userResponse.ok) {
-          const user = await userResponse.json();
-          const welcomeInfo = document.getElementById('welcomeInfo');
-          
-          let welcomeContent = `
-            <h2>👋 Привет, ${tgUser.first_name || user.name || 'дорогой пользователь'}!</h2>
-          `;
-          
-          if (user.role === 'admin') {
-            welcomeContent += `<p>Вы можете забронировать занятие для любого студента или управлять расписанием.</p>`;
-          } else if (user.role === 'student') {
-            welcomeContent += `<p>Выберите удобное время для занятия или свяжитесь с Ханной для консультации.</p>`;
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-badge">
+                🎯 <span>AI-Powered Language Learning</span>
+            </div>
+            <h1 class="hero-title">Изучай языки с Ханной</h1>
+            <p class="hero-subtitle">Персонализированное обучение английскому и французскому с сертифицированным преподавателем CELTA Grade A</p>
             
-            if (user.next_session?.date) {
-              welcomeContent += `
-                <div class="next-session">
-                  📅 Ваше следующее занятие: ${user.next_session.date}
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Учеников</div>
                 </div>
-              `;
-            }
-          } else if (user.role === 'tutor') {
-            welcomeContent += `<p>Добро пожаловать! Здесь вы можете забронировать методические консультации или обсудить автоматизацию.</p>`;
-          } else {
-            welcomeContent += `<p>Выберите подходящий вариант сотрудничества с Ханной.</p>`;
-          }
-          
-          welcomeInfo.innerHTML = welcomeContent;
-          welcomeInfo.style.display = 'block';
+                <div class="stat-item">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Результат</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">4.9</div>
+                    <div class="stat-label">Рейтинг</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Audience Cards -->
+        <section class="audiences">
+            <!-- Студенты языков -->
+            <div class="audience-card" onclick="handleStudentClick()">
+                <div class="card-header">
+                    <div class="card-emoji">🎓</div>
+                    <div>
+                        <div class="card-title">Студенты языков</div>
+                        <div class="card-subtitle">Эффективное изучение с профессионалом</div>
+                    </div>
+                </div>
+                
+                <div class="card-pain">
+                    💔 <strong>Проблема:</strong> Неэффективные методы изучения языка, отсутствие персонализации и мотивации
+                </div>
+                
+                <div class="card-goal">
+                    🎯 <strong>Цель:</strong> Быстрое освоение языка с индивидуальным подходом и современными методиками
+                </div>
+                
+                <button class="cta-button cta-primary">
+                    📅 Забронировать урок с Ханной
+                </button>
+            </div>
+
+            <!-- Преподаватели английского -->
+            <div class="audience-card" onclick="handleTeacherClick()">
+                <div class="card-header">
+                    <div class="card-emoji">👩‍🏫</div>
+                    <div>
+                        <div class="card-title">Преподаватели английского</div>
+                        <div class="card-subtitle">Повышение квалификации и экспертизы</div>
+                    </div>
+                </div>
+                
+                <div class="card-pain">
+                    💔 <strong>Проблема:</strong> Устаревшие методики преподавания, нехватка современных знаний и сертификации
+                </div>
+                
+                <div class="card-goal">
+                    🎯 <strong>Цель:</strong> Освоить передовые методики преподавания и получить профессиональную поддержку
+                </div>
+                
+                <button class="cta-button cta-secondary">
+                    🤝 Консультация по методике
+                </button>
+            </div>
+
+            <!-- Тьюторы/репетиторы -->
+            <div class="audience-card" onclick="handleTutorClick()">
+                <div class="card-header">
+                    <div class="card-emoji">💻</div>
+                    <div>
+                        <div class="card-title">Тьюторы и репетиторы</div>
+                        <div class="card-subtitle">Автоматизация учебного процесса</div>
+                    </div>
+                </div>
+                
+                <div class="card-pain">
+                    💔 <strong>Проблема:</strong> Много рутинной работы, сложное управление учениками, устаревшие инструменты
+                </div>
+                
+                <div class="card-goal">
+                    🎯 <strong>Цель:</strong> Автоматизировать процессы через современного Telegram-бота и AI-инструменты
+                </div>
+                
+                <button class="cta-button cta-success">
+                    🤖 Подключить автоматизацию
+                </button>
+            </div>
+
+            <!-- Ученики тьюторов -->
+            <div class="audience-card" onclick="handleStudentOfTutorClick()">
+                <div class="card-header">
+                    <div class="card-emoji">🤝</div>
+                    <div>
+                        <div class="card-title">Ученики тьюторов</div>
+                        <div class="card-subtitle">Современные инструменты обучения</div>
+                    </div>
+                </div>
+                
+                <div class="card-pain">
+                    💔 <strong>Проблема:</strong> Хочется современные методы обучения, но тьютор использует устаревшие подходы
+                </div>
+                
+                <div class="card-goal">
+                    🎯 <strong>Цель:</strong> Предложить своему тьютору использовать инновационные инструменты обучения
+                </div>
+                
+                <button class="cta-button cta-warning">
+                    📤 Поделиться с тьютором
+                </button>
+            </div>
+        </section>
+
+        <!-- Social Proof -->
+        <section class="social-proof">
+            <h2 class="proof-title">Почему выбирают нас</h2>
+            
+            <div class="certificates">
+                <span class="certificate-badge">CELTA Grade A</span>
+                <span class="certificate-badge">Cambridge Certified</span>
+                <span class="certificate-badge">AI-Powered</span>
+            </div>
+            
+            <div class="testimonial">
+                "За 3 месяца занятий с Ханной мой уровень английского вырос с B1 до B2. Индивидуальный подход и современные методики действительно работают!"
+            </div>
+            <div class="testimonial-author">— Мария, студентка</div>
+            
+            <div class="testimonial">
+                "Telegram-бот полностью изменил мою работу репетитора. Теперь я могу сосредоточиться на обучении, а не на рутине."
+            </div>
+            <div class="testimonial-author">— Алексей, репетитор</div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-logo">🚀</div>
+            <p>Современное языковое образование в Telegram</p>
+            <p>Разработано с ❤️ для эффективного обучения</p>
+        </footer>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram?.WebApp;
+        
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            
+            // Применяем тему Telegram
+            document.documentElement.style.setProperty('--tg-bg-color', tg.themeParams.bg_color || '#1a1a1a');
+            document.documentElement.style.setProperty('--tg-text-color', tg.themeParams.text_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-hint-color', tg.themeParams.hint_color || '#707579');
+            document.documentElement.style.setProperty('--tg-button-color', tg.themeParams.button_color || '#3390ec');
         }
-      } catch (error) {
-        console.warn('Не удалось персонализировать приветствие:', error);
-      }
-    }
 
-    // Основные функции бронирования
-    function openStudentBooking() {
-      console.log('🎓 Клик по карточке студента');
-      // Автоматически открываем календарь при клике на карточку
-      openCalendarBooking();
-    }
+        // Функции для обработки кликов
+        function handleStudentClick() {
+            if (tg) {
+                tg.showAlert('Перенаправляем к Ханне для записи на урок...', () => {
+                    tg.openLink('https://t.me/hannah_language_teacher?start=book_lesson');
+                });
+            } else {
+                window.open('https://t.me/hannah_language_teacher?start=book_lesson', '_blank');
+            }
+        }
 
-    function openTeacherBooking() {
-      console.log('👩‍🏫 Клик по карточке репетитора');
-      openTeacherCalendar();
-    }
+        function handleTeacherClick() {
+            if (tg) {
+                tg.showAlert('Открываем чат с Ханной для консультации...', () => {
+                    tg.openLink('https://t.me/hannah_language_teacher?start=teacher_consultation');
+                });
+            } else {
+                window.open('https://t.me/hannah_language_teacher?start=teacher_consultation', '_blank');
+            }
+        }
 
-    function openDeveloperContact() {
-      console.log('💻 Клик по карточке разработчика');
-      openLink('https://t.me/naumenko');
-    }
+        function handleTutorClick() {
+            if (tg) {
+                tg.showAlert('Подключаем к разработчикам...', () => {
+                    tg.openLink('https://t.me/naumenko?start=automation_demo');
+                });
+            } else {
+                window.open('https://t.me/naumenko?start=automation_demo', '_blank');
+            }
+        }
 
-    // Функции открытия ссылок
-    function openCalendarBooking() {
-      console.log('📅 Открытие календаря бронирования');
-      openLink(CALENDAR_BOOKING_URL);
-      sessionStorage.setItem(REDIRECT_KEY, Date.now().toString());
-    }
+        function handleStudentOfTutorClick() {
+            if (tg) {
+                tg.showConfirm('Поделиться ботом с вашим тьютором?', (confirmed) => {
+                    if (confirmed) {
+                        const shareText = '🤖 Посмотри этот крутой бот для автоматизации преподавания! Думаю, он поможет нам учиться ещё эффективнее: ' + window.location.href;
+                        
+                        if (navigator.share) {
+                            navigator.share({
+                                title: 'Language Learning Bot',
+                                text: shareText,
+                                url: window.location.href
+                            });
+                        } else {
+                            // Копируем в буфер обмена
+                            navigator.clipboard.writeText(shareText).then(() => {
+                                tg.showAlert('Ссылка скопирована! Отправь её своему тьютору.');
+                            });
+                        }
+                    }
+                });
+            }
+        }
 
-    function openTeacherCalendar() {
-      console.log('🎯 Открытие календаря для репетиторов');
-      // Пока используем тот же календарь, в будущем можно сделать отдельный
-      openLink(CALENDAR_BOOKING_URL);
-    }
+        // Анимации при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            const cards = document.querySelectorAll('.audience-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(50px)';
+                
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, 200 * (index + 1));
+            });
+        });
 
-    function openLink(url) {
-      if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(url);
-      } else {
-        window.open(url, '_blank');
-      }
-    }
+        // Haptic feedback для Telegram
+        function addHapticFeedback(element) {
+            element.addEventListener('click', () => {
+                if (tg && tg.HapticFeedback) {
+                    tg.HapticFeedback.impactOccurred('light');
+                }
+            });
+        }
 
-    // Навигация
-    function goBack() {
-      if (window.history?.length > 1) {
-        window.history.back();
-      } else {
-        // Fallback для случаев, когда нет истории
-        window.location.href = 'index.html';
-      }
-    }
-
-    // Проверка автоперенаправления (убрана, так как теперь используем карточки)
-    function shouldAutoRedirect() {
-      const ts = parseInt(sessionStorage.getItem(REDIRECT_KEY) || '0', 10);
-      if (!ts) return true;
-      return (Date.now() - ts) > REDIRECT_TTL_MS;
-    }
-
-    console.log('✅ Система бронирования инициализирована');
-  </script>
+        // Добавляем haptic feedback ко всем кнопкам
+        document.querySelectorAll('.cta-button, .audience-card').forEach(addHapticFeedback);
+    </script>
 </body>
 </html>
