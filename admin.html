@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>Админ панель — Mini App</title>
+
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Твоя авторизация (адаптирована под Mini App) -->
+  <script src="js/auth.js"></script>
+
+  <!-- Опционально: твои стили -->
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/admin.css">
+
+  <style>
+    :root{
+      --bg-color:#0f0f10; --text-color:#fff; --hint-color:#aaa; --link-color:#5ea4ff;
+      --button-color:#2ea6ff; --button-text-color:#fff;
+      --card-bg:rgba(255,255,255,.04); --border-color:rgba(255,255,255,.08);
+      --success-color:#22c55e; --error-color:#ef4444; --accent-color:#3b82f6;
+      --font-size-xs:12px; --font-size-sm:13px; --font-size-md:14px; --font-size-lg:15px;
+      --radius:12px; --gap:10px;
+    }
+    html,body{background:var(--bg-color);color:var(--text-color);margin:0;
+      padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial; font-size:var(--font-size-md);}
+    a{color:var(--link-color);text-decoration:none}
+    .container{max-width:880px;margin:0 auto;padding:8px 10px 20px;}
+    .hidden{display:none!important;}
+
+    .admin-header{display:flex;align-items:center;justify-content:space-between;gap:var(--gap);margin:4px 0 10px;}
+    .admin-header h1{font-size:16px;margin:0;font-weight:700;display:flex;gap:6px;align-items:center;}
+    .emoji{font-size:16px}
+    .user-info{opacity:.85;font-size:var(--font-size-sm);}
+
+    .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);margin:6px 0 10px;}
+    @media (max-width:540px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+    .stat-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius);padding:10px;}
+    .stat-number{font-size:18px;font-weight:700}
+    .stat-label{font-size:var(--font-size-xs);opacity:.8}
+
+    .quick-tools{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);margin:6px 0 12px;}
+    @media (max-width:540px){.quick-tools{grid-template-columns:1fr 1fr}}
+    .tool-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius);padding:10px;display:flex;gap:8px;align-items:center;min-height:56px;}
+    .tool-card .title{font-weight:600;font-size:var(--font-size-sm)}
+    .tool-card .subtitle{font-size:var(--font-size-xs);opacity:.8}
+
+    .students-section{margin-top:6px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius);padding:10px;}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .section-title{margin:0;font-size:15px;display:flex;gap:6px;align-items:center;}
+    .refresh-btn{border:1px solid var(--border-color);background:transparent;color:var(--text-color);padding:6px 10px;border-radius:10px;font-size:var(--font-size-sm);}
+
+    .table-container{overflow:auto;border-radius:10px;}
+    table{width:100%;border-collapse:collapse;}
+    th,td{padding:8px;border-bottom:1px solid var(--border-color);text-align:left;font-size:var(--font-size-sm);}
+    th{opacity:.9;font-weight:600;background:rgba(255,255,255,.02);position:sticky;top:0;}
+
+    .student-name a{font-weight:600}
+    .student-email{font-size:var(--font-size-xs);opacity:.8}
+    .telegram-column{white-space:nowrap}
+
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:var(--font-size-xs)}
+    .badge-primary{background:rgba(94,164,255,.2);color:#cfe3ff;border:1px solid rgba(94,164,255,.35)}
+
+    .booking-mode .booking-badge{font-size:var(--font-size-xs);padding:2px 6px;border-radius:6px;border:1px solid var(--border-color)}
+    .booking-badge.student{background:rgba(34,197,94,.18);border-color:rgba(34,197,94,.36)}
+    .booking-badge.teacher{background:rgba(59,130,246,.18);border-color:rgba(59,130,246,.36)}
+
+    .action-buttons{display:flex;gap:6px}
+    .action-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid var(--border-color);font-size:16px;}
+
+    .loading{display:flex;gap:8px;align-items:center;padding:12px;font-size:var(--font-size-sm);opacity:.85}
+    .loading-spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:rgba(255,255,255,.8);animation:spin .8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .empty-state{text-align:center;padding:16px;opacity:.8}
+    .error{padding:12px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.32);border-radius:10px;color:#fecaca}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="adminPanel" class="hidden">
+      <div class="admin-header">
+        <h1><span class="emoji">👑</span>Админ панель</h1>
+        <div class="user-info" id="userInfo">Загрузка…</div>
+      </div>
+
+      <div class="stats-grid hidden" id="statsGrid">
+        <div class="stat-card"><div class="stat-number" id="totalStudents">0</div><div class="stat-label">Всего студентов</div></div>
+        <div class="stat-card"><div class="stat-number" id="upcomingLessons">0</div><div class="stat-label">Предстоящих занятий</div></div>
+        <div class="stat-card"><div class="stat-number" id="totalWords">—</div><div class="stat-label">Слов в словарях</div></div>
+        <div class="stat-card"><div class="stat-number" id="weeklyLessons">0</div><div class="stat-label">Занятий в неделю</div></div>
+      </div>
+
+      <div class="quick-tools">
+        <a href="chat-history.html" class="tool-card">
+          <span class="emoji">💬</span>
+          <div>
+            <div class="title">История чатов</div>
+            <div class="subtitle">Просмотр диалогов с агентами</div>
+          </div>
+        </a>
+        <button class="tool-card" onclick="exportData()" style="text-align:left;border:none;">
+          <span class="emoji">📊</span>
+          <div>
+            <div class="title">Экспорт данных</div>
+            <div class="subtitle">Выгрузка информации о студентах</div>
+          </div>
+        </button>
+        <a href="settings.html" class="tool-card">
+          <span class="emoji">⚙️</span>
+          <div>
+            <div class="title">Настройки</div>
+            <div class="subtitle">Параметры мини-аппа</div>
+          </div>
+        </a>
+      </div>
+
+      <div class="students-section">
+        <div class="section-header">
+          <h2 class="section-title"><span class="emoji">🧑‍🎓</span>Список студентов</h2>
+          <button class="refresh-btn" onclick="loadStudents()"><span class="emoji">🔄</span> Обновить</button>
+        </div>
+
+        <div class="table-container">
+          <div id="studentsContent">
+            <div class="loading"><span class="loading-spinner"></span>Загрузка списка студентов…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="guard" class="error hidden" style="margin:10px;">
+      <strong>Доступ запрещён.</strong>
+      <div style="margin-top:6px; font-size: var(--font-size-sm); opacity:.9;">
+        Этот экран доступен только администраторам.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Mini App + Auth =====
+    const tg = window.Telegram?.WebApp;
+    let auth = null;
+    let studentsData = [];
+
+    function applyThemeFromTelegram(){
+      if(!tg || !tg.themeParams) return;
+      const th = tg.themeParams;
+      const cssVars = {
+        '--bg-color': th.bg_color,
+        '--text-color': th.text_color,
+        '--hint-color': th.hint_color,
+        '--link-color': th.link_color,
+        '--button-color': th.button_color,
+        '--button-text-color': th.button_text_color,
+        '--card-bg': th.secondary_bg_color || 'rgba(255,255,255,.04)',
+        '--border-color': 'rgba(255,255,255,.08)',
+      };
+      Object.entries(cssVars).forEach(([k,v])=>{ if(v) document.documentElement.style.setProperty(k,v); });
+      if (tg.platform === 'ios' || tg.platform === 'android'){
+        document.documentElement.style.setProperty('--font-size-md','13px');
+        document.documentElement.style.setProperty('--font-size-sm','12px');
+        document.documentElement.style.setProperty('--font-size-xs','11px');
+      }
+    }
+
+    function show(el){ el.classList.remove('hidden'); }
+    function hide(el){ el.classList.add('hidden'); }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if(!tg){
+        const guard = document.getElementById('guard');
+        guard.innerHTML = '<strong>Откройте страницу из Telegram.</strong>';
+        show(guard); return;
+      }
+
+      tg.ready(); tg.expand();
+      applyThemeFromTelegram();
+      Telegram.WebApp.onEvent('themeChanged', applyThemeFromTelegram);
+
+      tg.BackButton.show();
+      tg.BackButton.onClick(() => tg.close());
+
+      // Авторизация только для админов (через /api/user-role и x-telegram-id)
+      try{
+        auth = new AuthSystem();
+        const user = await auth.init(['admin'], onAuthSuccess, onAuthFail);
+        // onAuthSuccess вызовется внутри, но вернувшийся user можно использовать при необходимости
+      }catch(e){
+        // Ошибка уже показана через auth.showAuthError
+      }
+    });
+
+    function onAuthSuccess(user){
+      // верхняя плашка
+      const u = tg?.initDataUnsafe?.user || {};
+      document.getElementById('userInfo').textContent =
+        `Вы вошли как ${u.first_name || ''} ${u.last_name || ''} (@${u.username || '—'})`;
+      show(document.getElementById('adminPanel'));
+      loadStudents();
+    }
+    function onAuthFail(_error){
+      show(document.getElementById('guard'));
+    }
+
+    // ===== Data =====
+    async function loadStudents(){
+      const box = document.getElementById('studentsContent');
+      box.innerHTML = `<div class="loading"><span class="loading-spinner"></span>Загрузка списка студентов…</div>`;
+
+      try{
+        const res = await auth.apiRequest('/api/students', { method:'GET' });
+        if(!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        const data = await res.json();
+        if(!data.students) throw new Error('Некорректный ответ API: нет поля students');
+        studentsData = data.students;
+        renderStudentsTable(studentsData);
+        updateStats(studentsData);
+      }catch(err){
+        box.innerHTML = `<div class="error"><strong>Ошибка загрузки</strong><div style="margin-top:6px;">${err.message}</div></div>`;
+      }
+    }
+
+    function getBookingModeDisplay(bookingMode, preferredTime, preferredDays){
+      if(bookingMode === 'by_student'){
+        return `<div class="booking-mode"><span class="booking-badge student">🧑‍🎓 Студент</span></div>`;
+      }else{
+        const timeInfo = preferredTime ? `⏰ ${preferredTime}` : '';
+        const daysInfo = (preferredDays && preferredDays.length) ? `📅 ${preferredDays.join(', ')}` : '';
+        return `<div class="booking-mode">
+          <span class="booking-badge teacher">👩‍🏫 Преподаватель</span>
+          <small style="opacity:.7;display:block;margin-top:2px;">${daysInfo} ${timeInfo}</small>
+        </div>`;
+      }
+    }
+
+    function renderStudentsTable(students){
+      const box = document.getElementById('studentsContent');
+      if(!students.length){
+        box.innerHTML = `<div class="empty-state"><div class="emoji" style="font-size:28px;">👥</div><div style="margin-top:6px;">Пока нет активных студентов</div></div>`;
+        return;
+      }
+
+      box.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Студент</th>
+              <th>Telegram</th>
+              <th>Бронирование</th>
+              <th>Язык</th>
+              <th>Следующее занятие</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${students.map(s => `
+              <tr>
+                <td>
+                  <div class="student-name">
+                    <a href="student.html?user_id=${encodeURIComponent(s.id || s.user_id || '')}">
+                      ${s.name || '—'}
+                    </a>
+                  </div>
+                  ${s.email ? `<div class="student-email">${s.email}</div>` : ''}
+                </td>
+                <td class="telegram-column">
+                  ${s.username ? `<a href="https://t.me/${s.username}" target="_blank">@${s.username}</a>` : '<span style="opacity:.6;">—</span>'}
+                  ${s.telegram_id ? `<br><small>ID: ${s.telegram_id}</small>` : ''}
+                </td>
+                <td>${getBookingModeDisplay(s.booking_mode, s.preferred_time, s.preferred_days)}</td>
+                <td><span class="badge badge-primary">${s.language || '—'}</span>
+                  ${s.frequency ? `<br><small style="opacity:.7;">${s.frequency}× в неделю</small>` : ''}</td>
+                <td>
+                  ${s.next_session
+                    ? `<a href="lesson.html?session_id=${encodeURIComponent(s.next_session_id || '')}">${s.next_session}</a>`
+                    : '<span style="opacity:.6;">Не запланировано</span>'}
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <a href="student.html?user_id=${encodeURIComponent(s.id || s.user_id || '')}" class="action-btn" title="Профиль">👤</a>
+                    <a href="vocabulary.html?user_id=${encodeURIComponent(s.id || s.user_id || '')}" class="action-btn" title="Словарь">📚</a>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function updateStats(students){
+      const total = students.length;
+      const upcoming = students.filter(s => s.next_session).length;
+      const weekly = students.reduce((sum,s)=> sum + (s.frequency || 0), 0);
+
+      const totalEl = document.getElementById('totalStudents');
+      const upEl = document.getElementById('upcomingLessons');
+      const wordsEl = document.getElementById('totalWords');
+      const weeklyEl = document.getElementById('weeklyLessons');
+      const grid = document.getElementById('statsGrid');
+
+      if(totalEl) totalEl.textContent = total;
+      if(upEl) upEl.textContent = upcoming;
+      if(wordsEl) wordsEl.textContent = '—';
+      if(weeklyEl) weeklyEl.textContent = weekly;
+      if(grid) grid.classList.remove('hidden');
+    }
+
+    async function exportData(){
+      if(!auth || !auth.isAuth() || !studentsData.length){ return alert('Нет данных для экспорта'); }
+      try{
+        const user = auth.getCurrentUser();
+        const payload = {
+          students: studentsData,
+          exportDate: new Date().toISOString(),
+          exportedBy: user?.username || user?.first_name || 'admin',
+          totalStudents: studentsData.length,
+          upcomingLessons: studentsData.filter(s => s.next_session).length
+        };
+        const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `hanna_students_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      }catch(e){ alert('Ошибка экспорта: ' + e.message); }
+    }
+  </script>
+</body>
+</html>
