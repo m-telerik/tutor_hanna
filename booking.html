@@ -7,41 +7,386 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="stylesheet" href="styles/main.css">
   <link rel="stylesheet" href="styles/booking.css">
+  
+  <style>
+    :root {
+      --bg-color: #0f0f10;
+      --text-color: #fff;
+      --card-bg: rgba(255,255,255,.04);
+      --border-color: rgba(255,255,255,.08);
+      --accent-color: #3b82f6;
+      --success-color: #22c55e;
+      --warning-color: #f59e0b;
+      --font-size-sm: 13px;
+      --font-size-md: 14px;
+      --radius: 12px;
+      --gap: 10px;
+    }
+
+    html, body {
+      background: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial;
+      font-size: var(--font-size-md);
+    }
+
+    .container {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 8px 10px 20px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--gap);
+      margin: 4px 0 20px;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      margin: 0;
+      font-weight: 700;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .emoji {
+      font-size: 16px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--accent-color);
+      cursor: pointer;
+      padding: 0.5rem 0;
+      font-size: 14px;
+    }
+
+    .back-btn:hover {
+      text-decoration: underline;
+    }
+
+    .booking-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .booking-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 20px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--text-color);
+      display: block;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .booking-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .booking-card.student::before {
+      background: var(--accent-color);
+    }
+
+    .booking-card.teacher::before {
+      background: var(--success-color);
+    }
+
+    .booking-card.developer::before {
+      background: var(--warning-color);
+    }
+
+    .booking-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      text-decoration: none;
+      color: var(--text-color);
+    }
+
+    .booking-card:hover::before {
+      opacity: 1;
+    }
+
+    .booking-card.student:hover {
+      border-color: var(--accent-color);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .booking-card.teacher:hover {
+      border-color: var(--success-color);
+      background: rgba(34, 197, 94, 0.05);
+    }
+
+    .booking-card.developer:hover {
+      border-color: var(--warning-color);
+      background: rgba(245, 158, 11, 0.05);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .card-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    .card-content {
+      margin: 12px 0 16px 0;
+      line-height: 1.5;
+      opacity: 0.9;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-color);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-action.primary {
+      background: var(--accent-color);
+      border-color: var(--accent-color);
+    }
+
+    .card-action.success {
+      background: var(--success-color);
+      border-color: var(--success-color);
+    }
+
+    .card-action.warning {
+      background: var(--warning-color);
+      border-color: var(--warning-color);
+    }
+
+    .card-action:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      text-decoration: none;
+      color: var(--text-color);
+    }
+
+    .card-action .emoji {
+      font-size: 14px;
+    }
+
+    .subtitle {
+      font-size: var(--font-size-sm);
+      opacity: 0.7;
+      margin-top: 8px;
+    }
+
+    /* Персонализация для пользователей */
+    .welcome-info {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .welcome-info h2 {
+      margin: 0 0 8px 0;
+      color: var(--accent-color);
+      font-size: 16px;
+    }
+
+    .welcome-info p {
+      margin: 0;
+      opacity: 0.8;
+      font-size: var(--font-size-sm);
+    }
+
+    .next-session {
+      margin-top: 12px;
+      padding: 8px;
+      background: var(--success-color);
+      color: white;
+      border-radius: 8px;
+      font-size: var(--font-size-sm);
+    }
+
+    /* Адаптивность */
+    @media (max-width: 768px) {
+      .container {
+        padding: 4px 8px 16px;
+      }
+
+      .booking-card {
+        padding: 16px;
+      }
+
+      .card-title {
+        font-size: 15px;
+      }
+
+      .card-content {
+        font-size: var(--font-size-sm);
+      }
+
+      .card-actions {
+        flex-direction: column;
+      }
+
+      .card-action {
+        justify-content: center;
+        padding: 10px 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header {
+        margin-bottom: 16px;
+      }
+
+      .header h1 {
+        font-size: 15px;
+      }
+
+      .booking-card {
+        padding: 14px;
+      }
+
+      .card-header {
+        gap: 10px;
+      }
+
+      .card-icon {
+        font-size: 24px;
+      }
+
+      .card-title {
+        font-size: 14px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div id="bookingContent" style="display:none;">
+  <div class="container">
     <div class="header">
-      <button onclick="history.back()">← Назад</button>
+      <button class="back-btn" onclick="goBack()">← Назад</button>
       <h1><span class="emoji">📅</span>Бронирование</h1>
       <div></div>
     </div>
 
     <div class="welcome-info" id="welcomeInfo" style="display:none;"></div>
 
-    <div class="quick-actions">
-      <a href="https://t.me/hanna_teaches" class="action-btn">
-        <span class="emoji">💬</span>
-        <strong>Написать Ханне</strong>
-        <small>Обсудить расписание</small>
-      </a>
-      <div class="action-btn" onclick="openCalendarBooking()">
-        <span class="emoji">📅</span>
-        <strong>Забронировать время</strong>
-        <small>Выбрать слот в календаре</small>
+    <div class="booking-cards">
+      <!-- Карточка для студентов -->
+      <div class="booking-card student" onclick="openStudentBooking()">
+        <div class="card-header">
+          <div class="card-icon">🎓</div>
+          <h3 class="card-title">Изучать английский или французский с Ханной</h3>
+        </div>
+        <div class="card-content">
+          Хочешь свободно говорить на английском или французском? Забронируй индивидуальное занятие с Ханной или напиши ей в личные сообщения для консультации.
+        </div>
+        <div class="card-actions">
+          <a href="#" class="card-action primary" onclick="event.stopPropagation(); openCalendarBooking()">
+            <span class="emoji">📅</span>
+            Забронировать занятие
+          </a>
+          <a href="https://t.me/croissanechkaa" target="_blank" class="card-action" onclick="event.stopPropagation()">
+            <span class="emoji">💬</span>
+            Написать Ханне
+          </a>
+        </div>
+        <div class="subtitle">
+          Индивидуальные занятия • Все уровни • Английский и французский
+        </div>
       </div>
-    </div>
 
-    <div class="calendar-container">
-      <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;height:400px;background:var(--card-bg);border-radius:8px;padding:2rem;text-align:center;">
-        <div style="width:50px;height:50px;border:3px solid var(--accent-color);border-top:3px solid transparent;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:2rem;"></div>
-        <h2 style="margin-bottom:1rem;color:var(--accent-color);">Открываем календарь...</h2>
-        <p style="opacity:.8;margin-bottom:2rem;line-height:1.6;max-width:320px;">
-          Сейчас вы будете перенаправлены на страницу бронирования Ханны
-        </p>
-        <button onclick="openCalendarBooking()" class="external-link-btn" style="font-size:16px;padding:12px 24px;">
-          <span class="emoji">📅</span>Открыть вручную
-        </button>
-        <p style="font-size:12px;opacity:.6;margin-top:1rem;">Если автоматический переход не сработал</p>
+      <!-- Карточка для репетиторов -->
+      <div class="booking-card teacher" onclick="openTeacherBooking()">
+        <div class="card-header">
+          <div class="card-icon">👩‍🏫</div>
+          <h3 class="card-title">Методические занятия для репетиторов</h3>
+        </div>
+        <div class="card-content">
+          Ты репетитор и хочешь улучшить методику обучения? Запишись на методические занятия к Ханне. У неё сертификат CELTA Grade A и опыт подготовки преподавателей.
+        </div>
+        <div class="card-actions">
+          <a href="#" class="card-action success" onclick="event.stopPropagation(); openTeacherCalendar()">
+            <span class="emoji">🎯</span>
+            Записаться на консультацию
+          </a>
+          <a href="https://t.me/croissanechkaa" target="_blank" class="card-action" onclick="event.stopPropagation()">
+            <span class="emoji">📝</span>
+            Обсудить программу
+          </a>
+        </div>
+        <div class="subtitle">
+          CELTA Grade A • Методика преподавания • Профессиональный рост
+        </div>
+      </div>
+
+      <!-- Карточка для тьюторов/разработчиков -->
+      <div class="booking-card developer" onclick="openDeveloperContact()">
+        <div class="card-header">
+          <div class="card-icon">💻</div>
+          <h3 class="card-title">Автоматизация для тьюторов</h3>
+        </div>
+        <div class="card-content">
+          Ты тьютор, которому хочется минимизировать рутину и уделять больше внимания языку? Свяжись с разработчиками для создания твоего персонального помощника.
+        </div>
+        <div class="card-actions">
+          <a href="https://t.me/naumenko" target="_blank" class="card-action warning" onclick="event.stopPropagation()">
+            <span class="emoji">🚀</span>
+            Связаться с разработчиками
+          </a>
+          <a href="https://t.me/croissanechkaa" target="_blank" class="card-action" onclick="event.stopPropagation()">
+            <span class="emoji">💡</span>
+            Узнать больше
+          </a>
+        </div>
+        <div class="subtitle">
+          AI-помощники • Автоматизация • Telegram боты • Индивидуальные решения
+        </div>
       </div>
     </div>
   </div>
@@ -51,73 +396,123 @@
     const REDIRECT_KEY = 'booking_redirect_ts';
     const REDIRECT_TTL_MS = 15 * 60 * 1000; // 15 минут
 
-    function openCalendarBooking() {
-      if (window.Telegram?.WebApp?.openLink) {
-        window.Telegram.WebApp.openLink(CALENDAR_BOOKING_URL);
-      } else {
-        window.location.href = CALENDAR_BOOKING_URL;
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', async () => {
+      console.log('🚀 Инициализация страницы бронирования...');
+      
+      // Настройка Telegram WebApp
+      if (window.Telegram?.WebApp) {
+        console.log('📱 Telegram WebApp обнаружен');
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+        
+        // Персонализация для пользователей
+        const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (tgUser?.id) {
+          await personalizeWelcome(tgUser);
+        }
       }
-      // фиксируем факт открытия, чтобы не автоперенаправлять повторно
+      
+      console.log('✅ Страница бронирования загружена');
+    });
+
+    // Персонализация приветствия
+    async function personalizeWelcome(tgUser) {
+      try {
+        const userResponse = await fetch('/api/user-role', {
+          headers: { 'x-telegram-id': tgUser.id.toString() }
+        });
+        
+        if (userResponse.ok) {
+          const user = await userResponse.json();
+          const welcomeInfo = document.getElementById('welcomeInfo');
+          
+          let welcomeContent = `
+            <h2>👋 Привет, ${tgUser.first_name || user.name || 'дорогой пользователь'}!</h2>
+          `;
+          
+          if (user.role === 'admin') {
+            welcomeContent += `<p>Вы можете забронировать занятие для любого студента или управлять расписанием.</p>`;
+          } else if (user.role === 'student') {
+            welcomeContent += `<p>Выберите удобное время для занятия или свяжитесь с Ханной для консультации.</p>`;
+            
+            if (user.next_session?.date) {
+              welcomeContent += `
+                <div class="next-session">
+                  📅 Ваше следующее занятие: ${user.next_session.date}
+                </div>
+              `;
+            }
+          } else if (user.role === 'tutor') {
+            welcomeContent += `<p>Добро пожаловать! Здесь вы можете забронировать методические консультации или обсудить автоматизацию.</p>`;
+          } else {
+            welcomeContent += `<p>Выберите подходящий вариант сотрудничества с Ханной.</p>`;
+          }
+          
+          welcomeInfo.innerHTML = welcomeContent;
+          welcomeInfo.style.display = 'block';
+        }
+      } catch (error) {
+        console.warn('Не удалось персонализировать приветствие:', error);
+      }
+    }
+
+    // Основные функции бронирования
+    function openStudentBooking() {
+      console.log('🎓 Клик по карточке студента');
+      // Автоматически открываем календарь при клике на карточку
+      openCalendarBooking();
+    }
+
+    function openTeacherBooking() {
+      console.log('👩‍🏫 Клик по карточке репетитора');
+      openTeacherCalendar();
+    }
+
+    function openDeveloperContact() {
+      console.log('💻 Клик по карточке разработчика');
+      openLink('https://t.me/naumenko');
+    }
+
+    // Функции открытия ссылок
+    function openCalendarBooking() {
+      console.log('📅 Открытие календаря бронирования');
+      openLink(CALENDAR_BOOKING_URL);
       sessionStorage.setItem(REDIRECT_KEY, Date.now().toString());
     }
 
-    function shouldAutoRedirect(){
+    function openTeacherCalendar() {
+      console.log('🎯 Открытие календаря для репетиторов');
+      // Пока используем тот же календарь, в будущем можно сделать отдельный
+      openLink(CALENDAR_BOOKING_URL);
+    }
+
+    function openLink(url) {
+      if (window.Telegram?.WebApp?.openLink) {
+        window.Telegram.WebApp.openLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+
+    // Навигация
+    function goBack() {
+      if (window.history?.length > 1) {
+        window.history.back();
+      } else {
+        // Fallback для случаев, когда нет истории
+        window.location.href = 'index.html';
+      }
+    }
+
+    // Проверка автоперенаправления (убрана, так как теперь используем карточки)
+    function shouldAutoRedirect() {
       const ts = parseInt(sessionStorage.getItem(REDIRECT_KEY) || '0', 10);
       if (!ts) return true;
       return (Date.now() - ts) > REDIRECT_TTL_MS;
     }
 
-    function personalizeWelcome(user){
-      const el = document.getElementById('welcomeInfo');
-      const next = user?.next_session?.date ? `
-        <div style="margin-top:1rem;padding:.8rem;background:var(--success-color);color:#fff;border-radius:8px;">
-          📅 Ваше следующее занятие: ${user.next_session.date}
-        </div>` : '';
-      el.innerHTML = `
-        <div style="background:var(--card-bg);border-radius:12px;padding:1.5rem;margin:1rem 0;border:1px solid var(--border-color);text-align:center;">
-          <h2 style="margin:0 0 .5rem 0;color:var(--accent-color);">
-            👋 Привет, ${user?.first_name || user?.name || 'студент'}!
-          </h2>
-          <p style="margin:0;opacity:.8;">${user?.role === 'admin' ? 'Вы можете забронировать занятие для любого студента' : 'Выберите удобное время для занятия'}</p>
-          ${next}
-        </div>`;
-      el.style.display = 'block';
-    }
-
-    async function fetchUserRole(telegramId){
-      try {
-        const res = await fetch('/api/user-role', { headers: { 'x-telegram-id': telegramId.toString() } });
-        if (!res.ok) return null;
-        return await res.json(); // может быть admin/student/tutor/prospect
-      } catch { return null; }
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Telegram UI
-      if (window.Telegram?.WebApp) { Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
-
-      document.getElementById('bookingContent').style.display = 'block';
-
-      // Персонализация (без строгой авторизации)
-      const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
-      if (tgUser?.id) {
-        const user = await fetchUserRole(tgUser.id);
-        if (user && (user.role === 'admin' || user.role === 'student' || user.role === 'tutor')) {
-          personalizeWelcome({ ...user, first_name: tgUser.first_name });
-        } else {
-          // prospect/unknown — нейтральное приветствие (ничего не делаем: блок с карточкой ниже общий)
-        }
-      }
-
-      // Автопереход только если не делали недавно
-      if (shouldAutoRedirect()) {
-        setTimeout(openCalendarBooking, 900);
-      }
-    });
+    console.log('✅ Система бронирования инициализирована');
   </script>
-
-  <style>
-    @keyframes spin { to { transform: rotate(360deg) } }
-  </style>
 </body>
 </html>
