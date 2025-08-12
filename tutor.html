@@ -26,6 +26,14 @@
   </div>
 
   <script>
+    // Конфигурация для тьютора
+    const TUTOR_CONFIG = {
+      tutorId: 'hanna_teaches', // ID тьютора
+      tutorName: 'Анна',
+      tutorLanguages: ['English', 'French'],
+      hourlyRate: 2000 // руб/час
+    };
+    
     // Глобальные переменные
     let currentTutor = null;
     let navigation = null;
@@ -73,23 +81,22 @@
       const tutorInfo = document.getElementById('tutorInfo');
       if (tutorInfo) {
         tutorInfo.innerHTML = `
-          ${user.name} • ${user.role === 'admin' ? 'Администратор' : 'Тьютор'}
+          ${currentTutor.name} • ${currentTutor.languages.join(' & ')}
+          <small style="display: block; opacity: 0.9;">
+            Ставка: ${currentTutor.rate}₽/час
+          </small>
         `;
       }
     }
 
-    // Инициализация навигации
-    function initializeNavigation(user) {
-      // Создаем навигацию
-      navigation = initNavigation(user, 'navigation-container');
+    // Загрузка начальных данных
+    async function loadInitialData() {
+      console.log('📊 Загрузка данных тьютора...');
       
-      // Подписываемся на события смены секции
-      document.addEventListener('navigation:sectionChange', handleSectionChange);
-      
-      // Загружаем контент первой секции
-      setTimeout(() => {
-        const currentSection = navigation.getCurrentSection();
-        loadSectionContent(currentSection);
+      setTimeout(async () => {
+        await loadMyStudents();
+        await loadRecurringSchedules();
+        await loadUpcomingLessons();
       }, 100);
     }
 
