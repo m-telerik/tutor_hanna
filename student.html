@@ -241,12 +241,12 @@
       </div>
 
       <div id="studentContent" style="display: none;">
-        <div class="page-layout">
+        <div class="page-layout" style="grid-template-columns: 1fr;">
           <!-- Левая колонка: Информация о студенте -->
           <div class="left-column" id="left-column">
             <div class="student-header">
-              <h3><span class="emoji">ℹ️</span>Информация</h3>
-            </div>
+          <h3><span class="emoji">ℹ️</span>Информация о студенте</h3>
+      </div>
             
             <div id="student-info">
               <div class="loading-state">
@@ -256,23 +256,6 @@
             </div>
           </div>
 
-          <!-- Правая колонка: Краткий словарь -->
-          <div class="right-column" id="right-column">
-            <div class="vocab-header">
-              <h3><span class="emoji">📚</span>Последние слова</h3>
-              <div class="vocab-count" id="vocab-count">0 слов</div>
-            </div>
-            
-            <div id="vocabulary-preview">
-              <div class="loading-state">
-                <span class="loading-spinner"></span>
-                <p>Загрузка словаря...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- Секция полного словаря -->
     <section id="vocabulary-section" class="nav-section">
@@ -685,7 +668,6 @@
       
       // Загружаем данные
       loadStudentInfo();
-      loadVocabularyPreview();
     }
 
     // Неудачная авторизация
@@ -814,73 +796,6 @@ if (mainTitle) {
       }
     }
 
-    async function loadVocabularyPreview() {
-      try {
-        const response = await auth.apiRequest('/api/vocab');
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-
-        const { words = [] } = await response.json();
-        
-        // Берем последние 5 слов для превью
-        const recentWords = words
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .slice(0, 5);
-        
-        // Обновляем счетчик
-        const englishWords = words.filter(w => w.language === 'english').length;
-        const frenchWords = words.filter(w => w.language === 'french').length;
-        
-        document.getElementById('vocab-count').innerHTML = `
-          ${words.length} слов
-          ${englishWords > 0 || frenchWords > 0 ? `<br><small style="opacity: 0.8; font-size: 10px;">
-            ${englishWords > 0 ? `EN: ${englishWords}` : ''}
-            ${englishWords > 0 && frenchWords > 0 ? ' • ' : ''}
-            ${frenchWords > 0 ? `FR: ${frenchWords}` : ''}
-          </small>` : ''}
-        `;
-
-        if (recentWords.length === 0) {
-          document.getElementById('vocabulary-preview').innerHTML = `
-            <div class="empty-vocab">
-              <span class="emoji">📚</span>
-              <p>Словарь пока пуст</p>
-              <p style="font-size: 11px; opacity: 0.7;">Слова будут появляться после уроков</p>
-            </div>
-          `;
-          return;
-        }
-
-        // Рендерим превью словаря
-        document.getElementById('vocabulary-preview').innerHTML = `
-          <div class="vocab-preview">
-            ${recentWords.map(word => `
-              <div class="word-item">
-                <div>
-                  <div class="word-term">${word.word}</div>
-                  <div class="word-translation">${word.translation || '—'}</div>
-                </div>
-                ${word.language ? `<small style="color: var(--accent-color); font-size: 9px;">${word.language.toUpperCase()}</small>` : ''}
-              </div>
-            `).join('')}
-          </div>
-          <button class="btn-secondary" onclick="navigation.navigateToSection('vocabulary')" style="width: 100%; margin-top: 0.5rem;">
-            📚 Смотреть весь словарь (${words.length})
-          </button>
-        `;
-
-      } catch (error) {
-        console.error('Ошибка загрузки словаря:', error);
-        document.getElementById('vocabulary-preview').innerHTML = `
-          <div class="error-state">
-            <h3>Ошибка загрузки словаря</h3>
-            <p>${error.message}</p>
-          </div>
-        `;
-      }
-    }
 
     // Функции для пагинации полного словаря
     function changePageFull(direction) {
