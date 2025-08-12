@@ -1,6 +1,13 @@
 // 📁 /api/student-lessons.js
 import { createClient } from '@supabase/supabase-js';
 import { authenticate } from './_auth-middleware.js';
+import { 
+  SESSION_STATUS, 
+  enrichSessionData, 
+  validateUUID,
+  getTimeUntil,
+  getRelativeTime 
+} from './_session-helpers.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -39,11 +46,19 @@ export default async function handler(req, res) {
       }
     } else if (user.role === 'tutor') {
       // Тьюторы могут видеть занятия своих студентов
-      // В будущем здесь будет проверка связи tutor-student
       if (!targetUserId) {
         return res.status(400).json({ 
           error: 'Missing user_id',
           message: 'Укажите ID студента для просмотра занятий'
+        });
+      }
+      // Валидируем UUID
+      try {
+        validateUUID(targetUserId, 'user_id');
+      } catch (error) {
+        return res.status(400).json({ 
+          error: 'Invalid user_id',
+          message: error.message
         });
       }
     } else if (user.role === 'admin') {
@@ -52,6 +67,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ 
           error: 'Missing user_id',
           message: 'Укажите ID студента для просмотра занятий'
+        });
+      }
+      // Валидируем UUID
+      try {
+        validateUUID(targetUserId, 'user_id');
+      } catch (error) {
+        return res.status(400).json({ 
+          error: 'Invalid user_id',
+          message: error.message
         });
       }
     }
@@ -87,13 +111,13 @@ export default async function handler(req, res) {
     if (status_filter === 'upcoming') {
       query = query
         .gte('session_datetime', now)
-        .in('status', ['planned', 'confirmed']);
+        .in('status', [SESSION_STATUS.PLANNED, SESSION_STATUS.CONFIRMED]);
     } else if (status_filter === 'completed') {
       query = query
-        .eq('status', 'completed');
+        .eq('status', SESSION_STATUS.COMPLETED);
     } else if (status_filter === 'cancelled') {
       query = query
-        .eq('status', 'cancelled');
+        .eq('status', SESSION_STATUS.CANCELLED);
     } else if (status_filter === 'past') {
       query = query
         .lt('session_datetime', now);
@@ -114,46 +138,7 @@ export default async function handler(req, res) {
       .single();
 
     // Обогащаем данные занятий
-    const enrichedLessons = sessions.map(session => {
-      const sessionDate = new Date(session.session_datetime);
-      const isUpcoming = sessionDate > new Date();
-      const isPast = sessionDate < new Date();
-      
-      // Определяем язык из сессии или информации о студенте
-      const language = session.language || 
-                      (Array.isArray(studentInfo?.languages) 
-                        ? studentInfo.languages.join(', ') 
-                        : studentInfo?.languages) || 'Не указан';
-
-      return {
-        id: session.id,
-        date: session.session_datetime,
-        formatted_date: sessionDate.toLocaleDateString('ru-RU', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }),
-        formatted_time: sessionDate.toLocaleTimeString('ru-RU', {
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        formatted_datetime: sessionDate.toLocaleString('ru-RU', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        weekday: sessionDate.toLocaleDateString('ru-RU', { weekday: 'long' }),
-        duration: session.duration_minutes || 60,
-        status: session.status || 'planned',
-        type: session.type || 'individual',
-        language: language,
-        zoom_link: session.zoom_link,
-        zoom_meeting_id: session.zoom_meeting_id,
-        google_event_id: session.google_event_id,
-        session_type: session.session_type,
-        notes: session.notes,
+    const enrichedLessons = sessions.map(session => enrichSessionData(session, studentInfo));notes,
         created_by: session.created_by,
         tutor_id: session.tutor_id,
         is_upcoming: isUpcoming,
@@ -168,9 +153,9 @@ export default async function handler(req, res) {
     });
 
     // Группируем по статусу для удобства
-    const upcomingLessons = enrichedLessons.filter(l => l.is_upcoming && l.status !== 'cancelled');
+    const upcomingLessons = enrichedLessons.filter(l => l.is_upcoming && l.status !== SESSION_STATUS.CANCELLED);
     const pastLessons = enrichedLessons.filter(l => l.is_past);
-    const cancelledLessons = enrichedLessons.filter(l => l.status === 'cancelled');
+    const cancelledLessons = enrichedLessons.filter(l => l.status === SESSION_STATUS.CANCELLED);
 
     const response = {
       lessons: enrichedLessons,
@@ -184,7 +169,7 @@ export default async function handler(req, res) {
         upcoming: upcomingLessons.length,
         past: pastLessons.length,
         cancelled: cancelledLessons.length,
-        completed: enrichedLessons.filter(l => l.status === 'completed').length
+        completed: enrichedLessons.filter(l => l.status === SESSION_STATUS.COMPLETED).length
       },
       student_info: studentInfo,
       requester: {
