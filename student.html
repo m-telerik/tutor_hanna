@@ -1,16 +1,15 @@
 <!-- Секция уроков -->
     <section id="lessons-section" class="nav-section">
-      <div class="section-header">
-        <h2><span class="emoji">📖</span>Мои уроки</h2>
-        <div class="lessons-filter">
-          <select id="lessonsFilter" onchange="filterLessons()">
-            <option value="upcoming">Предстоящие</option>
-            <option value="all">Все</option>
-            <option value="past">Прошедшие</option>
-            <option value="cancelled">Отмененные</option>
-          </select>
-        </div>
-      </div>
+      <div class="header">
+  <button class="back-btn" onclick="history.back()">← Назад</button>
+  <h1><span class="emoji">🎓</span>Мой профиль</h1>
+  <div class="header-help">
+    <a href="https://t.me/naumenko" target="_blank" class="help-link">
+      <span class="emoji">💬</span>
+      <span class="help-text">Помощь</span>
+    </a>
+  </div>
+</div>
 
       <div class="lessons-stats" id="lessons-stats" style="display: none;">
         <div class="stat-item">
