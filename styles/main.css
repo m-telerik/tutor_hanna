@@ -14,6 +14,9 @@
   --error-color: #dc3545;
   --admin-accent: #ff6b35;
   --tutor-accent: #28a745;
+  --student-primary: #20c997;
+  --student-secondary: #17a2b8;
+  --student-accent: #6f42c1;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -32,6 +35,9 @@
     --error-color: #f85149;
     --admin-accent: #ff8a65;
     --tutor-accent: #34d058;
+    --student-primary: #26d0ce;
+    --student-secondary: #17a2b8;
+    --student-accent: #8b5cf6;
   }
 }
 

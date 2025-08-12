@@ -76,7 +76,9 @@
       document.addEventListener('navigation:sectionChange', handleSectionChange);
       
       // Загружаем начальные данные
-      loadInitialData();
+      setTimeout(() => {
+        loadInitialData();
+      }, 100);
     }
 
     // Обновление информации о студенте в хедере
@@ -102,11 +104,13 @@
     async function loadInitialData() {
       console.log('📊 Загрузка данных студента...');
       
-      setTimeout(async () => {
-        await loadStudentProfile();
-        await loadStudentVocabulary();
-        await loadStudentLessons();
-      }, 100);
+      try {
+        // Загружаем начальный контент для активной секции
+        const currentSection = navigation.getCurrentSection();
+        await loadSectionContent(currentSection);
+      } catch (error) {
+        console.error('Ошибка загрузки начальных данных:', error);
+      }
     }
 
     // Обработчик смены секции
@@ -393,9 +397,9 @@
               </div>
               
               <div class="vocab-actions">
-                <button class="btn-secondary" onclick="navigation.switchToSection('vocabulary')">
+                <a href="vocabulary.html?user_id=${encodeURIComponent(currentStudent.id)}" class="btn-secondary">
                   📚 Открыть полный словарь
-                </button>
+                </a>
               </div>
             </div>
           ` : `
@@ -410,13 +414,67 @@
     }
 
     async function loadProgressContent() {
+      const stats = await loadStudentStats();
+
       return `
         <div class="progress-content">
-          <div class="empty-state">
-            <div class="placeholder-icon">📈</div>
-            <h3>Отслеживание прогресса</h3>
-            <p>Здесь будет отображаться ваш прогресс в изучении языка</p>
-            <p><small>Функция находится в разработке</small></p>
+          <div class="progress-stats">
+            <div class="stat-card">
+              <div class="stat-number">${stats.totalLessons}</div>
+              <div class="stat-label">Завершено уроков</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">${stats.vocabularyWords}</div>
+              <div class="stat-label">Изучено слов</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">${stats.studyStreak}</div>
+              <div class="stat-label">Дней подряд</div>
+            </div>
+          </div>
+
+          <div class="progress-sections">
+            <div class="progress-section">
+              <h4><span class="emoji">📊</span>Общий прогресс</h4>
+              <div class="progress-info">
+                <p>Вы прошли <strong>${stats.totalLessons}</strong> уроков и изучили <strong>${stats.vocabularyWords}</strong> новых слов.</p>
+                ${stats.totalLessons > 0 ? `
+                  <div class="achievement">
+                    <span class="achievement-icon">🎉</span>
+                    <span>Отличная работа! Продолжайте в том же духе!</span>
+                  </div>
+                ` : `
+                  <div class="motivation">
+                    <span class="motivation-icon">🚀</span>
+                    <span>Готовы начать изучение? Забронируйте первый урок!</span>
+                  </div>
+                `}
+              </div>
+            </div>
+
+            <div class="progress-section">
+              <h4><span class="emoji">🎯</span>Ближайшие цели</h4>
+              <div class="goals-list">
+                <div class="goal-item">
+                  <div class="goal-text">Пройти 5 уроков</div>
+                  <div class="goal-progress">
+                    <div class="progress-bar">
+                      <div class="progress-fill" style="width: ${Math.min((stats.totalLessons / 5) * 100, 100)}%"></div>
+                    </div>
+                    <span class="progress-text">${stats.totalLessons}/5</span>
+                  </div>
+                </div>
+                <div class="goal-item">
+                  <div class="goal-text">Изучить 50 слов</div>
+                  <div class="goal-progress">
+                    <div class="progress-bar">
+                      <div class="progress-fill" style="width: ${Math.min((stats.vocabularyWords / 50) * 100, 100)}%"></div>
+                    </div>
+                    <span class="progress-text">${stats.vocabularyWords}/50</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -440,6 +498,9 @@
     async function loadStudentProfile() {
       try {
         const response = await auth.apiRequest(`/api/students`);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
         const { students } = await response.json();
         
         // Обновляем информацию о текущем студенте
@@ -453,22 +514,18 @@
       }
     }
 
-    async function loadStudentVocabulary() {
-      // Загружается в секции vocabulary
-    }
-
-    async function loadStudentLessons() {
-      // Загружается в секции lessons
-    }
-
     async function loadStudentStats() {
       try {
         // Загружаем базовую статистику
         const [vocabRes, lessonsRes] = await Promise.all([
           auth.apiRequest(`/api/vocab?user_id=${currentStudent.id}`),
-          auth.apiRequest(`/api/student-lessons?user_id=${currentStudent.id}`)
+          auth.apiRequest(`/api/student-lessons?user_id=${currentStudent.id}&limit=100`)
         ]);
-        
+
+          if (!vocabRes.ok || !lessonsRes.ok) {
+            throw new Error('Ошибка загрузки данных с сервера');
+          }
+
         const { words = [] } = await vocabRes.json();
         const { lessons = [] } = await lessonsRes.json();
         

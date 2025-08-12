@@ -180,13 +180,17 @@
 
 /* Стили для студентов */
 .role-student .nav-tab.active {
-  border-bottom-color: var(--tutor-accent);
-  color: var(--tutor-accent);
+  border-bottom-color: var(--student-primary);
+  color: var(--student-primary);
 }
 
 .role-student .nav-tab:hover {
-  background: rgba(40, 167, 69, 0.1);
-  color: var(--tutor-accent);
+  background: rgba(32, 201, 151, 0.1);
+  color: var(--student-primary);
+}
+
+.role-student .section-placeholder h3 {
+  color: var(--student-primary);
 }
 
 /* Стили для тьюторов */
@@ -208,6 +212,11 @@
 .role-admin .nav-tab.active {
   border-bottom-color: var(--admin-accent);
   color: var(--admin-accent);
+}
+
+/* Индикатор активной секции для студентов */
+.role-student .nav-tab.active::after {
+  background: var(--student-primary);
 }
 
 .role-admin .nav-tab:hover {
