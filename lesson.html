@@ -140,7 +140,7 @@
         `;
 
         // Обновляем ссылку на полный словарь
-        document.getElementById('full-vocab-link').href = `vocabulary.html?student_name=${encodeURIComponent(student.name)}`;
+        document.getElementById('full-vocab-link').href = `vocabulary.html?user_id=${encodeURIComponent(student.id || student.user_id)}`;
         
       } catch (error) {
         console.error('Ошибка загрузки урока:', error);
@@ -155,8 +155,8 @@
         const { words: lessonWords = [] } = await lessonRes.json();
         
         // Загружаем все слова студента
-        if (currentStudentName) {
-          const allRes = await auth.apiRequest(`/api/vocab?user_name=${encodeURIComponent(currentStudentName)}`);
+        if (currentStudentId) {
+          const allRes = await auth.apiRequest(`/api/vocab?user_id=${encodeURIComponent(currentStudentId)}`);
           const { words: allWords = [] } = await allRes.json();
 
           // Отображаем слова урока

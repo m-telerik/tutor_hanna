@@ -68,8 +68,8 @@
           case 'admin':   return window.location.replace('admin.html');
           case 'tutor':   return window.location.replace('tutor.html');
           case 'student': {
-            const id = encodeURIComponent(user.user_id || user.id || '');
-            return id ? window.location.replace(`student.html?user_id=${id}`) : goBookingOnce();
+           const id = user.id || user.user_id;
+           return id ? window.location.replace(`student.html?user_id=${encodeURIComponent(id)}`) : goBookingOnce();
           }
           // prospect и прочие — бронирование
           default: return goBookingOnce();

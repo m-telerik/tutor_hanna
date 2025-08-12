@@ -39,7 +39,6 @@ export default async function handler(req, res) {
 async function handleGetRequest(req, res, requestingUser) {
   const { searchParams } = new URL(req.url, `http://${req.headers.host}`);
   const session_id = searchParams.get('session_id');
-  const user_name = searchParams.get('user_name');
   const user_id = searchParams.get('user_id');
 
   let query = supabase
@@ -65,15 +64,10 @@ async function handleGetRequest(req, res, requestingUser) {
     if (requestingUser.auth_method === 'telegram') {
       query = query.eq('user_id', requestingUser.id);
     } else {
-      // Для браузерной авторизации студентов нужно найти по имени
-      if (user_name) {
-        query = query.eq('hanna_users.name', user_name);
-      } else {
-        return res.status(400).json({ 
-          error: 'Missing user identification',
-          message: 'Для браузерной авторизации требуется параметр user_name'
-        });
-      }
+      return res.status(403).json({
+        error: 'Access denied',
+        message: 'Доступ к словарю возможен только через Telegram'
+      });
     }
   } else if (requestingUser.role === 'tutor') {
     // Тьюторы видят словари своих студентов
@@ -85,10 +79,6 @@ async function handleGetRequest(req, res, requestingUser) {
   // Фильтрация по параметрам
   if (session_id) {
     query = query.eq('session_id', session_id);
-  }
-  
-  if (user_name && requestingUser.role !== 'student') {
-    query = query.eq('hanna_users.name', user_name);
   }
   
   if (user_id) {

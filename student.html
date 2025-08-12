@@ -74,7 +74,7 @@
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const studentName = urlParams.get("name");
+    const userId = urlParams.get("user_id");
     
     let auth = null;
     let studentData = null;
@@ -86,8 +86,8 @@
     document.addEventListener('DOMContentLoaded', async function() {
       console.log('🚀 Инициализация профиля студента...');
       
-      if (!studentName) {
-        showError('Не указано имя студента');
+      if (!userId) {
+        showError('Не указан ID студента');
         return;
       }
 
@@ -106,11 +106,11 @@
       console.log('✅ Пользователь авторизован для просмотра профиля:', user);
       
       // Проверяем права доступа для студентов
-      if (user.role === 'student' && user.name !== studentName) {
+      if (user.role === 'student' && (user.id !== userId && user.user_id !== userId)) {
         showError('Вы можете просматривать только свой профиль');
         return;
       }
-      
+
       // Показываем контент
       document.getElementById('studentContent').style.display = 'block';
       
@@ -127,14 +127,14 @@
 
     async function loadStudentInfo() {
       try {
-        const response = await auth.apiRequest('/api/students');
+        const response = await auth.apiRequest(`/api/students?user_id=${encodeURIComponent(userId)}`);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
         
         const { students } = await response.json();
-        const student = students.find(s => s.name === studentName);
+        const student = students.find(s => s.id === userId || s.user_id === userId);
 
         if (!student) {
           throw new Error('Студент не найден');
@@ -259,7 +259,7 @@
 
     async function loadVocabulary() {
       try {
-        const response = await auth.apiRequest(`/api/vocab?user_name=${encodeURIComponent(studentName)}`);
+        const response = await auth.apiRequest(`/api/vocab?user_id=${encodeURIComponent(userId)}`);
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -446,7 +446,7 @@
       setTimeout(syncColumnHeights, 100);
     });
 
-    console.log('✅ Student profile загружен для:', studentName);
+    console.log('✅ Student profile загружен для user_id:', userId);
   </script>
 </body>
 </html>

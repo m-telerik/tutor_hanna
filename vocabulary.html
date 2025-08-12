@@ -68,7 +68,7 @@
   </div>
 
   <script>
-    const studentName = new URLSearchParams(window.location.search).get("student_name");
+    const userId = new URLSearchParams(window.location.search).get("user_id");
     const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
     const vocabTbody = document.getElementById("vocab-tbody");
     const searchInput = document.getElementById("search");
@@ -77,17 +77,17 @@
     let filteredWords = [];
     let currentFilter = 'all';
 
-    if (!studentName || !userId) {
+    if (!userId || !telegramUserId) {
       vocabTbody.innerHTML = '<tr><td colspan="7" class="error">Недостаточно данных для отображения</td></tr>';
     } else {
-      document.querySelector('h1').innerHTML = `<span class="emoji">📚</span>Словарь: ${studentName}`;
+      document.querySelector('h1').innerHTML = `<span class="emoji">📚</span>Словарь студента`;
       loadVocabulary();
     }
 
     async function loadVocabulary() {
       try {
-        const res = await fetch(`/api/vocab?user_name=${encodeURIComponent(studentName)}`, {
-          headers: { "x-telegram-id": userId }
+        const res = await fetch(`/api/vocab?user_id=${encodeURIComponent(userId)}`, {
+          headers: { "x-telegram-id": telegramUserId }
         });
         const { words = [] } = await res.json();
         
@@ -182,7 +182,7 @@
           method: 'PUT',
           headers: {
             "Content-Type": "application/json",
-            "x-telegram-id": userId
+            "x-telegram-id": telegramUserId
           },
           body: JSON.stringify({ id: wordId, studied: true })
         });
