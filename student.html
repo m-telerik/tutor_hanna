@@ -88,11 +88,6 @@
     document.addEventListener('DOMContentLoaded', async function() {
       console.log('🚀 Инициализация профиля студента...');
       
-      if (!userId) {
-        showError('Не указан ID студента');
-        return;
-      }
-
       try {
         // Инициализируем авторизацию - доступ для админов, студентов и тьюторов
         auth = new AuthSystem();
@@ -107,19 +102,27 @@
     function onAuthSuccess(user) {
       console.log('✅ Полные данные пользователя:', JSON.stringify(user, null, 2));
       
-      // Проверяем права доступа для студентов
+      // Определяем userId в зависимости от роли
+      let targetUserId;
+ 
   if (user.role === 'student') {
-     // Для студентов проверяем, что они просматривают свой профиль
-     const userIdFromAuth = user.id || user.user_id;
-     const userIdFromUrl = userId;
-     
-     console.log('🔍 Проверка доступа:', { userIdFromAuth, userIdFromUrl, authMethod: user.auth_method });
-     
-     if (userIdFromAuth !== userIdFromUrl) {
-       showError('Вы можете просматривать только свой профиль');
-       return;
-     }
-   }
+    // Студенты видят только свой профиль
+    targetUserId = user.id || user.user_id;
+    if (!targetUserId) {
+      showError('Не удалось определить ID студента');
+      return;
+    }
+  } else {
+    // Админы и тьюторы должны указать user_id в URL
+    if (!userId) {
+      showError('Не указан ID студента');
+      return;
+    }
+    targetUserId = userId;
+  }
+
+  // Сохраняем определенный ID для использования в других функциях
+  window.currentUserId = targetUserId;
 
       // Показываем контент
       document.getElementById('studentContent').style.display = 'block';
@@ -137,14 +140,14 @@
 
     async function loadStudentInfo() {
       try {
-        const response = await auth.apiRequest(`/api/students?user_id=${encodeURIComponent(userId)}`);
+        const response = await auth.apiRequest(`/api/students?user_id=${encodeURIComponent(window.currentUserId)}`);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
         
         const { students } = await response.json();
-        const student = students.find(s => s.id === userId || s.user_id === userId);
+        const student = students.find(s => s.id === window.currentUserId || s.user_id === window.currentUserId);
 
         if (!student) {
           throw new Error('Студент не найден');
@@ -269,7 +272,7 @@
 
     async function loadVocabulary() {
       try {
-        const response = await auth.apiRequest(`/api/vocab?user_id=${encodeURIComponent(userId)}`);
+        const response = await auth.apiRequest(`/api/vocab?user_id=${encodeURIComponent(window.currentUserId)}`);
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
