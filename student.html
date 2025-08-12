@@ -495,7 +495,7 @@
         if (!auth || !studentName) return;
         
         try {
-          const response = await auth.apiRequest(`/api/vocab?user_name=${encodeURIComponent(studentName)}`);
+          const response = await auth.apiRequest('/api/vocab');
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           
           const { words = [] } = await response.json();
@@ -816,7 +816,7 @@ if (mainTitle) {
 
     async function loadVocabularyPreview() {
       try {
-        const response = await auth.apiRequest(`/api/vocab?user_name=${encodeURIComponent(studentName)}`);
+        const response = await auth.apiRequest('/api/vocab');
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -950,7 +950,7 @@ if (mainTitle) {
       `;
     }
 
-    console.log('✅ Student profile с навигацией загружен для:', studentName);
+    console.log('✅ Student profile с навигацией загружен для ID:', userId);
   </script>
 </body>
 </html>
