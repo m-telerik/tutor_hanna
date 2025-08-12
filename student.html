@@ -245,9 +245,8 @@
           <!-- Левая колонка: Информация о студенте -->
           <div class="left-column" id="left-column">
             <div class="student-header">
-          <h3><span class="emoji">ℹ️</span>Информация о студенте</h3>
-      
-           </div> 
+              <h3><span class="emoji">ℹ️</span>Информация о студенте</h3>
+            </div> 
             <div id="student-info">
               <div class="loading-state">
                 <span class="loading-spinner"></span>
@@ -257,7 +256,7 @@
           </div>
         </div>
       </div>
-
+    </section>
 
     <!-- Секция полного словаря -->
     <section id="vocabulary-section" class="nav-section">
@@ -478,7 +477,7 @@
 
       async loadFullVocabulary() {
         if (!auth || !studentName) return;
-        
+        if (!auth || !userId) return;
         try {
           const response = await auth.apiRequest('/api/vocab');
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
