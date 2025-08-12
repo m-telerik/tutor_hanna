@@ -1,73 +1,41 @@
-/* ===== ОБНОВЛЕННЫЕ СТИЛИ ТАБЛИЦЫ СТУДЕНТОВ ===== */
+/* ===== ИСПРАВЛЕНИЯ ДЛЯ МОБИЛЬНОЙ АДАПТИВНОСТИ ===== */
 
-/* Имя студента с email */
-.student-name a {
-  color: var(--text-color) !important;
-  text-decoration: none !important;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-
-.student-name a:hover {
-  color: var(--accent-color) !important;
-  text-decoration: none !important;
-}
-
-.student-email {
-  color: var(--text-color);
-  font-size: 11px;
-  margin-top: 2px;
-  opacity: 0.7;
-  font-style: italic;
-}
-
-/* Колонка Telegram */
-.telegram-column {
-  width: 120px;
-  min-width: 120px;
-  text-align: center;
-}
-
-.telegram-link {
-  display: inline-block;
-  background: var(--accent-color);
-  color: white !important;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
-  text-decoration: none !important;
-  transition: all 0.2s;
-}
-
-.telegram-link:hover {
-  opacity: 0.9;
-  text-decoration: none !important;
-  transform: translateY(-1px);
-}
-
-.no-telegram {
-  color: var(--text-color);
-  opacity: 0.5;
-  font-size: 12px;
-}
-
-/* ===== СТИЛИ ДЛЯ СТУДЕНТОВ ===== */
-
-/* ===== ХЕДЕР С ПОМОЩЬЮ ===== */
+/* 1. Исправляем header */
 .header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
   padding: 0.5rem 0;
+  gap: 1rem; /* Добавляем отступы между элементами */
+}
+
+.header h1 {
+  flex: 1; /* Заголовок занимает все свободное место */
+  margin: 0;
+  text-align: center; /* Центрируем заголовок */
 }
 
 .header-help {
-  display: flex;
-  align-items: center;
+  flex-shrink: 0; /* Кнопка помощи не сжимается */
 }
 
+/* 2. Исправляем основной layout - mobile-first подход */
+.page-layout {
+  display: grid;
+  grid-template-columns: 1fr; /* По умолчанию одна колонка */
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Только на больших экранах делаем две колонки */
+@media (min-width: 768px) {
+  .page-layout {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+/* 3. Улучшаем кнопку помощи */
 .help-link {
   display: flex;
   align-items: center;
@@ -81,6 +49,7 @@
   font-size: 12px;
   font-weight: 500;
   transition: all 0.2s;
+  white-space: nowrap; /* Предотвращаем перенос текста */
 }
 
 .help-link:hover {
@@ -97,650 +66,22 @@
   margin: 0;
 }
 
-.help-text {
-  white-space: nowrap;
-}
-
-/* ===== НОВЫЙ МАКЕТ ПРОФИЛЯ ===== */
-.page-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin-top: 1rem;
-}
-
-.left-column, .right-column {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid var(--border-color);
-  height: fit-content;
-}
-
-/* ===== ИНФОРМАЦИЯ О СТУДЕНТЕ ===== */
-.student-header {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--accent-color);
-}
-
-.student-header h2 {
-  margin: 0;
-  color: var(--accent-color);
-  font-size: 1.3rem;
-}
-
-.info-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.info-item:last-child {
-  border-bottom: none;
-}
-
-.info-label {
-  font-weight: 600;
-  color: var(--text-color);
-  opacity: 0.8;
-  min-width: 120px;
-}
-
-.info-value {
-  text-align: right;
-  flex: 1;
-}
-
-.language-badge {
-  background: var(--accent-color);
-  color: white;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.booking-badge {
-  background: var(--success-color);
-  color: white;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.booking-badge.by-teacher {
-  background: var(--admin-accent);
-}
-
-/* ===== СЕКЦИЯ ЗАНЯТИЙ ===== */
-.lessons-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border-color);
-}
-
-.lessons-section h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1.1rem;
-  color: var(--text-color);
-}
-
-.lessons-list {
-  margin-top: 1rem;
-}
-
-.lesson-item {
-  display: block;
-  padding: 0.6rem 0.8rem;
-  margin: 0.3rem 0;
-  background: var(--bg-color);
-  border-radius: 6px;
-  text-decoration: none;
-  color: var(--text-color);
-  transition: all 0.2s;
-  border: 1px solid var(--border-color);
-  font-size: 13px;
-}
-
-.lesson-item:hover {
-  background: var(--accent-color);
-  color: white;
-  text-decoration: none;
-  transform: translateX(4px);
-}
-
-.lesson-date {
-  font-weight: 500;
-}
-
-.lesson-language {
-  opacity: 0.8;
-  font-size: 11px;
-}
-
-.no-lessons {
-  text-align: center;
-  opacity: 0.6;
-  padding: 1rem;
-  font-style: italic;
-}
-
-/* ===== КНОПКА БРОНИРОВАНИЯ ===== */
-.book-button {
-  width: 100%;
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 1rem;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.book-button:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-}
-
-.book-button:active {
-  transform: translateY(0);
-}
-
-/* ===== СЛОВАРЬ ===== */
-.vocab-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--success-color);
-}
-
-.vocab-header h2 {
-  margin: 0;
-  color: var(--success-color);
-  font-size: 1.3rem;
-}
-
-.vocab-count {
-  background: var(--success-color);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.vocab-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-  background: var(--bg-color);
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid var(--border-color);
-}
-
-.vocab-table th {
-  background: var(--header-bg);
-  padding: 10px 8px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 11px;
-  color: var(--text-color);
-  border-bottom: 2px solid var(--border-color);
-  position: sticky;
-  top: 0;
-}
-
-.vocab-table td {
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 12px;
-  vertical-align: top;
-}
-
-.vocab-table tbody tr:hover {
-  background: rgba(0, 122, 255, 0.05);
-}
-
-.vocab-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.word-cell {
-  font-weight: 600;
-  color: var(--accent-color);
-}
-
-.date-cell {
-  font-size: 10px;
-  opacity: 0.7;
-  white-space: nowrap;
-  min-width: 80px;
-}
-
-.translation-cell {
-  font-weight: 500;
-}
-
-.example-cell {
-  font-style: italic;
-  opacity: 0.8;
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.3;
-}
-
-.example-cell[title]:hover {
-  cursor: help;
-}
-
-/* ===== ПАГИНАЦИЯ ===== */
-.pagination-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  padding: 1rem 0;
-  border-top: 1px solid var(--border-color);
-  gap: 1rem;
-}
-
-.pagination-info {
-  font-size: 11px;
-  opacity: 0.7;
-  color: var(--text-color);
-}
-
-.pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.pagination-btn {
-  background: var(--accent-color);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 70px;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-.pagination-btn:disabled {
-  background: var(--border-color);
-  color: var(--text-color);
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.page-indicator {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-color);
-  min-width: 50px;
-  text-align: center;
-}
-
-/* ===== СИНХРОНИЗАЦИЯ ВЫСОТЫ КОЛОНОК ===== */
-.left-column, .right-column {
-  transition: height 0.3s ease;
-}
-
-/* ===== ПУСТЫЕ СОСТОЯНИЯ ===== */
-.empty-vocab {
-  text-align: center;
-  opacity: 0.6;
-  padding: 2rem;
-}
-
-.empty-vocab .emoji {
-  font-size: 2em;
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.empty-vocab p {
-  margin: 0.5rem 0;
-}
-
-/* ===== СОСТОЯНИЯ ЗАГРУЗКИ И ОШИБОК ===== */
-.loading-state {
-  text-align: center;
-  padding: 2rem;
-  opacity: 0.6;
-}
-
-.loading-state .loading-spinner {
-  margin-bottom: 1rem;
-}
-
-.error-state {
-  text-align: center;
-  padding: 2rem;
-  color: var(--error-color);
-  background: rgba(220, 53, 69, 0.1);
-  border-radius: 8px;
-  border: 1px solid rgba(220, 53, 69, 0.2);
-}
-
-.error-state h3 {
-  margin-top: 0;
-  color: var(--error-color);
-}
-
-/* ===== ФУТЕР ===== */
-.footer {
-  text-align: center;
-  margin-top: 2rem;
-  padding: 1.5rem 1rem;
-  font-size: 12px;
-  opacity: 0.7;
-  border-top: 1px solid var(--border-color);
-  background: var(--card-bg);
-  border-radius: 8px;
-}
-
-.footer a {
-  color: var(--accent-color);
-  text-decoration: none;
-  font-weight: 500;
-  transition: opacity 0.2s;
-}
-
-.footer a:hover {
-  text-decoration: underline;
-  opacity: 0.8;
-}
-
-/* ===== СТАРЫЕ СТИЛИ (для совместимости) ===== */
-
-/* Приветственные карточки */
-.welcome-card {
-  background: var(--card-bg);
-  border-radius: 12px;
-  padding: 1.2rem;
-  margin: 0.8rem 0;
-  text-align: center;
-  border: 1px solid var(--border-color);
-}
-
-.welcome-card.gradient {
-  background: linear-gradient(135deg, var(--accent-color) 0%, #5856d6 100%);
-  color: white;
-  border: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.welcome-card.gradient::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  z-index: 1;
-}
-
-.welcome-card.gradient * {
-  position: relative;
-  z-index: 2;
-}
-
-.welcome-card.gradient p {
-  opacity: 0.9;
-  margin: 0.5rem 0;
-}
-
-.welcome-card.gradient h2 {
-  margin: 0 0 0.8rem 0;
-}
-
-/* Информация о студенте (старый стиль) */
-.student-info {
-  background: var(--card-bg);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin: 1rem 0;
-  border: 1px solid var(--border-color);
-}
-
-.student-info p {
-  margin: 0.5rem 0;
-  line-height: 1.5;
-}
-
-.student-info strong {
-  color: var(--text-color);
-  font-weight: 600;
-}
-
-/* Следующее занятие */
-.next-lesson {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--card-bg);
-  border-radius: 8px;
-  padding: 1rem;
-  margin: 1rem 0;
-  border: 1px solid var(--border-color);
-}
-
-/* Действия студента */
-.student-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin: 1.5rem 0;
-}
-
-/* Быстрые действия */
-.quick-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  margin: 1rem 0;
-}
-
-/* Кнопки бронирования (старые) */
-.book-lesson-btn {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: var(--button-bg);
-  color: var(--button-text);
-  border: none;
-  border-radius: 25px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-  z-index: 1000;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.book-lesson-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 122, 255, 0.4);
-}
-
-.external-link-btn {
-  background: var(--accent-color);
-  color: var(--button-text);
-  border: none;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  margin: 10px 5px;
-  transition: opacity 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  text-decoration: none;
-}
-
-.external-link-btn:hover {
-  opacity: 0.9;
-  text-decoration: none;
-}
-
-/* Ссылки контактов */
-.contact-link {
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 20px;
-  text-decoration: none;
-  margin-top: 1rem;
-  font-weight: 500;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.2s;
-}
-
-.contact-link:hover {
-  background: rgba(255, 255, 255, 0.3);
-  text-decoration: none;
-  transform: translateY(-1px);
-}
-
-/* Секция для тьюторов */
-.tutor-section {
-  background: linear-gradient(135deg, var(--tutor-accent) 0%, #20c997 100%);
-  border-radius: 12px;
-  padding: 1.2rem;
-  margin: 1.5rem 0 0.8rem 0;
-  text-align: center;
-  color: white;
-  position: relative;
-  overflow: hidden;
-}
-
-.tutor-section::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  z-index: 1;
-}
-
-.tutor-section * {
-  position: relative;
-  z-index: 2;
-}
-
-.tutor-section h3 {
-  margin: 0 0 0.8rem 0;
-  font-size: 1.1rem;
-}
-
-.tutor-section p {
-  margin: 0 0 1.2rem 0;
-  opacity: 0.9;
-  line-height: 1.4;
-}
-
-.tutor-link {
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 20px;
-  text-decoration: none;
-  font-weight: 500;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.2s;
-}
-
-.tutor-link:hover {
-  background: rgba(255, 255, 255, 0.3);
-  text-decoration: none;
-  transform: translateY(-1px);
-}
-
-/* Разделители */
-.footer-divider {
-  height: 1px;
-  background: var(--border-color);
-  margin: 1.5rem 0 0.8rem 0;
-  opacity: 0.5;
-}
-
-/* Контактная информация */
-.contact-info {
-  background: var(--card-bg);
-  border-radius: 8px;
-  padding: 1rem;
-  margin: 1rem 0;
-  border: 1px solid var(--border-color);
-  text-align: center;
-}
-
-/* ===== АДАПТИВНОСТЬ ===== */
+/* 4. Адаптивность для мобильных */
 @media (max-width: 768px) {
-  .page-layout {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .left-column, .right-column {
-    padding: 1rem;
-    height: auto !important; /* Отключаем синхронизацию высоты на мобильных */
-  }
-  
-  /* Хедер на мобильных */
   .header {
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    padding: 0.25rem 0;
+    margin-bottom: 0.5rem;
   }
   
+  .header h1 {
+    font-size: 1.1rem;
+  }
+  
+  /* Компактная кнопка помощи на мобильных */
   .help-link {
     padding: 6px 10px;
     font-size: 11px;
+    border-radius: 16px;
   }
   
   .help-text {
@@ -751,21 +92,14 @@
     font-size: 16px;
   }
   
-  /* Таблица студентов на мобильных */
-  .telegram-column {
-    width: 100px;
-    min-width: 100px;
+  /* Колонки на мобильных */
+  .left-column, 
+  .right-column {
+    padding: 1rem;
+    margin-bottom: 1rem;
   }
   
-  .telegram-link {
-    font-size: 10px;
-    padding: 3px 6px;
-  }
-  
-  .student-email {
-    font-size: 10px;
-  }
-  
+  /* Информация о студенте на мобильных */
   .info-item {
     flex-direction: column;
     align-items: flex-start;
@@ -781,17 +115,53 @@
   .info-value {
     text-align: left;
   }
+}
+
+/* 5. Улучшения для очень маленьких экранов */
+@media (max-width: 480px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
   
-  .vocab-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .back-btn {
+    order: 1;
+    flex: none;
+  }
+  
+  .header h1 {
+    order: 2;
+    flex: 1;
+    font-size: 1rem;
+    text-align: left; /* На маленьких экранах выравниваем влево */
+  }
+  
+  .header-help {
+    order: 3;
+    flex: none;
+  }
+  
+  /* Еще более компактные колонки */
+  .left-column, 
+  .right-column {
+    padding: 0.8rem;
+  }
+  
+  .student-header h2,
+  .vocab-header h2 {
+    font-size: 1.1rem;
+  }
+}
+
+/* 6. Исправления для таблицы словаря на мобильных */
+@media (max-width: 768px) {
+  .vocab-table {
+    font-size: 11px;
   }
   
   .vocab-table th,
   .vocab-table td {
     padding: 8px 4px;
-    font-size: 11px;
   }
   
   .example-cell {
@@ -800,117 +170,23 @@
   
   .date-cell {
     min-width: 60px;
+    font-size: 9px;
+  }
+  
+  .word-cell {
+    font-size: 12px;
+  }
+}
+
+/* 7. Улучшения для кнопок действий */
+@media (max-width: 768px) {
+  .book-button {
+    padding: 10px 16px;
+    font-size: 13px;
   }
   
   .lesson-item {
     font-size: 12px;
     padding: 0.5rem 0.6rem;
-  }
-
-  .student-actions {
-    grid-template-columns: 1fr;
-  }
-  
-  .quick-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .next-lesson {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-  
-  /* Пагинация на мобильных */
-  .pagination-container {
-    flex-direction: column;
-    gap: 0.8rem;
-    text-align: center;
-  }
-  
-  .pagination-controls {
-    gap: 0.8rem;
-  }
-  
-  .pagination-btn {
-    min-width: 60px;
-    font-size: 10px;
-    padding: 5px 8px;
-  }
-  
-  .page-indicator {
-    font-size: 11px;
-    min-width: 40px;
-  }
-  
-  .pagination-info {
-    font-size: 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .page-layout {
-    gap: 0.5rem;
-  }
-  
-  .left-column, .right-column {
-    padding: 0.8rem;
-  }
-  
-  /* Хедер на очень маленьких экранах */
-  .header {
-    margin-bottom: 0.5rem;
-  }
-  
-  .header h1 {
-    font-size: 1.1rem;
-  }
-  
-  .help-link {
-    padding: 4px 8px;
-    border-radius: 16px;
-  }
-  
-  .help-link .emoji {
-    font-size: 14px;
-  }
-  
-  /* Таблица студентов на очень маленьких экранах */
-  .telegram-column {
-    width: 80px;
-    min-width: 80px;
-  }
-  
-  .telegram-link {
-    font-size: 9px;
-    padding: 2px 4px;
-  }
-  
-  .student-name {
-    font-size: 12px;
-  }
-  
-  .student-email {
-    font-size: 9px;
-  }
-  
-  .vocab-table th,
-  .vocab-table td {
-    padding: 6px 3px;
-    font-size: 10px;
-  }
-  
-  .example-cell {
-    max-width: 80px;
-  }
-  
-  .student-header h2,
-  .vocab-header h2 {
-    font-size: 1.1rem;
-  }
-  
-  .book-button {
-    padding: 10px 16px;
-    font-size: 13px;
   }
 }
