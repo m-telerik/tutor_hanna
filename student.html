@@ -75,6 +75,8 @@
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get("user_id");
+
+    console.log('📍 URL Parameters:', { userId, fullUrl: window.location.href });
     
     let auth = null;
     let studentData = null;
@@ -103,13 +105,21 @@
 
     // Успешная авторизация
     function onAuthSuccess(user) {
-      console.log('✅ Пользователь авторизован для просмотра профиля:', user);
+      console.log('✅ Полные данные пользователя:', JSON.stringify(user, null, 2));
       
       // Проверяем права доступа для студентов
-      if (user.role === 'student' && (user.id !== userId && user.user_id !== userId)) {
-        showError('Вы можете просматривать только свой профиль');
-        return;
-      }
+  if (user.role === 'student') {
+     // Для студентов проверяем, что они просматривают свой профиль
+     const userIdFromAuth = user.id || user.user_id;
+     const userIdFromUrl = userId;
+     
+     console.log('🔍 Проверка доступа:', { userIdFromAuth, userIdFromUrl, authMethod: user.auth_method });
+     
+     if (userIdFromAuth !== userIdFromUrl) {
+       showError('Вы можете просматривать только свой профиль');
+       return;
+     }
+   }
 
       // Показываем контент
       document.getElementById('studentContent').style.display = 'block';
