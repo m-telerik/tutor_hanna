@@ -1,0 +1,387 @@
+/* ===== НАВИГАЦИОННАЯ СИСТЕМА ===== */
+
+.navigation-panel {
+  background: var(--card-bg);
+  border-radius: 12px 12px 0 0;
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+.nav-tabs {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  padding: 0;
+  background: var(--header-bg);
+}
+
+.nav-tabs::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  padding: 12px 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.nav-tab:hover {
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--accent-color);
+}
+
+.nav-tab.active {
+  background: var(--card-bg);
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+  font-weight: 600;
+}
+
+.nav-icon {
+  font-size: 18px;
+  margin-bottom: 4px;
+  transition: transform 0.2s ease;
+}
+
+.nav-tab:hover .nav-icon,
+.nav-tab.active .nav-icon {
+  transform: scale(1.1);
+}
+
+.nav-title {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.nav-tab.active .nav-title {
+  font-weight: 600;
+}
+
+/* ===== КОНТЕНТ СЕКЦИЙ ===== */
+
+.nav-content {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  min-height: 400px;
+  overflow: hidden;
+  position: relative;
+}
+
+.nav-section {
+  display: none;
+  padding: 1.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.nav-section.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== СОСТОЯНИЯ СЕКЦИЙ ===== */
+
+.section-placeholder {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.section-placeholder h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+  color: var(--accent-color);
+}
+
+.section-placeholder p {
+  margin: 0 0 1.5rem 0;
+  opacity: 0.7;
+  line-height: 1.4;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+.loading-state .loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.error-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-color);
+}
+
+.error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--error-color);
+}
+
+.error-state h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--error-color);
+}
+
+.error-state p {
+  margin: 0 0 1.5rem 0;
+  opacity: 0.8;
+  line-height: 1.4;
+}
+
+/* ===== РОЛЕ-СПЕЦИФИЧНЫЕ СТИЛИ ===== */
+
+/* Стили для студентов */
+.role-student .nav-tab.active {
+  border-bottom-color: var(--tutor-accent);
+  color: var(--tutor-accent);
+}
+
+.role-student .nav-tab:hover {
+  background: rgba(40, 167, 69, 0.1);
+  color: var(--tutor-accent);
+}
+
+/* Стили для тьюторов */
+.role-tutor .nav-tab.active {
+  border-bottom-color: var(--tutor-primary);
+  color: var(--tutor-primary);
+}
+
+.role-tutor .nav-tab:hover {
+  background: rgba(40, 167, 69, 0.1);
+  color: var(--tutor-primary);
+}
+
+.role-tutor .section-placeholder h3 {
+  color: var(--tutor-primary);
+}
+
+/* Стили для админов */
+.role-admin .nav-tab.active {
+  border-bottom-color: var(--admin-accent);
+  color: var(--admin-accent);
+}
+
+.role-admin .nav-tab:hover {
+  background: rgba(255, 107, 53, 0.1);
+  color: var(--admin-accent);
+}
+
+.role-admin .section-placeholder h3 {
+  color: var(--admin-accent);
+}
+
+/* ===== АДАПТИВНОСТЬ ===== */
+
+@media (max-width: 768px) {
+  .nav-tab {
+    min-width: 80px;
+    padding: 10px 6px;
+  }
+  
+  .nav-icon {
+    font-size: 16px;
+  }
+  
+  .nav-title {
+    font-size: 10px;
+  }
+  
+  .nav-section {
+    padding: 1rem;
+  }
+  
+  .section-placeholder {
+    padding: 1.5rem;
+  }
+  
+  .placeholder-icon {
+    font-size: 2.5rem;
+  }
+  
+  .section-placeholder h3 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .nav-tab {
+    min-width: 70px;
+    padding: 8px 4px;
+  }
+  
+  .nav-icon {
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  
+  .nav-title {
+    font-size: 9px;
+  }
+  
+  .nav-section {
+    padding: 0.8rem;
+  }
+  
+  /* Скрываем текст и показываем только иконки на очень маленьких экранах */
+  .nav-title {
+    display: none;
+  }
+  
+  .nav-tab {
+    min-width: 50px;
+    padding: 10px 6px;
+  }
+  
+  .nav-icon {
+    font-size: 18px;
+    margin-bottom: 0;
+  }
+}
+
+/* ===== СПЕЦИАЛЬНЫЕ ЭФФЕКТЫ ===== */
+
+/* Индикатор активной секции */
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 3px;
+  background: var(--accent-color);
+  border-radius: 2px 2px 0 0;
+}
+
+.role-tutor .nav-tab.active::after {
+  background: var(--tutor-primary);
+}
+
+.role-admin .nav-tab.active::after {
+  background: var(--admin-accent);
+}
+
+/* Плавная анимация переключения */
+.nav-content {
+  transition: min-height 0.3s ease;
+}
+
+/* Подсветка при hover */
+.nav-tab::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--accent-color);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: -1;
+}
+
+.nav-tab:hover::before {
+  opacity: 0.05;
+}
+
+/* Пульсация для уведомлений (если нужно) */
+.nav-tab.has-notification .nav-icon::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: var(--error-color);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ===== СКРОЛЛБАР ДЛЯ КОНТЕНТА ===== */
+.nav-section {
+  max-height: 600px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.nav-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nav-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav-section::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 3px;
+}
+
+.nav-section::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-color);
+}
