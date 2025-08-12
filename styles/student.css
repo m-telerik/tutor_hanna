@@ -190,3 +190,595 @@
     padding: 0.5rem 0.6rem;
   }
 }
+/* ===== ДОПОЛНЕНИЯ К styles/student.css ===== */
+
+/* Хедер студента */
+.student-header {
+  background: linear-gradient(135deg, var(--tutor-accent) 0%, #20c997 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 0.8rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(32, 201, 151, 0.3);
+}
+
+.student-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.student-header * {
+  position: relative;
+  z-index: 2;
+}
+
+.student-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.student-header .student-info {
+  opacity: 0.9;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Обзорная секция */
+.overview-content .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.overview-content .stat-card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.2rem;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.overview-content .stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--tutor-accent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.overview-content .stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(32, 201, 151, 0.15);
+  border-color: var(--tutor-accent);
+}
+
+.overview-content .stat-card:hover::before {
+  opacity: 1;
+}
+
+.overview-content .stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--tutor-accent);
+  margin-bottom: 0.5rem;
+}
+
+.overview-content .stat-label {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+/* Профиль студента */
+.student-profile,
+.next-lesson,
+.no-lessons {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border-color);
+}
+
+.student-profile h3,
+.next-lesson h3,
+.no-lessons h3 {
+  margin: 0 0 1rem 0;
+  color: var(--tutor-accent);
+  border-bottom: 2px solid var(--tutor-accent);
+  padding-bottom: 0.5rem;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.8;
+  min-width: 150px;
+}
+
+.info-value {
+  text-align: right;
+  color: var(--text-color);
+}
+
+/* Карточка урока */
+.lesson-card {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lesson-time {
+  font-weight: 600;
+  color: var(--tutor-accent);
+  font-size: 1.1rem;
+}
+
+.lesson-details {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.lesson-language,
+.lesson-type {
+  background: var(--tutor-accent);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Секция уроков */
+.lessons-content .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--tutor-accent);
+}
+
+.lessons-group {
+  margin: 2rem 0;
+}
+
+.lessons-group h4 {
+  margin: 0 0 1rem 0;
+  color: var(--tutor-accent);
+  font-size: 1.1rem;
+}
+
+.lessons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.lesson-item {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s ease;
+}
+
+.lesson-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(32, 201, 151, 0.15);
+  border-color: var(--tutor-accent);
+}
+
+.lesson-item.upcoming {
+  border-left: 4px solid var(--tutor-accent);
+}
+
+.lesson-item.past {
+  opacity: 0.8;
+  border-left: 4px solid var(--border-color);
+}
+
+.lesson-item .lesson-time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+  text-align: center;
+}
+
+.lesson-item .lesson-time .date {
+  font-weight: 600;
+  color: var(--tutor-accent);
+  font-size: 0.9rem;
+}
+
+.lesson-item .lesson-time .time {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  color: var(--text-color);
+}
+
+.lesson-item .lesson-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.lesson-item .lesson-language {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.lesson-item .lesson-type,
+.lesson-item .lesson-status {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  color: var(--text-color);
+}
+
+.lesson-item .lesson-notes {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  font-style: italic;
+  margin-top: 0.3rem;
+}
+
+.lesson-item .lesson-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.lesson-item .time-until {
+  font-size: 0.8rem;
+  color: var(--tutor-accent);
+  font-weight: 500;
+}
+
+/* Секция словаря */
+.vocabulary-content .vocab-stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.vocabulary-content .stat-item {
+  text-align: center;
+  min-width: 60px;
+}
+
+.vocabulary-content .stat-item .stat-number {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--tutor-accent);
+  margin-bottom: 0.2rem;
+}
+
+.vocabulary-content .stat-item .stat-label {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  color: var(--text-color);
+  line-height: 1.2;
+}
+
+.recent-words {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+}
+
+.recent-words h4 {
+  margin: 0 0 1rem 0;
+  color: var(--tutor-accent);
+  border-bottom: 2px solid var(--tutor-accent);
+  padding-bottom: 0.5rem;
+}
+
+.words-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.word-item {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s ease;
+}
+
+.word-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(32, 201, 151, 0.1);
+  border-color: var(--tutor-accent);
+}
+
+.word-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.word-text {
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.word-translation {
+  color: var(--text-color);
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+.word-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.language-badge {
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.language-badge.english {
+  background: #007aff;
+  color: white;
+}
+
+.language-badge.french {
+  background: #5856d6;
+  color: white;
+}
+
+.studied-badge {
+  background: var(--success-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.vocab-actions {
+  text-align: center;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Кнопки действий */
+.action-btn {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 70px;
+  text-align: center;
+}
+
+.action-btn:hover {
+  background: var(--tutor-accent);
+  color: white;
+  border-color: var(--tutor-accent);
+  transform: translateY(-1px);
+}
+
+/* Состояния */
+.empty-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+.empty-state .placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.empty-state h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--tutor-accent);
+}
+
+.empty-state p {
+  margin: 0.5rem 0;
+  line-height: 1.5;
+}
+
+.empty-state .btn-primary {
+  background: var(--tutor-accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: all 0.2s;
+}
+
+.empty-state .btn-primary:hover {
+  background: var(--tutor-secondary);
+  transform: translateY(-1px);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .student-header {
+    padding: 1rem;
+  }
+
+  .student-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .overview-content .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+  }
+
+  .overview-content .stat-card {
+    padding: 1rem;
+  }
+
+  .overview-content .stat-number {
+    font-size: 1.5rem;
+  }
+
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+
+  .info-label {
+    min-width: auto;
+    font-size: 0.8rem;
+  }
+
+  .info-value {
+    text-align: left;
+  }
+
+  .lesson-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+
+  .lesson-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+
+  .lesson-item .lesson-time {
+    min-width: auto;
+    text-align: left;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .lesson-item .lesson-actions {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .vocabulary-content .vocab-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .word-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .word-meta {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .student-header {
+    padding: 0.8rem;
+  }
+
+  .overview-content .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vocabulary-content .vocab-stats {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .vocabulary-content .stat-item {
+    min-width: auto;
+  }
+
+  .lessons-content .section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .word-item {
+    padding: 0.6rem;
+  }
+}
