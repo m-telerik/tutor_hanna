@@ -69,7 +69,7 @@
 
   <script>
     const userId = new URLSearchParams(window.location.search).get("user_id");
-    const userId = Telegram.WebApp.initDataUnsafe?.user?.id;
+    const telegramUserId = Telegram.WebApp.initDataUnsafe?.user?.id;
     const vocabTbody = document.getElementById("vocab-tbody");
     const searchInput = document.getElementById("search");
     
@@ -77,7 +77,7 @@
     let filteredWords = [];
     let currentFilter = 'all';
 
-    if (!userId || !telegramUserId) {
+    if (!userId) {
       vocabTbody.innerHTML = '<tr><td colspan="7" class="error">Недостаточно данных для отображения</td></tr>';
     } else {
       document.querySelector('h1').innerHTML = `<span class="emoji">📚</span>Словарь студента`;
@@ -87,7 +87,7 @@
     async function loadVocabulary() {
       try {
         const res = await fetch(`/api/vocab?user_id=${encodeURIComponent(userId)}`, {
-          headers: { "x-telegram-id": telegramUserId }
+          headers: { "x-telegram-id": telegramUserId || userId }
         });
         const { words = [] } = await res.json();
         
@@ -182,7 +182,7 @@
           method: 'PUT',
           headers: {
             "Content-Type": "application/json",
-            "x-telegram-id": telegramUserId
+            "x-telegram-id": telegramUserId || userId
           },
           body: JSON.stringify({ id: wordId, studied: true })
         });
