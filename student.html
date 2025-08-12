@@ -475,7 +475,6 @@
       }
 
       async loadFullVocabulary() {
-        if (!auth || !studentName) return;
         if (!auth || !userId) return;
         try {
           const response = await auth.apiRequest('/api/vocab');
