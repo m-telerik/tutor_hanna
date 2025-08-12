@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { authenticate } from './_auth-middleware.js';
+import { SESSION_STATUS, validateUUID } from './_session-helpers.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -107,7 +108,7 @@ export default async function handler(req, res) {
         const now = new Date();
         const timeUntil = getTimeUntil(sessionDate);
         const canJoin = sessionDate > now && nextSession.zoom_link && 
-                       ['planned', 'confirmed'].includes(nextSession.status);
+                       [SESSION_STATUS.PLANNED, SESSION_STATUS.CONFIRMED].includes(nextSession.status);
 
         // Определяем язык из сессии или студента
         const sessionLanguage = nextSession.language || 
